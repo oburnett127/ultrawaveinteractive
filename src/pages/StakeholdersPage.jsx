@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 function StakeholdersPage() {
   return (
-    <h1>Stakeholders Page</h1>
+    <h1>Stakeholders</h1>
   );
 }
 

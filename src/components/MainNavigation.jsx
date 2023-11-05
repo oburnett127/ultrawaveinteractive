@@ -31,6 +31,16 @@ function MainNavigation() {
           </li>
           <li>
             <NavLink
+              to="/services"
+              className={({ isActive }) =>
+                isActive ? classes.active : undefined
+              }
+            >
+              Services
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
               to="/stakeholders"
               className={({ isActive }) =>
                 isActive ? classes.active : undefined
@@ -41,12 +51,22 @@ function MainNavigation() {
           </li>
           <li>
             <NavLink
-              to="/stakeholders"
+              to="/contact"
               className={({ isActive }) =>
                 isActive ? classes.active : undefined
               }
             >
               Contact Us
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/careers"
+              className={({ isActive }) =>
+                isActive ? classes.active : undefined
+              }
+            >
+              Careers
             </NavLink>
           </li>
         </ul>
