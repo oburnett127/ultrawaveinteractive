@@ -4,7 +4,6 @@ import StakeholdersList from '../components/StakeholdersList';
 function StakeholdersPage() {
   return (
     <>
-      <h1>Stakeholders</h1>
       <StakeholdersList />
     </>
   );

@@ -5,25 +5,37 @@ type Stakeholder = {
   id: number;
   firstName: string;
   lastName: string;
-  photoUrl: string;
+  pictureUrl: string;
 };
 
 const StakeholdersList: React.FC = () => {
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
 
   useEffect(() => {
-    axios.get('/stakeholder/findAll')
-      .then((response) => {
-        setStakeholders(response.data);
-      })
-      .catch((error) => {
+
+    console.log("line 1");
+    
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(`${process.env.REACT_APP_SERVER_URL}/stakeholder/findAll`, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        //console.log('response.data: ', response.data);
+        setStakeholders(response.data);  
+      } catch (error) {
         console.error('Error fetching stakeholders:', error);
-      });
+      }
+    };
+
+    fetchData();
   }, []);
 
   return (
     <div>
-      <h1>Stakeholders List</h1>
+      <h1>Stakeholders</h1>
       <div className="stakeholder-list">
         {stakeholders.map((stakeholder) => (
           <div key={stakeholder.id} className="stakeholder">
