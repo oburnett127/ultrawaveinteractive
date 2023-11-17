@@ -21,4 +21,14 @@
   .list a.active {
     color: var(--color-primary-800);
   }
+
+  .pageTitle {
+    text-align: center;
+  }
+
+  .flex-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
   

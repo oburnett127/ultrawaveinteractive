@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import classes from './StakeholdersList.module.css';
 
 type Stakeholder = {
   id: number;
@@ -12,8 +13,6 @@ const StakeholdersList: React.FC = () => {
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
 
   useEffect(() => {
-
-    console.log("line 1");
     
     const fetchData = async () => {
       try {
@@ -23,7 +22,6 @@ const StakeholdersList: React.FC = () => {
           },
         });
 
-        //console.log('response.data: ', response.data);
         setStakeholders(response.data);  
       } catch (error) {
         console.error('Error fetching stakeholders:', error);
@@ -34,16 +32,13 @@ const StakeholdersList: React.FC = () => {
   }, []);
 
   return (
-    <div>
-      <h1>Stakeholders</h1>
-      <div className="stakeholder-list">
-        {stakeholders.map((stakeholder) => (
-          <div key={stakeholder.id} className="stakeholder">
-            <img src={stakeholder.pictureUrl} alt={`${stakeholder.firstName} ${stakeholder.lastName}`} />
-            <p>{stakeholder.firstName} {stakeholder.lastName}</p>
-          </div>
-        ))}
-      </div>
+    <div className={classes["flex-container"]}>
+      {stakeholders.map((stakeholder) => (
+        <div key={stakeholder.id} className="stakeholder">
+          <img src={stakeholder.pictureUrl} alt={`${stakeholder.firstName} ${stakeholder.lastName}`} />
+          <p>{stakeholder.firstName} {stakeholder.lastName}</p>
+        </div>
+      ))}
     </div>
   );
 };

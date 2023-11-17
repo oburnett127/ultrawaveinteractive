@@ -21,4 +21,12 @@
   .list a.active {
     color: var(--color-primary-800);
   }
+
+  .pageTitle {
+    text-align: center;
+  }
+  
+  .p-text {
+    text-align: center;
+  }
   
