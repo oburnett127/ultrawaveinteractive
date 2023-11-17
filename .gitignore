@@ -18,6 +18,10 @@
 .env.test.local
 .env.production.local
 
+/public/stakeholders/*.jpg
+/public/stakeholders/*.png
+/public/stakeholders/*.gif
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

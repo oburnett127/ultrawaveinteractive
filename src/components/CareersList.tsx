@@ -34,12 +34,15 @@ const CareersList: React.FC = () => {
   return (
       <div className={classes["careers-list"]}>
         {careers.map((career) => (
-          <div key={career.id} className={classes["career-item"]}>
-            <h2>{career.title}</h2>
-            <p>Date: {new Date(career.postDate).toLocaleDateString()}</p>
-            <p>{career.description}</p>
-            <p>{career.requirements}</p>
-          </div>
+          <>
+            <div key={career.id} className={classes["career-item"]}>
+              <h2>{career.title}</h2>
+              <p><b>Post Date: </b> {new Date(career.postDate).toLocaleDateString()}</p>
+              <p><b>Description: </b> {career.description}</p>
+              <p><b>Requirements: </b> {career.requirements}</p>
+            </div>
+          <hr></hr>
+          </>
         ))}
       </div>
   );

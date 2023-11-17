@@ -34,9 +34,9 @@ const StakeholdersList: React.FC = () => {
   return (
     <div className={classes["flex-container"]}>
       {stakeholders.map((stakeholder) => (
-        <div key={stakeholder.id} className="stakeholder">
-          <img src={stakeholder.pictureUrl} alt={`${stakeholder.firstName} ${stakeholder.lastName}`} />
-          <p>{stakeholder.firstName} {stakeholder.lastName}</p>
+        <div key={stakeholder.id}>
+          <img className={classes["image"]} src={stakeholder.pictureUrl} alt={`${stakeholder.firstName} ${stakeholder.lastName}`} />
+          <p className={classes["stakeholderName"]}>{stakeholder.firstName} {stakeholder.lastName}</p>
         </div>
       ))}
     </div>
