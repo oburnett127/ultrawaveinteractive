@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import React, { useState, useContext } from 'react';
 import { useForm } from 'react-hook-form';
-import { UserContext } from '../pages/UserContext'
+import { UserContext } from '../components/UserContext'
 
 interface FormData {
     email: string;
