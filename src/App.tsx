@@ -7,6 +7,8 @@ import ServicesPage from './pages/ServicesPage';
 import StakeholdersPage from './pages/StakeholdersPage';
 import ContactPage from './pages/ContactPage';
 import CareersPage from './pages/CareersPage';
+import AuthenticationPage from './pages/AuthenticationPage';
+import LogoutPage from './pages/LogoutPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
@@ -20,6 +22,8 @@ function App() {
             <Route path="/stakeholders" element={<StakeholdersPage />}></Route>
             <Route path="/contact" element={<ContactPage />}></Route>
             <Route path="/careers" element={<CareersPage />}></Route>
+            <Route path="/auth" element={<AuthenticationPage />}></Route>
+            <Route path="/logout" element={<LogoutPage />}></Route>
             <Route path="*" element={<NotFoundPage />}></Route>
         </Route>
     )
