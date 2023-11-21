@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import classes from './CareersList.module.css';
 
 type Career = {
@@ -34,15 +35,15 @@ const CareersList: React.FC = () => {
   return (
       <div className={classes["careers-list"]}>
         {careers.map((career) => (
-          <>
+          <Link to={{ pathname: `/careers/${career.id}` }}>
             <div key={career.id} className={classes["career-item"]}>
               <h2>{career.title}</h2>
               <p><b>Post Date: </b> {new Date(career.postDate).toLocaleDateString()}</p>
               <p><b>Description: </b> {career.description}</p>
               <p><b>Requirements: </b> {career.requirements}</p>
             </div>
-          <hr></hr>
-          </>
+            <hr></hr>
+          </Link>
         ))}
       </div>
   );
