@@ -11,32 +11,31 @@ import CareerDetailPage from './pages/CareerDetailPage';
 import AuthenticationPage from './pages/AuthenticationPage';
 import LogoutPage from './pages/LogoutPage';
 import NotFoundPage from './pages/NotFoundPage';
+import ErrorPage from './pages/ErrorPage';
 
 function App() {
   
   const router = createBrowserRouter(
     createRoutesFromElements(
-        <Route path="/" element={<RootLayout />}>
-            <Route index element={<HomePage />}></Route>
-            <Route path="/about" element={<AboutPage />}></Route>
-            <Route path="/services" element={<ServicesPage />}></Route>
-            <Route path="/stakeholders" element={<StakeholdersPage />}></Route>
-            <Route path="/contact" element={<ContactPage />}></Route>
-            <Route path="/careers" element={<CareersPage />}>
-              <Route path="/careers/:id">
-                <Route index element={<CareerDetailPage />}></Route>
-              </Route>
-            </Route>
-            <Route path="/auth" element={<AuthenticationPage />}></Route>
-            <Route path="/logout" element={<LogoutPage />}></Route>
-            <Route path="*" element={<NotFoundPage />}></Route>
-        </Route>
+      <Route path="/" element={<RootLayout />}>
+        <Route index element={<HomePage />}></Route>
+        <Route path="/about" element={<AboutPage />}></Route>
+        <Route path="/services" element={<ServicesPage />}></Route>
+        <Route path="/stakeholders" element={<StakeholdersPage />}></Route>
+        <Route path="/contact" element={<ContactPage />}></Route>
+        <Route path="/careers" element={<CareersPage />}></Route>
+        <Route path="/careers/:id" element={<CareerDetailPage />}></Route>
+        <Route path="/auth" element={<AuthenticationPage />}></Route>
+        <Route path="/logout" element={<LogoutPage />}></Route>
+        <Route path="/error" element={<ErrorPage />}></Route>
+        <Route path="*" element={<NotFoundPage />}></Route>
+      </Route>
     )
   );
 
   return (
     <div className={"App"}>
-        <RouterProvider router={router} />
+      <RouterProvider router={router} />
     </div>
   );
 }

@@ -6,66 +6,72 @@ import { UserContext } from "./UserContext";
 import axios from 'axios';
 
 type Career = {
-    title: string;
-    postDate: Date;
-    description: string;
-    requirements: string;
-    idNum: number;
-}
+  title: string;
+  postDate: Date;
+  description: string;
+  requirements: string;
+  idNum: number;
+};
 
 function CareerItem({ id }) {
-    const context = useContext(UserContext);
-    const [career, setCareer] = useState<Career>();
+  const context = useContext(UserContext);
+  const [career, setCareer] = useState<Career | undefined>();
 
-    if (!context || !context.user) {
-        throw new Error("Something went wrong.");
+  if (!context || !context.user) {
+    throw new Error("Something went wrong.");
+  }
+
+  const { isAdmin } = context.user;
+
+  console.log("test line A");
+
+  useEffect(() => {
+    const fetchCareer = async () => {
+      try {
+        const response = await axios.get(`${process.env.REACT_APP_SERVER_URL}/job/findOne/${id}`, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        setCareer(response.data);
+      } catch (error) {
+        console.error('Error fetching career details:', error);
+      }
+    };
+
+    const numericId = parseInt(id, 10);
+
+    console.log("test line 1");
+
+    if (!isNaN(numericId)) {
+      fetchCareer();
+      console.log("career is: ", career);
     }
+  }, [id]);
 
-    const { isAdmin } = context.user;
+  const { title, postDate, description, requirements, idNum } = career || {};
 
-    useEffect(() => {
-        const fetchCareer = async () => {
-          try {
-            const response = await axios.get(`${process.env.REACT_APP_SERVER_URL}/job/findOne/${id}`, {
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
+  const formattedPostDate = career?.postDate ? new Date(career.postDate).toLocaleDateString() : '';
 
-            setCareer(response.data);
-          } catch (error) {
-            console.error('Error fetching career details:', error);
-          }
-        };
-    
-        const numericId = parseInt(id, 10);
-        
-        if (!isNaN(numericId)) {
-          fetchCareer();
-          console.log("career is: ", career);
-        }
-      }, [id]);
-
-    const { title, postDate, description, requirements, idNum } = career;
-
-    return (
-        <article>
-            <h2>{title}</h2>
-            <p><b>Post Date: </b> {new Date(career.postDate).toLocaleDateString()}</p>
-            <p><b>Description: </b>{description}</p>
-            <p><b>Requirements: </b>{requirements}</p>
-            {isAdmin && (
-                <menu>
-                    <Link to={{ pathname: `/careers/${idNum}/edit` }} state={{ title, postDate, description, requirements }}>
-                        <EditIcon />
-                    </Link>
-                    <Link to={{ pathname: `/careers/${idNum}/delete` }}>
-                        <ClearIcon />
-                    </Link>
-                </menu>
-            )}
-        </article>
-    );
+  return (
+    <article>
+      <h2>{title}</h2>
+      <p><b>Post Date: </b> {new Date(formattedPostDate).toLocaleDateString()}</p>
+      <p><b>Description: </b>{description}</p>
+      <p><b>Requirements: </b>{requirements}</p>
+      {isAdmin && (
+        <menu>
+          <Link to={{ pathname: `/careers/${idNum}/edit` }} state={{ title, postDate, description, requirements }}>
+            <EditIcon />
+          </Link>
+          <Link to={{ pathname: `/careers/${idNum}/delete` }}>
+            <ClearIcon />
+          </Link>
+        </menu>
+      )}
+    </article>
+  );
 }
 
 export default CareerItem;
