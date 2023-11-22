@@ -1,41 +1,69 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import classes from './careerItem.module.css';
 import EditIcon from "@mui/icons-material/Edit";
 import ClearIcon from "@mui/icons-material/Clear";
 import { UserContext } from "./UserContext";
+import axios from 'axios';
 
-function CareerItem({ career }) {
-    const user = useContext(UserContext);
+type Career = {
+    title: string;
+    postDate: Date;
+    description: string;
+    requirements: string;
+    idNum: number;
+}
 
-    if(user === undefined) return;
+function CareerItem({ id }) {
+    const context = useContext(UserContext);
+    const [career, setCareer] = useState<Career>();
 
-    const userIsAdmin = user.isAdmin;
-    const careerData = career.data;
+    if (!context || !context.user) {
+        throw new Error("Something went wrong.");
+    }
 
-    //console.log("user.empId: " + user?.employerId);
-    //console.log("career.empId: " + career.employerId);
+    const { isAdmin } = context.user;
+
+    useEffect(() => {
+        const fetchCareer = async () => {
+          try {
+            const response = await axios.get(`${process.env.REACT_APP_SERVER_URL}/job/findOne/${id}`, {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+
+            setCareer(response.data);
+          } catch (error) {
+            console.error('Error fetching career details:', error);
+          }
+        };
+    
+        const numericId = parseInt(id, 10);
+        
+        if (!isNaN(numericId)) {
+          fetchCareer();
+          console.log("career is: ", career);
+        }
+      }, [id]);
+
+    const { title, postDate, description, requirements, idNum } = career;
 
     return (
-         <article className={classes.career}>
-            <h2>{career.data.title}</h2>
-            <time>{career.data.postDate}</time>
-            <p>{career.data.description}</p>
-            <p>{career.data.requirements}</p>
-            <menu className={classes.actions}>
-                {
-                  userIsAdmin === true && (
-                    <>
-                        <Link to={{ pathname: `/careers/${career.data.id}/edit` }} state={{careerData}}>
-                            <EditIcon />
-                        </Link>
-                        <Link to={{ pathname: `/careers/${career.data.id}/delete` }}>
-                            <ClearIcon />
-                        </Link>
-                    </>
-                  )
-                }
-            </menu>
+        <article>
+            <h2>{title}</h2>
+            <p><b>Post Date: </b> {new Date(career.postDate).toLocaleDateString()}</p>
+            <p><b>Description: </b>{description}</p>
+            <p><b>Requirements: </b>{requirements}</p>
+            {isAdmin && (
+                <menu>
+                    <Link to={{ pathname: `/careers/${idNum}/edit` }} state={{ title, postDate, description, requirements }}>
+                        <EditIcon />
+                    </Link>
+                    <Link to={{ pathname: `/careers/${idNum}/delete` }}>
+                        <ClearIcon />
+                    </Link>
+                </menu>
+            )}
         </article>
     );
 }
