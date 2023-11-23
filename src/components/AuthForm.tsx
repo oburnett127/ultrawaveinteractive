@@ -38,6 +38,12 @@ function AuthForm() {
             } else {
                 url = process.env.REACT_APP_SERVER_URL + '/user/signup';
                 console.log("registration request");
+
+                if(!userContext) throw new Error("AuthForm must be used within a provider that provides UserContext");
+
+                if(userContext.isLoggedIn === false || userContext.user.isAdmin === false) {
+                    throw new Error("Must be logged in as an admin to create an admin account.");
+                }
             }
 
             const response = await fetch(url, {
