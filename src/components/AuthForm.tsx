@@ -120,11 +120,11 @@ function AuthForm() {
                 {isLogin === 'signup' && (
                     <>
                         <p>
-                            <label htmlFor="firstName">First Name</label>
+                            <label htmlFor="firstName"><b>First Name: </b></label>
                             <input type="text" {...register("firstName", {required: true})} />
                         </p>
                         <p>
-                            <label htmlFor="lastName">Last Name</label>
+                            <label htmlFor="lastName"><b>Last Name: </b></label>
                             <input type="text" {...register("lastName", {required: true})} />
                         </p>
                     </>
