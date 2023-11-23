@@ -18,7 +18,7 @@
     "include": [
         "src/**/*.ts",
         "src/**/*.tsx"
-, "src/index.js", "src/reportWebVitals.js", "src/App.test.js"    ],
+, "src/index.js", "src/reportWebVitals.js", "src/App.test.ts"    ],
     "exclude": [
         "node_modules"
     ]

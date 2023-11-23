@@ -16,14 +16,11 @@ type Career = {
 function CareerItem({ id }) {
   const context = useContext(UserContext);
   const [career, setCareer] = useState<Career | undefined>();
+  let isAdmin = false;
 
-  if (!context || !context.user) {
-    throw new Error("Something went wrong.");
+  if (context && context.user) {
+    isAdmin = context.user.isAdmin;
   }
-
-  const { isAdmin } = context.user;
-
-  console.log("test line A");
 
   useEffect(() => {
     const fetchCareer = async () => {
@@ -42,11 +39,8 @@ function CareerItem({ id }) {
 
     const numericId = parseInt(id, 10);
 
-    console.log("test line 1");
-
     if (!isNaN(numericId)) {
       fetchCareer();
-      console.log("career is: ", career);
     }
   }, [id]);
 
@@ -55,7 +49,7 @@ function CareerItem({ id }) {
   const formattedPostDate = career?.postDate ? new Date(career.postDate).toLocaleDateString() : '';
 
   return (
-    <article>
+    <React.Fragment>
       <h2>{title}</h2>
       <p><b>Post Date: </b> {new Date(formattedPostDate).toLocaleDateString()}</p>
       <p><b>Description: </b>{description}</p>
@@ -70,7 +64,7 @@ function CareerItem({ id }) {
           </Link>
         </menu>
       )}
-    </article>
+    </React.Fragment>
   );
 }
 

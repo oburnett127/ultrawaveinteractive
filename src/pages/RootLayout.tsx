@@ -1,9 +1,10 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import MainNavigation from '../components/MainNavigation';
-import './RootLayout.module.css';
 
 function RootLayout() {
+  const navigate = useNavigate();
+  
   const headerStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
@@ -18,11 +19,17 @@ function RootLayout() {
     textAlign: 'center',
   };
 
+  function adminLoginOnClickHandler() {
+    const authPageUrl = '/auth';
+    
+    navigate(authPageUrl);
+  };
+
   return (
     <div>
       <div style={headerStyle}>
         <MainNavigation />
-        <button type="button" style={buttonStyle}>Admin Login</button>
+        <button type="button" style={buttonStyle} onClick={adminLoginOnClickHandler}>Admin Login</button>
       </div>
 
       <main style={mainStyle}>

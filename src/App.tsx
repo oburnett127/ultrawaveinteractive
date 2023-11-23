@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createBrowserRouter, createRoutesFromElements, RouterProvider, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import RootLayout from './pages/RootLayout';
@@ -12,9 +12,22 @@ import AuthenticationPage from './pages/AuthenticationPage';
 import LogoutPage from './pages/LogoutPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ErrorPage from './pages/ErrorPage';
+import { UserContext } from './components/UserContext';
+
+interface User {
+  id: number;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  isAdmin: boolean;
+}
 
 function App() {
   
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path="/" element={<RootLayout />}>
@@ -34,9 +47,11 @@ function App() {
   );
 
   return (
-    <div className={"App"}>
-      <RouterProvider router={router} />
-    </div>
+    <UserContext.Provider value={{ user, setUser, isLoggedIn, setIsLoggedIn }}>    
+      <div className={"App"}>
+        <RouterProvider router={router} />
+      </div>
+    </UserContext.Provider>
   );
 }
 

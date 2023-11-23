@@ -110,11 +110,11 @@ function AuthForm() {
                 <h1>{isLogin === 'login' ? 'Log in' : 'Create a new user'}</h1>
                 <p>{message}</p>
                 <p>
-                    <label htmlFor="email">Email</label>
+                    <label htmlFor="email"><b>Email: </b></label>
                     <input type="email" {...register("email", {required: true})} />
                 </p>
                 <p>
-                    <label htmlFor="password">Password</label>
+                    <label htmlFor="password"><b>Password: </b></label>
                     <input type="password" {...register("password", {required: true})} />
                 </p>
                 {isLogin === 'signup' && (
