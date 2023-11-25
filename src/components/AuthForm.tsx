@@ -33,18 +33,20 @@ function AuthForm() {
             let url = '';
 
             if(isLogin === 'login') {
-                url = process.env.REACT_APP_SERVER_URL + '/user/login';
+                url = process.env.REACT_APP_SERVER_URL + '/userinfo/login';
                 console.log("user is logging in");
             } else {
-                url = process.env.REACT_APP_SERVER_URL + '/user/signup';
-                console.log("registration request");
+                url = process.env.REACT_APP_SERVER_URL + '/userinfo/create';
+                //console.log("admin registration request");
 
                 if(!userContext) throw new Error("AuthForm must be used within a provider that provides UserContext");
 
-                if(userContext.isLoggedIn === false || userContext.user.isAdmin === false) {
-                    throw new Error("Must be logged in as an admin to create an admin account.");
+                if(userContext.isLoggedIn === false) {
+                    throw new Error("Must be logged in to create an admin account.");
                 }
             }
+
+            console.log('line 1');
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -54,26 +56,35 @@ function AuthForm() {
                 body: JSON.stringify(authData),
             });
 
+            console.log('line 2');
+
             if (isLogin !== 'login' && response.status === 409) {
                 setMessage('The email address you entered is already taken. Please enter a different email.');
                 throw new Error('The email address you entered is already taken. Please enter a different email.');
             }
+
+            console.log('line 3');
 
             //console.log("isLogin: " + isLogin);
             //console.log("response.status: " + response.status);
 
             if (!response.ok) {
                 setMessage('Log in or registration failed');
-                throw new Error('Could not authenticate user.');
+                throw new Error('Could not log in or register user.');
             }
 
-            const resData = await response.json();
-            const jwtToken = resData.token;
+            console.log('line 4');
 
-            localStorage.setItem('jwtToken', jwtToken);
-            const expiration = new Date();
-            expiration.setHours(expiration.getHours() + 2);
-            localStorage.setItem('expiration', expiration.toISOString());
+            const resData = await response.json();
+
+            console.log('line 5');
+
+            //const jwtToken = resData.token;
+
+            //localStorage.setItem('jwtToken', jwtToken);
+            //const expiration = new Date();
+            //expiration.setHours(expiration.getHours() + 2);
+            //localStorage.setItem('expiration', expiration.toISOString());
 
             setMessage('Log in or sign up was successful');
             setIsLoggedIn(true);
@@ -81,13 +92,23 @@ function AuthForm() {
             //console.log("setting isLoggedIn to true");
 
             try {
-                const response = await fetch(process.env.REACT_APP_SERVER_URL + `/user/getuserbyemail/${data.email}`, {
+
+                console.log('line 6');
+
+                const response = await fetch(process.env.REACT_APP_SERVER_URL + `/userinfo/${data.email}`, {
+                    method: "GET",
                     headers: {
-                        'Authorization': `Bearer ${jwtToken}`,
+             //           'Authorization': `Bearer ${jwtToken}`,
                         'Content-Type': 'application/json',
                     }
                 });
+
+                console.log('line 7');
+
                 const user = await response.json();
+
+                console.log('line 8');
+
                 console.log('user is: ', user);
                 setUser(user);
                 console.log("userId is: " + user.id);

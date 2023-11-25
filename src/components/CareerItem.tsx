@@ -16,10 +16,10 @@ type Career = {
 function CareerItem({ id }) {
   const context = useContext(UserContext);
   const [career, setCareer] = useState<Career | undefined>();
-  let isAdmin = false;
-
-  if (context && context.user) {
-    isAdmin = context.user.isAdmin;
+  let isLoggedIn = false;
+  
+  if(context && context.isLoggedIn) {
+    isLoggedIn = context.isLoggedIn;
   }
 
   useEffect(() => {
@@ -54,7 +54,7 @@ function CareerItem({ id }) {
       <p><b>Post Date: </b> {new Date(formattedPostDate).toLocaleDateString()}</p>
       <p><b>Description: </b>{description}</p>
       <p><b>Requirements: </b>{requirements}</p>
-      {isAdmin && (
+      {isLoggedIn && (
         <menu>
           <Link to={{ pathname: `/careers/${idNum}/edit` }} state={{ title, postDate, description, requirements }}>
             <EditIcon />
