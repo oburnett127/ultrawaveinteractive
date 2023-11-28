@@ -11,7 +11,7 @@ function CareersPage() {
       <p className={classes["p-text"]}>Check out the career opportunities below!</p>
       <CareersList />
       <Link to={{ pathname: `/careers/add` }}>
-        <AddIcon>Add Career</AddIcon>
+        <AddIcon />
       </Link>
     </>
   );

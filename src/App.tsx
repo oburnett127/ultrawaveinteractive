@@ -5,6 +5,7 @@ import RootLayout from './pages/RootLayout';
 import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
 import StakeholdersPage from './pages/StakeholdersPage';
+import StakeholderPostPage from './pages/StakeholderPostPage';
 import ContactPage from './pages/ContactPage';
 import CareersPage from './pages/CareersPage';
 import CareerDetailPage from './pages/CareerDetailPage';
@@ -37,6 +38,7 @@ function App() {
         <Route path="/about" element={<AboutPage />}></Route>
         <Route path="/services" element={<ServicesPage />}></Route>
         <Route path="/stakeholders" element={<StakeholdersPage />}></Route>
+        <Route path="/stakeholder/add" element={<StakeholderPostPage />}></Route>
         <Route path="/contact" element={<ContactPage />}></Route>
         <Route path="/careers" element={<CareersPage />}></Route>
         <Route path="/careers/:id" element={<CareerDetailPage />}></Route>
