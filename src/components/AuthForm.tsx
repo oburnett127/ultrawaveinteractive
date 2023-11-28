@@ -95,7 +95,7 @@ function AuthForm() {
 
                 console.log('line 6');
 
-                const response = await fetch(process.env.REACT_APP_SERVER_URL + `/userinfo/${data.email}`, {
+                const response = await fetch(process.env.REACT_APP_SERVER_URL + `/userinfo/findByEmail${data.email}`, {
                     method: "GET",
                     headers: {
              //           'Authorization': `Bearer ${jwtToken}`,

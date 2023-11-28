@@ -8,6 +8,9 @@ import StakeholdersPage from './pages/StakeholdersPage';
 import ContactPage from './pages/ContactPage';
 import CareersPage from './pages/CareersPage';
 import CareerDetailPage from './pages/CareerDetailPage';
+import CareerPostPage from './pages/CareerPostPage';
+import CareerUpdatePage from './pages/CareerUpdatePage';
+import CareerDeletePage from './pages/CareerDeletePage';
 import AuthenticationPage from './pages/AuthenticationPage';
 import LogoutPage from './pages/LogoutPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -37,6 +40,9 @@ function App() {
         <Route path="/contact" element={<ContactPage />}></Route>
         <Route path="/careers" element={<CareersPage />}></Route>
         <Route path="/careers/:id" element={<CareerDetailPage />}></Route>
+        <Route path="/careers/add" element={<CareerPostPage />}></Route>
+        <Route path="/careers/:id/edit" element={<CareerUpdatePage />}></Route>
+        <Route path="/careers/:id/delete" element={<CareerDeletePage />}></Route>
         <Route path="/auth" element={<AuthenticationPage />}></Route>
         <Route path="/logout" element={<LogoutPage />}></Route>
         <Route path="/error" element={<ErrorPage />}></Route>

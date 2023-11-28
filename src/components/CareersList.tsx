@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-
+import { useNavigate, Link } from 'react-router-dom';
+import EditIcon from "@mui/icons-material/Edit";
+import ClearIcon from "@mui/icons-material/Clear";
 import classes from './CareersList.module.css';
 
 type Career = {
@@ -53,6 +54,12 @@ const CareersList: React.FC = () => {
             <button onClick={() => handleViewDetailsClick(career.id)}>
               View Details
             </button>
+            <Link to={{ pathname: `/careers/${career.id}/edit` }}>
+                <EditIcon />
+            </Link>
+            <Link to={{ pathname: `/careers/${career.id}/delete` }}>
+                <ClearIcon />
+            </Link>
           </div>
           <hr />
         </React.Fragment>
