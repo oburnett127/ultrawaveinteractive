@@ -20,8 +20,7 @@ function CareerPostForm() {
         'Content-Type': 'application/json',
       //  'Authorization': `Bearer ${jwtToken}`,
       },
-      credentials: 'include',
-      body: JSON.stringify({ title: data.title, description: data.description}),
+      body: JSON.stringify({ title: data.title, description: data.description, requirements: data.requirements}),
     });
       
     if(!response.ok) {
