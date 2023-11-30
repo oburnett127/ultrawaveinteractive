@@ -36,11 +36,8 @@ const CareersList: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleViewDetailsClick = (careerId) => {
-    // Construct the URL for the CareerDetailPage
+  function handleViewDetailsClick(careerId) {
     const careerDetailUrl = `/careers/${careerId}`;
-    
-    // Use navigate to navigate to the CareerDetailPage
     navigate(careerDetailUrl);
   };
 

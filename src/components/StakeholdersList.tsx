@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
-import EditIcon from '@mui/icons-material/Edit';
-import ClearIcon from '@mui/icons-material/Clear';
+import StakeholderForm from './StakeholderForm';
 import classes from './StakeholdersList.module.css';
 
 type Stakeholder = {
@@ -37,21 +35,10 @@ const StakeholdersList: React.FC = () => {
   return (
     <div className={classes["flex-container"]}>
       {stakeholders.map((stakeholder) => (
-        <div>
-          <div key={stakeholder.id}>
-            <img className={classes["image"]} src={stakeholder.pictureUrl} alt={`${stakeholder.firstName} ${stakeholder.lastName}` } />
-            <p className={classes["stakeholderName"]}>{stakeholder.firstName} {stakeholder.lastName}</p>
-          </div>
-            <Link to={{ pathname: `/stakeholder/${stakeholder.id}/edit` }}>
-              <EditIcon />
-            </Link>
-            <Link to={{ pathname: `/stakeholder/${stakeholder.id}/delete` }}>
-              <ClearIcon />
-            </Link>
-          </div>
+        <StakeholderForm key={stakeholder.id} stakeholder={stakeholder} />
       ))}
     </div>
   );
-};
+}
 
 export default StakeholdersList;

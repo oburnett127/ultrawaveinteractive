@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useNavigation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 
@@ -32,7 +32,7 @@ function CareerPostForm() {
     }
   }
 
-  const handleCancel = () => {
+  function handleCancel() {
     navigate('..');
   }
 
