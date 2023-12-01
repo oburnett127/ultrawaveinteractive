@@ -37,7 +37,6 @@ function AuthForm() {
                 console.log("user is logging in");
             } else {
                 url = process.env.REACT_APP_SERVER_URL + '/userinfo/create';
-                //console.log("admin registration request");
 
                 if(!userContext) throw new Error("AuthForm must be used within a provider that provides UserContext");
 
@@ -75,7 +74,7 @@ function AuthForm() {
 
             console.log('line 4');
 
-            const resData = await response.json();
+            //const resData = await response.json();
 
             console.log('line 5');
 
@@ -95,7 +94,7 @@ function AuthForm() {
 
                 console.log('line 6');
 
-                const response = await fetch(process.env.REACT_APP_SERVER_URL + `/userinfo/findByEmail${data.email}`, {
+                const response = await fetch(process.env.REACT_APP_SERVER_URL + `/userinfo/findByEmail/${data.email}`, {
                     method: "GET",
                     headers: {
              //           'Authorization': `Bearer ${jwtToken}`,
@@ -134,7 +133,7 @@ function AuthForm() {
  
     return (
             <form onSubmit={handleSubmit(onSubmit)}>
-                <h1>{isLogin === 'login' ? 'Log in' : 'Create a new user'}</h1>
+                <h1>{isLogin === 'login' ? 'Login' : 'Create a new user'}</h1>
                 <p>{message}</p>
                 <p>
                     <label htmlFor="email"><b>Email: </b></label>

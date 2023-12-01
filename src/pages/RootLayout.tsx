@@ -1,10 +1,18 @@
-import React from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import MainNavigation from '../components/MainNavigation';
+import { UserContext } from '../components/UserContext';
 
 function RootLayout() {
+  const { isLoggedIn } = useContext(UserContext);
   const navigate = useNavigate();
-  
+  const [buttonText, setButtonText] = useState("Admin Login");
+
+  useEffect(() => {
+    if(isLoggedIn) setButtonText("Logout");
+    else setButtonText("Admin Login");
+  }, [isLoggedIn]);
+
   const headerStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
@@ -19,17 +27,21 @@ function RootLayout() {
     textAlign: 'center',
   };
 
-  function adminLoginOnClickHandler() {
-    const authPageUrl = '/auth';
-    
-    navigate(authPageUrl);
+  function adminLoginButtonHandler() {
+    if(!isLoggedIn) {    
+      const authPageUrl = '/auth';
+      navigate(authPageUrl);
+    } else {
+      const logoutPageUrl = '/logout';
+      navigate(logoutPageUrl);
+    }
   };
 
   return (
     <div>
       <div style={headerStyle}>
         <MainNavigation />
-        <button type="button" style={buttonStyle} onClick={adminLoginOnClickHandler}>Admin Login</button>
+        <button type="button" style={buttonStyle} onClick={adminLoginButtonHandler}>{buttonText}</button>
       </div>
 
       <main style={mainStyle}>

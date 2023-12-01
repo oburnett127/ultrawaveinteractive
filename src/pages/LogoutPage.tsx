@@ -6,7 +6,8 @@ function LogoutPage() {
   if (!userContext) return null;
   const { setIsLoggedIn } = userContext;
    
-  localStorage.removeItem('jwtToken');
+  //localStorage.removeItem('jwtToken');
+  
   setIsLoggedIn(false); 
   
   return (

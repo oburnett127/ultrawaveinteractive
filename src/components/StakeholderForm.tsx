@@ -8,7 +8,23 @@ function StakeholderForm({ stakeholder }) {
   const { register, handleSubmit } = useForm();
 
   function onSubmit(data) {
-    console.log(data);
+    const { firstName, lastName, pictureUrl } = data;
+
+    fetch(`${process.env.REACT_APP_SERVER_URL}/stakeholder/update/${(stakeholder.id).toString()}`, {
+      method: 'PUT',
+      headers: {
+        //              'Authorization': `Bearer ${jwtToken}`,
+                      'Content-Type': 'application/json',
+                },
+      body: JSON.stringify({ firstName, lastName, pictureUrl }),
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Response was not ok!');
+      setMessage('Update successful');
+    })
+    .catch(error => {
+      console.error('Fetch Error: ', error);
+    });
   };
 
   useEffect(() => {
@@ -44,7 +60,6 @@ function StakeholderForm({ stakeholder }) {
           <input type="text" {...register('firstName', { required: true })} /><br />
           <input type="text" {...register('lastName', { required: true })} /><br />
           <input type="text" {...register('pictureUrl', { required: false })} /><br />
-          <input type="text" {...register('orderNumber', { required: true })} /><br />
           <button type="submit">Save</button>
         </form>
       )}
