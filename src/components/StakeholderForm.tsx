@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { useForm } from 'react-hook-form';
+import { UserContext } from '../components/UserContext';
 
 function StakeholderForm({ stakeholder }) {
+  const { isLoggedIn } = useContext(UserContext);
   const [deleteClicked, setDeleteClicked] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -56,11 +58,15 @@ function StakeholderForm({ stakeholder }) {
             style={{ maxWidth: '100px', maxHeight: '125px' }}
           />
           <p>{stakeholder.firstName} {stakeholder.lastName}</p>
-          <button type="button" onClick={() => setDeleteClicked(true)}>Delete</button><br />
-          <input type="text" {...register('firstName', { required: true })} /><br />
-          <input type="text" {...register('lastName', { required: true })} /><br />
-          <input type="text" {...register('pictureUrl', { required: false })} /><br />
-          <button type="submit">Save</button>
+          { isLoggedIn && (
+            <React.Fragment>
+              <button type="button" onClick={() => setDeleteClicked(true)}>Delete</button><br />
+              <input type="text" {...register('firstName', { required: true })} /><br />
+              <input type="text" {...register('lastName', { required: true })} /><br />
+              <input type="text" {...register('pictureUrl', { required: false })} /><br />
+              <button type="submit">Save</button>
+            </React.Fragment>
+          )}
         </form>
       )}
       <p>{message}</p>

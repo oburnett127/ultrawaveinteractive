@@ -87,6 +87,7 @@ function AuthForm() {
 
             setMessage('Log in or sign up was successful');
             setIsLoggedIn(true);
+            localStorage.setItem('isLoggedIn', 'true');
 
             //console.log("setting isLoggedIn to true");
 

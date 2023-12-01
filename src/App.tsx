@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { createBrowserRouter, createRoutesFromElements, RouterProvider, Route } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { UserContext } from './components/UserContext';
+import ProtectedRoute from './ProtectedRoute';
 import HomePage from './pages/HomePage';
 import RootLayout from './pages/RootLayout';
 import AboutPage from './pages/AboutPage';
@@ -16,7 +18,6 @@ import AuthenticationPage from './pages/AuthenticationPage';
 import LogoutPage from './pages/LogoutPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ErrorPage from './pages/ErrorPage';
-import { UserContext } from './components/UserContext';
 
 interface User {
   id: number;
@@ -31,32 +32,37 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
-  const router = createBrowserRouter(
-    createRoutesFromElements(
-      <Route path="/" element={<RootLayout />}>
-        <Route index element={<HomePage />}></Route>
-        <Route path="/about" element={<AboutPage />}></Route>
-        <Route path="/services" element={<ServicesPage />}></Route>
-        <Route path="/stakeholders" element={<StakeholdersPage />}></Route>
-        <Route path="/stakeholders/add" element={<StakeholderPostPage />}></Route>
-        <Route path="/contact" element={<ContactPage />}></Route>
-        <Route path="/careers" element={<CareersPage />}></Route>
-        <Route path="/careers/:id" element={<CareerDetailPage />}></Route>
-        <Route path="/careers/add" element={<CareerPostPage />}></Route>
-        <Route path="/careers/:id/edit" element={<CareerUpdatePage />}></Route>
-        <Route path="/careers/:id/delete" element={<CareerDeletePage />}></Route>
-        <Route path="/auth" element={<AuthenticationPage />}></Route>
-        <Route path="/logout" element={<LogoutPage />}></Route>
-        <Route path="/error" element={<ErrorPage />}></Route>
-        <Route path="*" element={<NotFoundPage />}></Route>
-      </Route>
-    )
-  );
+  useEffect(() => {
+    const storedUserLoggedInInformation = localStorage.getItem('isLoggedIn');
+    if (storedUserLoggedInInformation === 'true') {
+      setIsLoggedIn(true);
+    }
+  }, []);
 
   return (
     <UserContext.Provider value={{ user, setUser, isLoggedIn, setIsLoggedIn }}>    
       <div className={"App"}>
-        <RouterProvider router={router} />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<RootLayout />}>
+            <Route index element={<HomePage />}></Route>
+            <Route path="/about" element={<AboutPage />}></Route>
+            <Route path="/services" element={<ServicesPage />}></Route>
+            <Route path="/stakeholders" element={<StakeholdersPage />}></Route>
+            <Route path="/stakeholders/add" element={<ProtectedRoute component={StakeholderPostPage} />} />
+            <Route path="/contact" element={<ContactPage />}></Route>
+            <Route path="/careers" element={<CareersPage />}></Route>
+            <Route path="/careers/:id" element={<CareerDetailPage />}></Route>
+            <Route path="/careers/add" element={<ProtectedRoute component={CareerPostPage} />} />
+            <Route path="/careers/:id/edit" element={<ProtectedRoute component={CareerUpdatePage} />} />
+            <Route path="/careers/:id/delete" element={<ProtectedRoute component={CareerDeletePage} />} />
+            <Route path="/auth" element={<AuthenticationPage />}></Route>
+            <Route path="/logout" element={<LogoutPage />}></Route>
+            <Route path="/error" element={<ErrorPage />}></Route>
+            <Route path="*" element={<NotFoundPage />}></Route>
+          </Route>
+        </Routes>
+      </BrowserRouter>
       </div>
     </UserContext.Provider>
   );

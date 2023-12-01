@@ -43,10 +43,7 @@ function RootLayout() {
         <MainNavigation />
         <button type="button" style={buttonStyle} onClick={adminLoginButtonHandler}>{buttonText}</button>
       </div>
-
-      <main style={mainStyle}>
-        <Outlet />
-      </main>
+      <Outlet />
     </div>
   );
 }

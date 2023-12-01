@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useContext }from 'react';
 import StakeholdersList from '../components/StakeholdersList';
 import { useNavigate, Link } from 'react-router-dom';
+import { UserContext } from '../components/UserContext';
 import classes from './StakeholdersPage.module.css';
 
 function StakeholdersPage() {
-
+  const { isLoggedIn } = useContext(UserContext);
   const navigate = useNavigate();
 
   function handleAddNewStakeholderClick() {
@@ -14,10 +15,12 @@ function StakeholdersPage() {
   return (
     <>
       <h1 className={classes.pageTitle}>Stakeholders</h1>
-      <StakeholdersList /><br></br>
-      <button onClick={handleAddNewStakeholderClick}>
-        Add New
-      </button>
+      <StakeholdersList /><br />
+      {isLoggedIn && (
+        <button onClick={handleAddNewStakeholderClick}>
+          Add New
+        </button>
+      )}
     </>
   );
 }

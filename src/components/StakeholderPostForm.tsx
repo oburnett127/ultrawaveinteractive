@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate, useNavigation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 
 function StakeholderPostForm() {
   const navigate = useNavigate();
-  const navigation = useNavigation();
-  const isSubmitting = navigation.state === 'submitting';
   const [message, setMessage] = useState(null);
 
-  const {register, handleSubmit, formState: {errors}} = useForm();
+  const {register, handleSubmit, formState: {isSubmitting, errors}} = useForm();
 
   const onSubmit = async (data) => {
   

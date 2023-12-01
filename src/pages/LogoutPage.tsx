@@ -8,6 +8,7 @@ function LogoutPage() {
    
   //localStorage.removeItem('jwtToken');
   
+  localStorage.removeItem('isLoggedIn');
   setIsLoggedIn(false); 
   
   return (
