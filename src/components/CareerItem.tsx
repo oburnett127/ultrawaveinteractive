@@ -3,63 +3,65 @@ import { Link } from 'react-router-dom';
 import EditIcon from "@mui/icons-material/Edit";
 import ClearIcon from "@mui/icons-material/Clear";
 import { UserContext } from "./UserContext";
-import axios from 'axios';
 
 type Career = {
   title: string;
-  postDate: Date;
+  postDate: string; // Changed to string as it's assigned to new Date()
   description: string;
   requirements: string;
-  idNum: number;
+  id: string;
 };
 
-function CareerItem({ id }) {
+interface CareerItemProps {
+  idNum: string; // Change to string since it's used in the URL
+}
+
+function CareerItem({ idNum }: CareerItemProps) {
   const context = useContext(UserContext);
   const [career, setCareer] = useState<Career | undefined>();
-  let isLoggedIn = false;
-  
-  if(context && context.isLoggedIn) {
-    isLoggedIn = context.isLoggedIn;
-  }
+  const isLoggedIn = context?.isLoggedIn || false; // Use optional chaining
 
   useEffect(() => {
     const fetchCareer = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_SERVER_URL}/job/findOne/${id}`, {
+        const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/job/findOne/${idNum}`, {
+          method: "GET",
           headers: {
             'Content-Type': 'application/json',
           },
         });
 
-        setCareer(response.data);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data: Career = await response.json(); // Annotate data as Career type
+
+        setCareer(data);
       } catch (error) {
         console.error('Error fetching career details:', error);
       }
     };
 
-    const numericId = parseInt(id, 10);
+    fetchCareer();
+  }, [idNum]);
 
-    if (!isNaN(numericId)) {
-      fetchCareer();
-    }
-  }, [id]);
-
-  const { title, postDate, description, requirements, idNum } = career || {};
+  const { id, title, postDate, description, requirements } = career || {};
 
   const formattedPostDate = career?.postDate ? new Date(career.postDate).toLocaleDateString() : '';
 
   return (
     <React.Fragment>
       <h2>{title}</h2>
-      <p><b>Post Date: </b> {new Date(formattedPostDate).toLocaleDateString()}</p>
+      <p><b>Post Date: </b> {formattedPostDate}</p>
       <p><b>Description: </b>{description}</p>
       <p><b>Requirements: </b>{requirements}</p>
       {isLoggedIn && (
         <menu>
-          <Link to={{ pathname: `/careers/${idNum}/edit` }} state={{ title, postDate, description, requirements }}>
+          <Link to={{ pathname: `/careers/${id}/edit` }} state={{ title, postDate, description, requirements }}>
             <EditIcon />
           </Link>
-          <Link to={{ pathname: `/careers/${idNum}/delete` }}>
+          <Link to={{ pathname: `/careers/${id}/delete` }}>
             <ClearIcon />
           </Link>
         </menu>

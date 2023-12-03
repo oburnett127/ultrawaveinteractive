@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import EditIcon from "@mui/icons-material/Edit";
 import ClearIcon from "@mui/icons-material/Clear";
 import classes from './CareersList.module.css';
 
 type Career = {
-  id: number;
+  id: string;
   title: string;
   description: string;
   requirements: string;
@@ -21,13 +20,20 @@ const CareersList: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_SERVER_URL}/job/findAll`, {
+        const response: Response = await fetch(`${process.env.REACT_APP_SERVER_URL}/job/findAll`, {
+          method: "GET",
           headers: {
             'Content-Type': 'application/json',
           },
         });
 
-        setCareers(response.data);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+    
+        const data = await response.json();
+
+        setCareers(data);
       } catch (error) {
         console.error('Error fetching careers:', error);
       }
@@ -36,8 +42,8 @@ const CareersList: React.FC = () => {
     fetchData();
   }, []);
 
-  function handleViewDetailsClick(careerId) {
-    const careerDetailUrl = `/careers/${careerId}`;
+  function handleViewDetailsClick(careerId: string) {
+    const careerDetailUrl: string = `/careers/${careerId}`;
     navigate(careerDetailUrl);
   };
 
@@ -48,13 +54,13 @@ const CareersList: React.FC = () => {
           <div className={classes["career-item"]}>
             <h2>{career.title}</h2>
             <p>Post Date: {new Date(career.postDate).toLocaleDateString()}</p>
-            <button onClick={() => handleViewDetailsClick(career.id)}>
+            <button onClick={() => handleViewDetailsClick(String(career.id))}>
               View Details
             </button>
-            <Link to={{ pathname: `/careers/${career.id}/edit` }}>
+            <Link to={{ pathname: `/careers/${String(career.id)}/edit` }}>
                 <EditIcon />
             </Link>
-            <Link to={{ pathname: `/careers/${career.id}/delete` }}>
+            <Link to={{ pathname: `/careers/${String(career.id)}/delete` }}>
                 <ClearIcon />
             </Link>
           </div>

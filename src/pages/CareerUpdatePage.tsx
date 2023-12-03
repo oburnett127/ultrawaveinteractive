@@ -6,10 +6,8 @@ import CareerUpdateForm from '../components/CareerUpdateForm';
 function CareerUpdatePage() {
   const { id } = useParams();
 
-  //const numericId = parseInt(id || '', 10);
-
   return (
-      <CareerUpdateForm id={id} />
+      <CareerUpdateForm id={String(id)} />
   );
 }
 

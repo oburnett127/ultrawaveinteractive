@@ -6,7 +6,7 @@ function CareerDeletePage() {
   const { id } = useParams();
 
   return (
-      <CareerDeleteForm id={id} />
+      <CareerDeleteForm id={String(id)} />
   );
 }
 

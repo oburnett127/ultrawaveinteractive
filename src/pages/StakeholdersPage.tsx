@@ -5,11 +5,11 @@ import { UserContext } from '../components/UserContext';
 import classes from './StakeholdersPage.module.css';
 
 function StakeholdersPage() {
-  const { isLoggedIn } = useContext(UserContext);
+  const isLoggedIn = localStorage.getItem('isLoggedIn');
   const navigate = useNavigate();
 
   function handleAddNewStakeholderClick() {
-    const stakeholderPostPageUrl = `/stakeholders/add`;
+    const stakeholderPostPageUrl: string = `/stakeholders/add`;
     navigate(stakeholderPostPageUrl);
   };
   return (

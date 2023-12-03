@@ -30,7 +30,7 @@ function AuthForm() {
                 lastName: data.lastName
             };
 
-            let url = '';
+            let url: string = '';
 
             if(isLogin === 'login') {
                 url = process.env.REACT_APP_SERVER_URL + '/userinfo/login';
@@ -47,7 +47,7 @@ function AuthForm() {
 
             console.log('line 1');
 
-            const response = await fetch(url, {
+            const response: Response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -95,7 +95,7 @@ function AuthForm() {
 
                 console.log('line 6');
 
-                const response = await fetch(process.env.REACT_APP_SERVER_URL + `/userinfo/findByEmail/${data.email}`, {
+                const response: Response = await fetch(process.env.REACT_APP_SERVER_URL + `/userinfo/findByEmail/${data.email}`, {
                     method: "GET",
                     headers: {
              //           'Authorization': `Bearer ${jwtToken}`,

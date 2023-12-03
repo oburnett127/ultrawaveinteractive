@@ -4,7 +4,7 @@ import MainNavigation from '../components/MainNavigation';
 import { UserContext } from '../components/UserContext';
 
 function RootLayout() {
-  const { isLoggedIn } = useContext(UserContext);
+  const isLoggedIn = localStorage.getItem('isLoggedIn');
   const navigate = useNavigate();
   const [buttonText, setButtonText] = useState("Admin Login");
 

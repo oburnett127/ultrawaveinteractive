@@ -8,7 +8,7 @@ function CareersPage() {
   const navigate = useNavigate();
 
   function handleAddNewCareerClick() {
-    const careerPostPageUrl = `/careers/add`;
+    const careerPostPageUrl: string = `/careers/add`;
     navigate(careerPostPageUrl);
   };
 
