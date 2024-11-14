@@ -15,13 +15,17 @@ function HomePage() {
       <p>I make websites and technology solutions for less!</p>
 
       <div className={styles.centerImage}>
-        <img className={styles.meetingImage} src="/images/meeting.jpg" alt="Business people in a meeting smiling." />
+        <img className={styles.image} src="/images/meeting.jpg" alt="Business people in a meeting smiling." />
       </div>
 
       <div className={styles.blockContainer}>
-        <div className={styles.flexCenter}>
+        <a className={styles.flexCenter} href="#contact-form">
           <button className={styles.button}>Schedule a Free Consultation</button>
-        </div>
+        </a>
+
+        <a className={styles.flexCenter} href="tel:+14055198318" aria-label="Call Me at +14055198318">
+          <button>or call me at 405-519-8318</button>
+        </a>
 
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="20vh">
           <Stack direction="row" spacing={6}>
@@ -64,7 +68,7 @@ function HomePage() {
         <p>Contact me using the below form or call 405-519-8318 to schedule a free consultation!</p>
 
         <hr />
-        <div className={styles.formContainer}>
+        <div className={styles.formContainer} id="contact-form">
           <form className={styles.contactForm}>
             <label htmlFor="fname">First name:</label>
             <input type="text" id="fname" name="fname" />
@@ -86,11 +90,22 @@ function HomePage() {
             </div>
           </form>
         </div>
-
-                {/* <img className={styles.img} src="/images/ladyatcomputer.jpg" alt="A lady typing on a laptop and smiling">
-        </img>
-        <img className={styles.img} src="/images/manonphone.jpg" alt="A man on a phone smiling" >
-        </img> */}
+      </div>
+      <div>
+        <img className={styles.image} src="/images/petcare.jpg" alt="Dog having fur groomed." />
+        <p>We would love to work on a website for your pet care business!</p><br />
+        <img className={styles.image} src="/images/dentalhygienist.jpg" alt="Dental hygienist at work." />
+        <p>We work with dentists and some medical practices!</p><br />
+        <img className={styles.image} src="/images/peopleingym.jpg" alt="People in a gym." />
+        <p>Your gym or fitness training business could really benefit from our expertise!</p><br />
+        <img className={styles.image} src="/images/plumberlookingatpipe.jpg" alt="Plumber looking at a pipe." />
+        <p>Increasing the revenue of your plumbing business sounds like a good idea to us! Get ready!</p><br />
+        <img className={styles.image} src="/images/carpetcleaning.jpg" alt="The carpet is being cleaned." />
+        <p>Cleaning service websites with a touch of creativity!</p><br />
+        <img className={styles.image} src="/images/hvacmenu.jpg" alt="Technician touches HVAC menu." />
+        <p>Your HVAC business needs the care it deserves!</p><br />
+        <img className={styles.image} src="/images/electricalreadingdevice.jpg" alt="Technician takes electrical reading using a device." />
+        <p>We have something special in store for your electrical business!</p>
       </div>
     </>
   );
