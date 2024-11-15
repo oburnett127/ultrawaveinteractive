@@ -1,85 +1,139 @@
-  .headerText {
-    text-align: center;
-  }
-
-  .image {
-    max-width: 800px;
-    width: 100%;
-    height: auto;
-    display: block;
-    margin: 0 auto;
+/* Container for the entire content */
+.page-container {
+  position: relative;
+  width: 100%;
+  height: 100vh; /* Full viewport height */
+  overflow: hidden; /* Prevent any overflow */
 }
 
-.centerImage {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    max-width: 100vw;
-}
-  
-  .blockContainer {
-    padding: 20px;
-  }
-  
-  .flexCenter {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .button {
-    background-color: white;
-    color: black;
-    height: 50px;
-    width: 100%;
-    max-width: 300px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-
-  .centerButton {
-    display: flex;
-    justify-content: center;
-    margin: 20px auto;
-    width: 100%;
-    max-width: 300px;
-  }
-
-.formContainer {
-    display: flex;
-    justify-content: center;
-    padding: 20px;
-  }
-  
-.contactForm {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
-    max-width: 400px;
+/* Background image covering the entire screen */
+.background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensure it covers the entire container */
+  opacity: 0.3;
+  z-index: 0; /* Lowest z-index */
 }
 
-.contactForm label {
-font-weight: bold;
+/* Foreground image container */
+.image-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  z-index: 1; /* Above the background image */
 }
 
-.contactForm input,
-.contactForm textarea {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.contactForm textarea {
-    height: 100px;
-    resize: vertical;
+/* Foreground image styling */
+.foreground {
+  width: 300px; /* Smaller size for the foreground image */
+  height: auto;
+  max-width: 100%;
 }
 
 p {
-    text-align: center;
+  text-align: center;
+  z-index: 2;
+}
+
+/* Reset default image styles (important if global styles are interfering) */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Centering header text */
+.headerText {
+  text-align: center;
+}
+
+/* Padding for block container */
+.blockContainer {
+  padding: 20px;
+}
+
+/* Flex centering for various elements */
+.flexCenter {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* General image styling */
+.image {
+  max-width: 300px;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Center image wrapper */
+.centerImage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 300px;
+}
+
+/* Button styling */
+.button {
+  background-color: white;
+  color: black;
+  height: 50px;
+  width: 100%;
+  max-width: 300px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Center button wrapper */
+.centerButton {
+  display: flex;
+  justify-content: center;
+  margin: 20px auto;
+  width: 100%;
+  max-width: 300px;
+}
+
+/* Form container */
+.formContainer {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Contact form styling */
+.contactForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.contactForm label {
+  font-weight: bold;
+}
+
+/* Input and textarea styling */
+.contactForm input,
+.contactForm textarea {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.contactForm textarea {
+  height: 100px;
+  resize: vertical;
 }

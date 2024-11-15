@@ -6,6 +6,7 @@ import TimerIcon from "@mui/icons-material/Timer";
 import CheckIcon from "@mui/icons-material/Check";
 import { List, ListItem, ListItemIcon, ListItemText } from "@mui/material";
 import { Box, Stack, Typography } from "@mui/material";
+
 function HomePage() {
   const items = ["Marketing", "Landscaping", "Catering", "Pet Care", "Dental Care", "Gyms", "Fitness Training", "Plumbing", "Cleaning", "HVAC", "Electrical"];
 
@@ -14,18 +15,21 @@ function HomePage() {
       <h1 className={styles.headerText}>Ultrawave Interactive Web Design</h1>
       <p>I make websites and technology solutions for less!</p>
 
-      <div className={styles.centerImage}>
-        <img className={styles.image} src="/images/meeting.jpg" alt="Business people in a meeting smiling." />
+      <div className="image-container">
+        <img src="/images/meeting.jpg" alt="Business people in a meeting smiling." className="foreground" />
       </div>
-
+  
       <div className={styles.blockContainer}>
         <a className={styles.flexCenter} href="#contact-form">
           <button className={styles.button}>Schedule a Free Consultation</button>
         </a>
 
         <a className={styles.flexCenter} href="tel:+14055198318" aria-label="Call Me at +14055198318">
-          <button>or call me at 405-519-8318</button>
+          <button className={styles.button}>or call me at 405-519-8318</button>
         </a>
+
+        <p>You don't pay me until you are satisfied with the quality of my work!</p>
+        <p>Fully customized websites, tailored to the specific and unique needs of your business!</p>
 
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="20vh">
           <Stack direction="row" spacing={6}>
@@ -45,6 +49,8 @@ function HomePage() {
         </Box>
 
         <p>I believe in maintaining excellent relationships with my clients. When doing business with me you are entering into a partnership. I am dedicated to the success of your business.</p>
+
+        <p>I work with a wide variety of businesses:</p>
 
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="30vh">
           <List>
@@ -110,11 +116,5 @@ function HomePage() {
     </>
   );
 }
-
-
-
-
-
-
 
 export default HomePage;
