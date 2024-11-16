@@ -6,6 +6,7 @@ import TimerIcon from "@mui/icons-material/Timer";
 import CheckIcon from "@mui/icons-material/Check";
 import { List, ListItem, ListItemIcon, ListItemText } from "@mui/material";
 import { Box, Stack, Typography } from "@mui/material";
+import ContactForm from '../components/ContactForm';
 
 function HomePage() {
   const items = ["Marketing", "Landscaping", "Catering", "Pet Care", "Dental Care", "Gyms", "Fitness Training", "Plumbing", "Cleaning", "HVAC", "Electrical"];
@@ -74,28 +75,7 @@ function HomePage() {
         <p>Contact me using the below form or call 405-519-8318 to schedule a free consultation!</p>
 
         <hr />
-        <div className={styles.formContainer} id="contact-form">
-          <form className={styles.contactForm}>
-            <label htmlFor="fname">First name:</label>
-            <input type="text" id="fname" name="fname" />
-
-            <label htmlFor="lname">Last name:</label>
-            <input type="text" id="lname" name="lname" />
-
-            <label htmlFor="email">Email:</label>
-            <input type="email" id="email" name="email" />
-
-            <label htmlFor="phone">Phone:</label>
-            <input type="tel" id="phone" name="phone" />
-
-            <label htmlFor="message">Message:</label>
-            <textarea id="message" name="message"></textarea>
-
-            <div className={styles.centerButton}>
-              <button type="submit" className={styles.button}>Submit</button>
-            </div>
-          </form>
-        </div>
+        <ContactForm />
       </div>
       <div>
         <img className={styles.image} src="/images/petcare.jpg" alt="Dog having fur groomed." />
