@@ -16,9 +16,7 @@ function HomePage() {
       <h1 className={styles.headerText}>Ultrawave Interactive Web Design</h1>
       <p>I make websites and technology solutions for less!</p>
 
-      <div className="image-container">
-        <img src="/images/meeting.jpg" alt="Business people in a meeting smiling." className="foreground" />
-      </div>
+      <img src="/images/meeting.jpg" alt="Business people in a meeting smiling." />
   
       <div className={styles.blockContainer}>
         <a className={styles.flexCenter} href="#contact-form">
@@ -36,15 +34,15 @@ function HomePage() {
           <Stack direction="row" spacing={6}>
             <Box display="flex" flexDirection="column" alignItems="center">
               <StarIcon fontSize="large" />
-              <Typography variant="subtitle1">Quality Work</Typography>
+              <Typography variant="subtitle1" textAlign="center">Quality Work</Typography>
             </Box>
             <Box display="flex" flexDirection="column" alignItems="center">
               <AttachMoneyIcon fontSize="large" />
-              <Typography variant="subtitle1">Affordable Prices</Typography>
+              <Typography variant="subtitle1" textAlign="center">Affordable Prices</Typography>
             </Box>
             <Box display="flex" flexDirection="column" alignItems="center">
               <TimerIcon fontSize="large" />
-              <Typography variant="subtitle1">Timely Service</Typography>
+              <Typography variant="subtitle1" textAlign="center">Timely Service</Typography>
             </Box>
           </Stack>
         </Box>
@@ -75,7 +73,10 @@ function HomePage() {
         <p>Contact me using the below form or call 405-519-8318 to schedule a free consultation!</p>
 
         <hr />
-        <ContactForm />
+        <div id="contact-form">
+          <ContactForm />
+        </div>
+
       </div>
       <div>
         <img className={styles.image} src="/images/petcare.jpg" alt="Dog having fur groomed." />
