@@ -15,6 +15,7 @@ function HomePage() {
     <>
       <h1 className={styles.headerText}>Ultrawave Interactive Web Design</h1>
       <p>I make websites and technology solutions for less!</p>
+      <p>From sunny Oklahoma City</p>
 
       <img src="/images/meeting.jpg" alt="Business people in a meeting smiling." />
   
@@ -87,8 +88,6 @@ function HomePage() {
         <p>Your gym or fitness training business could really benefit from our expertise!</p><br />
         <img className={styles.image} src="/images/plumberlookingatpipe.jpg" alt="Plumber looking at a pipe." />
         <p>Increasing the revenue of your plumbing business sounds like a good idea to us! Get ready!</p><br />
-        <img className={styles.image} src="/images/carpetcleaning.jpg" alt="The carpet is being cleaned." />
-        <p>Cleaning service websites with a touch of creativity!</p><br />
         <img className={styles.image} src="/images/hvacmenu.jpg" alt="Technician touches HVAC menu." />
         <p>Your HVAC business needs the care it deserves!</p><br />
         <img className={styles.image} src="/images/electricalreadingdevice.jpg" alt="Technician takes electrical reading using a device." />
