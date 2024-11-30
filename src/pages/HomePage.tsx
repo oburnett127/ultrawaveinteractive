@@ -15,7 +15,6 @@ function HomePage() {
     <>
       <h1 className={styles.headerText}>Ultrawave Interactive Web Design</h1>
       <p>I make websites and technology solutions for less!</p>
-      <p>From sunny Oklahoma City</p>
 
       <img src="/images/meeting.jpg" alt="Business people in a meeting smiling." />
   
