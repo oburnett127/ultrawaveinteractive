@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Helmet } from "react-helmet";
 
 const TermsOfServicePage = () => {
   const [termsOfServiceText, setTermsOfServiceText] = useState("");
@@ -29,7 +30,12 @@ const TermsOfServicePage = () => {
 
   return (
     <div>
-      <h1>Privacy Policy</h1>
+      <Helmet>
+        <title>Ultrawave Interactive Web Design | Terms of Service</title>
+        <meta name="description" content="Read the Terms of Service for Ultrawave Interactive Web Design to learn about the guidelines, responsibilities, and rights that apply to our website and services." />
+      </Helmet>
+
+      <h1>Terms of Service</h1>
       <pre style={{ whiteSpace: "pre-wrap" }}>{termsOfServiceText}</pre>
     </div>
   );

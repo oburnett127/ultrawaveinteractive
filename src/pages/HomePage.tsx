@@ -7,14 +7,41 @@ import CheckIcon from "@mui/icons-material/Check";
 import { List, ListItem, ListItemIcon, ListItemText } from "@mui/material";
 import { Box, Stack, Typography } from "@mui/material";
 import ContactForm from '../components/ContactForm';
+import { Helmet } from 'react-helmet';
 
 function HomePage() {
   const items = ["Marketing", "Landscaping", "Catering", "Pet Care", "Dental Care", "Gyms", "Fitness Training", "Plumbing", "Cleaning", "HVAC", "Electrical"];
 
+  const jsonLd = `{
+            "@context": "http://schema.org",
+            "@type": "ProfessionalService",
+            "name": "Ultrawave Interactive Web Design",
+            "image": "/images/meeting.jpg",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "5620 NW 103rd Street"
+              "addressLocality": "Oklahoma City",
+              "addressRegion": "OK",
+              "addressCountry": "USA"
+            },
+            "description": "Providing customized websites and technology solutions across the United States. Dedicated to quality and client satisfaction.",
+            "telephone": "+14055198318",
+            "areaServed": "United States",
+            "url": "https://ultrawaveinteractive.com",
+            "openingHours": "Su-Sa 08:00-20:00"
+          }`;
+
   return (
     <>
+      <Helmet>
+        <title>Ultrawave Interactive Web Design | Home</title>
+        <meta name="description" content="Ultrawave Interactive provides custom web design and technology solutions tailored to meet your unique business needs. Based in the USA, we offer affordable and quality services nationwide." />
+      </Helmet>
+
       <h1 className={styles.headerText}>Ultrawave Interactive Web Design</h1>
       <p>I make websites and technology solutions for less!</p>
+
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
 
       <img src="/images/meeting.jpg" alt="Business people in a meeting smiling." />
   

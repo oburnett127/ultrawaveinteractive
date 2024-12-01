@@ -14,7 +14,9 @@
     "@mui/material": "^5.14.18",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.20.0"
+    "react-helmet": "^6.1.0",
+    "react-router-dom": "^6.20.0",
+    "typescript": "^5.7.2"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -50,6 +52,7 @@
     "@types/node": "^22.10.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/react-helmet": "^6.1.11",
     "babel-loader": "^9.2.1",
     "clean-webpack-plugin": "^4.0.0",
     "css-minimizer-webpack-plugin": "^7.0.0",
@@ -58,7 +61,6 @@
     "react-scripts": "^5.0.1",
     "terser-webpack-plugin": "^5.3.10",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.7.2",
     "web-vitals": "^4.2.4",
     "webpack": "^5.96.1",
     "webpack-bundle-analyzer": "^4.10.2",
