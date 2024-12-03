@@ -6,6 +6,7 @@
         "strict": true,
         "moduleResolution": "node",
         "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "baseUrl": "./",
@@ -14,9 +15,8 @@
         }
     },
     "include": [
-        "src/**/*.ts",
-        "src/**/*.tsx"
-, "src/index.js", "src/reportWebVitals.js", "src/App.test.ts"    ],
+        "src/**/*"
+    ],
     "exclude": [
         "node_modules"
     ]

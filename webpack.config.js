@@ -11,7 +11,7 @@ module.exports = {
   entry: './src/index.js', // Your entry point, usually index.js or app.js
   output: {
     filename: 'bundle.[contenthash].js',
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'build'),
     clean: true,
   },
   module: {
@@ -36,35 +36,38 @@ module.exports = {
         use: [MiniCssExtractPlugin.loader, 'css-loader'],
       },
       {
-        test: /\.(jpe?g|png|gif|svg)$/i,
+        test: /\.(png|jpe?g|gif|svg)$/i,
         use: [
-          'file-loader',
           {
-            loader: 'image-webpack-loader',
+            loader: 'file-loader', // Ensures images are moved to the output folder
+            options: {
+              name: '[path][name].[hash].[ext]',
+            },
+          },
+          {
+            loader: 'image-webpack-loader', // Optimizes images
             options: {
               mozjpeg: {
                 progressive: true,
-                quality: 65
+                quality: 65,
               },
-              // Optipng.enabled: false will disable optipng
               optipng: {
                 enabled: false,
               },
               pngquant: {
-                quality: [0.65, 0.90],
-                speed: 4
+                quality: [0.65, 0.9],
+                speed: 4,
               },
               gifsicle: {
                 interlaced: false,
               },
-              // the webp option will enable WEBP
               webp: {
-                quality: 75
-              }
-            }
-          }
-        ]
-      },
+                quality: 75,
+              },
+            },
+          },
+        ],
+      }
     ],
   },
   resolve: {
