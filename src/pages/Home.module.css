@@ -17,7 +17,7 @@ img {
 }
 
 @media (max-width: 768px) {
-  .image-container img {
+  img {
     width: 80%; /* Make the image wider on smaller screens */
   }
 }
@@ -54,7 +54,6 @@ p {
 .button {
   background-color: white;
   color: black;
-  height: 50px;
   width: 100%;
   max-width: 300px;
   margin: 10px 0;

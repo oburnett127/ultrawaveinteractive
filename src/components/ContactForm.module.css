@@ -28,14 +28,12 @@ form {
 }
 
 .contactForm textarea {
-  height: 100px;
   resize: vertical;
 }
 
 .button {
     background-color: white;
     color: black;
-    height: 50px;
     width: 100%;
     max-width: 300px;
     margin: 10px 0;
