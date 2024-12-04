@@ -27,7 +27,7 @@ function HomePage() {
             "image": "/images/meeting.jpg",
             "address": {
               "@type": "PostalAddress",
-              "streetAddress": "5620 NW 103rd Street"
+              "streetAddress": "5620 NW 103rd Street",
               "addressLocality": "Oklahoma City",
               "addressRegion": "OK",
               "addressCountry": "USA"
