@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+      "module": "ESNext",
+      "target": "ESNext",
+      "moduleResolution": "Node",
+      "allowSyntheticDefaultImports": true,
+      "esModuleInterop": true,
+      "noImplicitAny": true,
+      "experimentalDecorators": true,
+      "removeComments": true,
+      "sourceMap": true,
+      "forceConsistentCasingInFileNames": true,
+      "strictFunctionTypes": true,
+      "strict": true,
+      "outDir": "dist",
+      "baseUrl": ".",
+      "paths": {
+        "UserinfoModule": ["./../userinfo.d.ts"]
+      }
+  },
+  "include": [
+      "app/**/*"
+  ],
+  "exclude": [
+    "dist","node_modules"
+  ]
+}
+  

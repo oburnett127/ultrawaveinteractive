@@ -3,20 +3,42 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "start": "node index.js",
+    "start": "node --es-module-specifier-resolution=node ./dist/app/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Owen Burnett",
   "license": "ISC",
-  "devDependencies": {
-    "@types/node": "^22.10.1",
-    "react-scripts": "^5.0.1"
-  },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "square": "^39.0.0"
+    "square": "^39.0.0",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
+    "cookie": "^0.6.0",
+    "inversify": "^6.0.2",
+    "inversify-binding-decorators": "^4.0.0",
+    "inversify-express-utils": "^6.4.6",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.6.3",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "sequelize": "^6.35.1",
+    "sequelize-typescript": "^2.1.6",
+    "typescript": "^5.6.2",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "react-scripts": "^5.0.1",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie": "^0.6.0",
+    "@types/cors": "^2.8.16",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/passport-jwt": "^3.0.13",
+    "nodemon": "^3.0.1"
   }
 }
