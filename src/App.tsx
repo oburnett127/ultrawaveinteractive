@@ -7,6 +7,7 @@ const Footer = lazy(() => import('./components/Footer'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
 const CookiePolicyPage = lazy(() => import('./pages/CookiePolicyPage'));
+const PaymentPage = lazy(() => import('./pages/PaymentPage'));
 
 function App() {
 
@@ -17,6 +18,7 @@ function App() {
         <Routes>
           <Route path="/">
             <Route index element={<HomePage />}></Route>
+            <Route path="payment" element={<PaymentPage />}></Route>
             <Route path="privacy-policy" element={<PrivacyPolicyPage />}></Route>
             <Route path="terms-of-service" element={<TermsOfServicePage />}></Route>
             <Route path="cookie-policy" element={<CookiePolicyPage />}></Route>
