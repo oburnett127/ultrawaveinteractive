@@ -72,3 +72,16 @@ p {
   width: 100%;
   max-width: 300px;
 }
+
+.flexContainer {
+  display: flex;
+  justify-content: flex-end;/* Aligns the links to the right */
+  gap: 10px; /* Adds space between the links */
+  width: 100%;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}

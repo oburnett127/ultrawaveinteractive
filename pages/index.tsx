@@ -45,8 +45,6 @@ function HomePage() {
         <title>Ultrawave Interactive Web Design | Home</title>
         <meta name="description" content="Ultrawave Interactive provides custom web design and technology solutions tailored to meet your unique business needs. Based in the USA, we offer affordable and quality services nationwide." />
       </Helmet>
-
-      <h1 className={styles.headerText}>Ultrawave Interactive Web Design</h1>
       <p>I make websites and technology solutions for less!</p>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />

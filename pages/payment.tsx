@@ -19,7 +19,7 @@ const PaymentPage = () => {
 
   const handlePayment = async (token: any, verifiedBuyer: any) => {
     try {
-      const response = await fetch('http://localhost:5000/process-payment', {
+      const response = await fetch('https://localhost:5000/process-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
