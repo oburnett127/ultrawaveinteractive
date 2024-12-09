@@ -1,13 +1,14 @@
+import Head from 'next/head';
 import React from 'react';
-import { Helmet } from 'react-helmet';
+
 
 function ErrorPage() {
   return (
     <>
-      <Helmet>
+      <Head>
         <title>Ultrawave Interactive Web Design | Error</title>
         <meta name="description" content="We're experiencing technical issues at Ultrawave Interactive Web Design. Please check back soon, and thank you for your patience." />
-      </Helmet>
+      </Head>
 
         <h1>An error occurred.</h1>
         <p>Please try again.</p>

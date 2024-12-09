@@ -1,5 +1,6 @@
+import Head from 'next/head';
 import React, { useEffect } from 'react';
-import { Helmet } from 'react-helmet';
+
 
 function CookiePolicyPage() {
   useEffect(() => {
@@ -25,10 +26,10 @@ function CookiePolicyPage() {
 
   return (
     <div>
-      <Helmet>
+      <Head>
         <title>Ultrawave Interactive Web Design | Cookie Policy</title>
         <meta name="description" content="Read our Cookie Policy to understand how Ultrawave Interactive uses cookies to enhance your browsing experience and provide personalized services." />
-      </Helmet>
+      </Head>
       
       <h1>Cookie Policy</h1>
       {/* The Cookiebot script will dynamically render content into the page */}

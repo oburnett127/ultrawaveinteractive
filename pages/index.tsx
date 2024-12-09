@@ -7,7 +7,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import { List, ListItem, ListItemIcon, ListItemText } from "@mui/material";
 import { Box, Stack, Typography } from "@mui/material";
 import ContactForm from '../components/ContactForm';
-import { Helmet } from 'react-helmet';
+import Image from 'next/image';
 import dentalHygienist from '../images/dentalhygienist.jpg';
 import electricalReadingDevice from '../images/electricalreadingdevice.jpg';
 import hvacMenu from '../images/hvacmenu.jpg';
@@ -15,6 +15,7 @@ import meeting from '../images/meeting.jpg';
 import peopleInGym from '../images/peopleingym.jpg';
 import petCare from '../images/petcare.jpg';
 import plumber from '../images/plumberlookingatpipe.jpg';
+import Head from 'next/head';
 
 
 function HomePage() {
@@ -41,15 +42,16 @@ function HomePage() {
 
   return (
     <>
-      <Helmet>
+      <Head>
         <title>Ultrawave Interactive Web Design | Home</title>
         <meta name="description" content="Ultrawave Interactive provides custom web design and technology solutions tailored to meet your unique business needs. Based in the USA, we offer affordable and quality services nationwide." />
-      </Helmet>
+      </Head>
+      
       <p>I make websites and technology solutions for less!</p>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
 
-      <img src={meeting} alt="Business people in a meeting smiling." />
+      <Image src={meeting} alt="Business people in a meeting smiling." />
   
       <div className={styles.blockContainer}>
         <a className={styles.flexCenter} href="#contact-form">
@@ -112,17 +114,17 @@ function HomePage() {
 
       </div>
       <div>
-        <img className={styles.image} src={petCare} alt="Dog having fur groomed." />
+        <Image className={styles.image} src={petCare} alt="Dog having fur groomed." />
         <p>We would love to work on a website for your pet care business!</p><br />
-        <img className={styles.image} src={dentalHygienist} alt="Dental hygienist at work." />
+        <Image className={styles.image} src={dentalHygienist} alt="Dental hygienist at work." />
         <p>We work with dentists and some medical practices!</p><br />
-        <img className={styles.image} src={peopleInGym} alt="People in a gym." />
+        <Image className={styles.image} src={peopleInGym} alt="People in a gym." />
         <p>Your gym or fitness training business could really benefit from our expertise!</p><br />
-        <img className={styles.image} src={plumber} alt="Plumber looking at a pipe." />
+        <Image className={styles.image} src={plumber} alt="Plumber looking at a pipe." />
         <p>Increasing the revenue of your plumbing business sounds like a good idea to us! Get ready!</p><br />
-        <img className={styles.image} src={hvacMenu} alt="Technician touches HVAC menu." />
+        <Image className={styles.image} src={hvacMenu} alt="Technician touches HVAC menu." />
         <p>Your HVAC business needs the care it deserves!</p><br />
-        <img className={styles.image} src={electricalReadingDevice} alt="Technician takes electrical reading using a device." />
+        <Image className={styles.image} src={electricalReadingDevice} alt="Technician takes electrical reading using a device." />
         <p>We have something special in store for your electrical business!</p>
       </div>
     </>

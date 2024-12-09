@@ -1,5 +1,6 @@
+import Head from "next/head";
 import React, { useState, useEffect } from "react";
-import { Helmet } from "react-helmet";
+
 
 const PrivacyPolicyPage = () => {
   const [policyText, setPolicyText] = useState("");
@@ -30,10 +31,10 @@ const PrivacyPolicyPage = () => {
 
   return (
     <div>
-      <Helmet>
+      <Head>
         <title>Ultrawave Interactive Web Design | Privacy Policy</title>
         <meta name="description" content="Explore our Privacy Policy to understand how Ultrawave Interactive Web Design collects, uses, and protects your personal data to ensure your privacy and trust." />
-      </Helmet>
+      </Head>
 
       <h1>Privacy Policy</h1>
       <pre style={{ whiteSpace: "pre-wrap" }}>{policyText}</pre>
