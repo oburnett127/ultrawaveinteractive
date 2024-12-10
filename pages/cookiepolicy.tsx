@@ -2,7 +2,7 @@ import Head from 'next/head';
 import React, { useEffect } from 'react';
 
 
-function CookiePolicyPage() {
+function CookiePolicy() {
   useEffect(() => {
     // Check if the script is already added to avoid duplication
     const existingScript = document.getElementById('CookieDeclaration');
@@ -37,5 +37,5 @@ function CookiePolicyPage() {
   );
 }
 
-export default CookiePolicyPage;
+export default CookiePolicy;
 

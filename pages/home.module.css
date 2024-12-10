@@ -9,23 +9,19 @@
 }
 
 /* Reset default image styles (important if global styles are interfering) */
-img {
-  width: 50%;
-  height: auto;
-  display: block;
-  margin: auto;
-}
-
-@media (max-width: 768px) {
+/* .content{
   img {
-    width: 80%; /* Make the image wider on smaller screens */
+    width: 50%;
+    height: auto;
+    display: block;
+    margin: auto;
   }
-}
 
-p {
-  text-align: center;
-  font-size: 1.2rem;
-}
+  p {
+    text-align: center;
+    font-size: 1.2rem;
+  }
+} */
 
 /* Centering header text */
 .headerText {
@@ -78,10 +74,4 @@ p {
   justify-content: flex-end;/* Aligns the links to the right */
   gap: 10px; /* Adds space between the links */
   width: 100%;
-}
-
-body, html {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
 }

@@ -2,7 +2,7 @@ import Head from "next/head";
 import React, { useState, useEffect } from "react";
 
 
-const PrivacyPolicyPage = () => {
+const PrivacyPolicy = () => {
   const [policyText, setPolicyText] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -42,4 +42,4 @@ const PrivacyPolicyPage = () => {
   );
 };
 
-export default PrivacyPolicyPage;
+export default PrivacyPolicy;

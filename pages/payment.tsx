@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { PaymentForm, CreditCard } from 'react-square-web-payments-sdk';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "./api/auth/[...nextauth]";
 
 // Define the type for payment details
 interface PaymentDetails {
@@ -13,7 +15,7 @@ interface PaymentDetails {
   };
 }
 
-const PaymentPage = () => {
+const Payment = ({session}: any) => {
   const [amount, setAmount] = useState('');
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
 
@@ -84,4 +86,24 @@ const PaymentPage = () => {
   );
 };
 
-export default PaymentPage;
+export default Payment;
+
+
+export async function getServerSideProps(context: any) {
+  const session = await getServerSession(context.req, context.res, authOptions);
+
+  if (!session) {
+    return {
+      redirect: {
+        destination: "/api/auth/signin",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {
+      session,
+    },
+  };
+}

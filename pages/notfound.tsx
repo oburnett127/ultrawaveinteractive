@@ -2,7 +2,7 @@ import Head from 'next/head';
 import React from 'react';
 
 
-function NotFoundPage() {
+function NotFound() {
   return (
     <>
       <Head>
@@ -16,4 +16,4 @@ function NotFoundPage() {
 );
 }
 
-export default NotFoundPage;
+export default NotFound;

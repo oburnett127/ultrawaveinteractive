@@ -2,7 +2,7 @@ import Head from 'next/head';
 import React from 'react';
 
 
-function ErrorPage() {
+function Error() {
   return (
     <>
       <Head>
@@ -16,4 +16,4 @@ function ErrorPage() {
   );
 }
 
-export default ErrorPage;
+export default Error;

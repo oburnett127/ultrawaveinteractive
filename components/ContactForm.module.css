@@ -88,11 +88,7 @@
     padding: 8px 16px;
   }
 
-  p {
-    font-size: 1.2rem; /* Smaller font size for response message */
+  .responseMessage{
+      font-size: 1.2rem; /* Smaller font size for response message */
   }
-}
-
-p {
-  font-size: 1.2rem; /* Smaller font size for response message */
 }

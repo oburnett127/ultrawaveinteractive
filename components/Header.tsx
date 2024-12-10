@@ -1,34 +1,24 @@
 import React from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
+import { useSession, signIn, signOut } from "next-auth/react";
 
 const Header = () => {
-  const { loginWithRedirect, logout, isAuthenticated } = useAuth0();
+  const { data: session } = useSession();
+
+  if (session) {
+    return (
+      <div>
+        <p>Welcome, {session.user?.name}!</p>
+        <button onClick={() => signOut()}>Sign Out</button>
+      </div>
+    );
+  }
 
   return (
-    <header>
-      <nav>
-        <h1>Ultrawave Interactive Web Design</h1>
-        <ul>
-          <li><a href="/">Home</a></li>
-        </ul>
-        {isAuthenticated ? (
-            <button
-                onClick={() =>
-                    logout({
-                        logoutParams: { returnTo: window.location.origin },
-                    })
-                }
-            >
-                Log Out
-            </button>
-        ) : (
-            <button onClick={() => loginWithRedirect()}>
-                Log In
-            </button>
-        )}
-      </nav>
-    </header>
+    <div>
+      <p>You are not signed in.</p>
+      <button onClick={() => signIn("google")}>Sign In with Google</button>
+    </div>
   );
-};
+}
 
 export default Header;

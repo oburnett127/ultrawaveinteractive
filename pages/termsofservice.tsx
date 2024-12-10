@@ -2,7 +2,7 @@ import Head from "next/head";
 import React, { useState, useEffect } from "react";
 
 
-const TermsOfServicePage = () => {
+const TermsOfService = () => {
   const [termsOfServiceText, setTermsOfServiceText] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -42,5 +42,5 @@ const TermsOfServicePage = () => {
   );
 };
 
-export default TermsOfServicePage;
+export default TermsOfService;
 

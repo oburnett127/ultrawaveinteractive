@@ -2,7 +2,7 @@ import Head from "next/head";
 import React from "react";
 
 
-const SignupPage = () => {
+const Signup = () => {
   return (
     <div>
       <Head>
@@ -18,4 +18,4 @@ const SignupPage = () => {
   );
 };
 
-export default SignupPage;
+export default Signup;

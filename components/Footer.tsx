@@ -7,17 +7,17 @@ const Footer: React.FC = () => {
       <div className="footer-content">
         <ul className="footer-links">
           <li>
-            <a href="/privacy-policy" className="footer-link">
+            <a href="/privacypolicy" className="footer-link">
               Privacy Policy
             </a>
           </li>
           <li>
-            <a href="/terms-of-service" className="footer-link">
+            <a href="/termsofservice" className="footer-link">
               Terms of Service
             </a>
           </li>
           <li>
-            <a href="/cookie-policy" className="footer-link">
+            <a href="/cookiepolicy" className="footer-link">
               Cookie Policy
             </a>
           </li>

@@ -2,7 +2,7 @@ import Head from "next/head";
 import React from "react";
 
 
-const LoginPage = () => {
+const Login = () => {
   return (
     <div>
       <Head>
@@ -18,4 +18,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default Login;

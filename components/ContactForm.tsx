@@ -79,7 +79,9 @@ const ContactForm = () => {
         />
         <button className={styles.button} type="submit">Submit</button>
       </form>
-      {responseMessage && <p>{responseMessage}</p>}
+      {responseMessage && (
+        <div className={styles.responseMessage}><p>{responseMessage}</p>
+        </div>)}
     </div>
   );
 };
