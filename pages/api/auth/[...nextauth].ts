@@ -10,6 +10,7 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "client-secret-not-present",
     }),
   ],
+  debug: true,
   callbacks: {
     async redirect({ url, baseUrl }) {
       // Redirect to the payment page if the user is signing in

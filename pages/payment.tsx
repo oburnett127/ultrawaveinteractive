@@ -15,7 +15,7 @@ interface PaymentDetails {
   };
 }
 
-const Payment = ({session}: any) => {
+const Payment = ({ session }: { session: any }) => {
   const [amount, setAmount] = useState('');
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
 
@@ -73,8 +73,8 @@ const Payment = ({session}: any) => {
       )}
 
       <PaymentForm
-        applicationId={process.env.REACT_APP_SQUARE_APPLICATION_ID || "missing-application-id"}
-        locationId={process.env.REACT_APP_SQUARE_LOCATION_ID || "missing-location-id"}
+        applicationId={process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID || "missing-application-id"}
+        locationId={process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || "missing-location-id"}
         cardTokenizeResponseReceived={handlePayment}
       >
         <CreditCard />
