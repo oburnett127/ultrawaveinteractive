@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PaymentForm, CreditCard } from 'react-square-web-payments-sdk';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./api/auth/[...nextauth]";
+import { GetServerSidePropsContext } from "next";
 
 // Define the type for payment details
 interface PaymentDetails {
@@ -26,6 +27,8 @@ const Payment = ({ session }: { session: any }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nonce: token.token,
+          googleProviderId: session.user.id,
+          email: session.user.email,
           amount: parseInt(amount) * 100, // Convert dollars to cents
         }),
       });
@@ -96,6 +99,15 @@ export async function getServerSideProps(context: any) {
     return {
       redirect: {
         destination: "/api/auth/signin",
+        permanent: false,
+      },
+    };
+  }
+
+  if (!session.user.email_verified) {
+    return {
+      redirect: {
+        destination: "/notfound",
         permanent: false,
       },
     };

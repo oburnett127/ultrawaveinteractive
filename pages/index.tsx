@@ -16,9 +16,13 @@ import peopleInGym from '../images/peopleingym.jpg';
 import petCare from '../images/petcare.jpg';
 import plumber from '../images/plumberlookingatpipe.jpg';
 import Head from 'next/head';
-
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 
 function Home() {
+  const router = useRouter();
+  const [idToken, setIdToken] = useState<string | null>(null);
+
   const items = ["Marketing", "Landscaping", "Catering", "Pet Care", "Dental Care", "Gyms", "Fitness Training", "Plumbing", "Cleaning", "HVAC", "Electrical"];
 
   const jsonLd = `{
@@ -39,6 +43,38 @@ function Home() {
             "url": "https://ultrawaveinteractive.com",
             "openingHours": "Su-Sa 08:00-20:00"
           }`;
+
+          useEffect(() => {
+            // Dynamically load the Google Identity Services (GIS) script
+            const script = document.createElement("script");
+            script.src = "https://accounts.google.com/gsi/client";
+            script.async = true;
+            script.defer = true;
+            document.body.appendChild(script);
+        
+            script.onload = () => {
+              window.google.accounts.id.initialize({
+                client_id: "YOUR_GOOGLE_CLIENT_ID",
+                callback: handleCredentialResponse,
+              });
+        
+              window.google.accounts.id.renderButton(
+                document.getElementById("google-login-button"),
+                { theme: "outline", size: "large" }
+              );
+            };
+          }, []);
+        
+          const handleCredentialResponse = (response: any) => {
+            console.log("Google ID Token:", response.credential);
+            setIdToken(response.credential);
+        
+            // Redirect to the payment page with the token
+            router.push({
+              pathname: "/payment",
+              query: { token: response.credential },
+            });
+          };
 
   return (
     <>
@@ -65,6 +101,8 @@ function Home() {
 
           <p>You don't pay me until you are satisfied with the quality of my work!</p>
           <p>Fully customized websites, tailored to the specific and unique needs of your business!</p>
+
+          <div id="google-login-button"></div> {/* Google Login Button */}
 
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="20vh">
             <Stack direction="row" spacing={6}>
