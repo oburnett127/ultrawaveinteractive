@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { PaymentForm, CreditCard } from 'react-square-web-payments-sdk';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "./api/auth/[...nextauth]";
-import { GetServerSidePropsContext } from "next";
+import { useRouter} from "next/router";
 
 // Define the type for payment details
 interface PaymentDetails {
@@ -17,8 +15,47 @@ interface PaymentDetails {
 }
 
 const Payment = ({ session }: { session: any }) => {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [amount, setAmount] = useState('');
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
+
+  useEffect(() => {
+    // Extract the token from the query parameters
+    const token = router.query.token as string;
+
+    if (!token) {
+      // If no token is provided, redirect the user back to the home page
+      alert("You must log in first.");
+      router.push("/");
+      return;
+    }
+
+    // Send the token to the backend for validation
+    fetch("/api/validate-token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ idToken: token }), // Send the token to the backend
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setIsAuthenticated(true); // Mark user as authenticated
+        } else {
+          alert("Authentication failed. Please log in again.");
+          router.push("/");
+        }
+      })
+      .catch(() => {
+        alert("Authentication error. Please log in again.");
+        router.push("/");
+      });
+  }, [router]);
+
+  // If the user is not authenticated, don't render the payment page
+  if (!isAuthenticated) return null;
 
   const handlePayment = async (token: any, verifiedBuyer: any) => {
     try {
@@ -90,32 +127,3 @@ const Payment = ({ session }: { session: any }) => {
 };
 
 export default Payment;
-
-
-export async function getServerSideProps(context: any) {
-  const session = await getServerSession(context.req, context.res, authOptions);
-
-  if (!session) {
-    return {
-      redirect: {
-        destination: "/api/auth/signin",
-        permanent: false,
-      },
-    };
-  }
-
-  if (!session.user.email_verified) {
-    return {
-      redirect: {
-        destination: "/notfound",
-        permanent: false,
-      },
-    };
-  }
-
-  return {
-    props: {
-      session,
-    },
-  };
-}
