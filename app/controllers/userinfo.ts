@@ -5,7 +5,7 @@ import localPassport from '../../passportext.js';
 import jwt, { Secret } from 'jsonwebtoken';
 import { UserinfoPayload, LoginPayload, UserinfoService } from '../services/userinfo.js';
 import { TYPES } from '../services/types.js';
-import logger from '../config/logger.js';
+//import logger from '../config/logger.js';
 import { RefreshToken } from '../models/refreshtoken.model.js';
 import { serialize } from 'cookie';
 
@@ -49,6 +49,8 @@ export class UserinfoController implements interfaces.Controller {
     this.userinfoService = userinfoService;
   }
 
+  [key: string]: any;
+
   @httpPost('/login')
   private async login(@request() req: express.Request, @response() res: express.Response): Promise<void> {
     try {
@@ -63,7 +65,7 @@ export class UserinfoController implements interfaces.Controller {
       const userInfo = await this.userinfoService.getUserByEmail(loginInfo.email);
       const userAuthorized = await this.userinfoService.login(loginInfo);
 
-      logger.info('userAuthorized is: ' + userAuthorized);
+      //logger.info('userAuthorized is: ' + userAuthorized);
   
       if (!userAuthorized || !userInfo) {
         res.sendStatus(401);
@@ -71,7 +73,7 @@ export class UserinfoController implements interfaces.Controller {
       }
   
       if (!process.env.ACCESS_TOKEN_SECRET || !process.env.REFRESH_TOKEN_SECRET) {
-        logger.error("JWT secret is undefined");
+        //logger.error("JWT secret is undefined");
         res.sendStatus(500);
         return;
       }
@@ -94,7 +96,7 @@ export class UserinfoController implements interfaces.Controller {
 
       res.status(200).json({ accessToken });
     } catch (error) {
-      logger.error("Login error:", error);
+      //logger.error("Login error:", error);
       res.sendStatus(500);
     }
   }

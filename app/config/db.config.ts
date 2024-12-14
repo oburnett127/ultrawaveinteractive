@@ -18,10 +18,10 @@ if (!process.env.DB_USERNAME || !process.env.DB_PASSWORD) {
 }
 
 const dbConfig: DbConfig = {
-  HOST: "localhost",
+  HOST: process.env.DB_HOSTNAME || "database-host-name",
   USER: process.env.DB_USERNAME,
   PASSWORD: process.env.DB_PASSWORD,
-  DB: "socialmediajs",
+  DB: process.env.DB_NAME || "database-name",
   dialect: "mysql",
   pool: {
     max: 5,

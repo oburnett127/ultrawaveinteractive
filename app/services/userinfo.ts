@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
 import { Userinfo } from '../models/userinfo.model.js';
-import logger from '../config/logger.js';
+//import logger from '../config/logger.js';
 import { RefreshToken } from '../models/refreshtoken.model.js';
 import bcrypt from 'bcryptjs';
 import { Op } from 'sequelize';
@@ -55,7 +55,7 @@ export class UserinfoService {
       const passwordMatch = await bcrypt.compare(receivedPlaintextPassword, storedHashedPassword);
       return passwordMatch;
     } catch (err: any) {
-      logger.error(err.message);
+      //logger.error(err.message);
       throw err;
     }
   }
@@ -70,7 +70,7 @@ export class UserinfoService {
       const newUserinfo = await Userinfo.create(userinfo as any);
       return newUserinfo;
     } catch (err: any) {
-      logger.error(err.message);
+      //logger.error(err.message);
       throw err;
     }
   }
@@ -96,7 +96,9 @@ export class UserinfoService {
       attributes: { exclude: ['password'] },
     })
       .then((data: any) => data)
-      .catch((err: any) => {logger.error(err.message); throw err; });
+      .catch((err: any) => {
+        //logger.error(err.message); throw err; 
+      });
   }
 
   public async getUserByEmail(email: string): Promise<Userinfo | void> {
@@ -105,19 +107,25 @@ export class UserinfoService {
       attributes: { exclude: ['password'] },
     })
     .then((data: any) => data)
-    .catch((err: any) => {logger.error(err.message); throw err; });
+    .catch((err: any) => {
+      //logger.error(err.message); throw err; 
+    });
   }
 
   public async update(userinfo: UserinfoPayload, id: string): Promise<void | number[]> {
    return Userinfo.update(userinfo, { where: { id: id } })
     .then((affectedCount: number[]) => affectedCount)
-    .catch((err: any) => { logger.error(err.message); throw err; });
+    .catch((err: any) => { 
+      //logger.error(err.message); throw err; 
+      });
   }
 
   public async deleteUserinfo(id: string): Promise<void | number> {
     return Userinfo.destroy({ where: { id: id } })
       .then((num: number) => num)
-      .catch((err: any) => { logger.error(err.message); throw err; });
+      .catch((err: any) => { 
+        //logger.error(err.message); throw err; 
+        });
   }
 
   public async deleteAll(): Promise<void | number> {
@@ -126,7 +134,9 @@ export class UserinfoService {
       truncate: false
     })
       .then((nums: any) => nums)
-      .catch((err: { message: any; }) => { logger.error(err.message); throw err; });
+      .catch((err: { message: any; }) => { 
+        //logger.error(err.message); throw err; 
+        });
   }
 
   public async getUsersByName(name: string): Promise<Userinfo[] | null> {
@@ -192,7 +202,7 @@ export class UserinfoService {
         return userinfo.dataValues.roles;
       }
     } catch(err: any) {
-      logger.error(err.message);
+      //logger.error(err.message);
       throw err;
     }
   }
