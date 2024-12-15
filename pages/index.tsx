@@ -54,7 +54,7 @@ function Home() {
         
             script.onload = () => {
               window.google.accounts.id.initialize({
-                client_id: "YOUR_GOOGLE_CLIENT_ID",
+                client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "missing-google-client-id",
                 callback: handleCredentialResponse,
               });
         

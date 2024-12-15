@@ -8,6 +8,9 @@ export default function ProtectedRoute({ children }: any) {
   const router = useRouter();
 
   useEffect(() => {
+    console.log("ProtectedRoute - session:", session);
+    console.log("ProtectedRoute - status:", status);
+
     if (status === "unauthenticated") {
       // Redirect to sign-in page if not authenticated
       router.push("/api/auth/signin");

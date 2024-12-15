@@ -15,6 +15,7 @@ interface PaymentDetails {
 }
 
 const Payment = ({ session }: { session: any }) => {
+  console.log("Session prop received by Payment page:", session);
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [amount, setAmount] = useState('');
@@ -31,8 +32,11 @@ const Payment = ({ session }: { session: any }) => {
       return;
     }
 
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
     // Send the token to the backend for validation
-    fetch("/api/validate-token", {
+    //fetch(`${backendUrl}/validate-token`, {
+    fetch('http://localhost:5000/validate-token', {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -59,30 +63,44 @@ const Payment = ({ session }: { session: any }) => {
 
   const handlePayment = async (token: any, verifiedBuyer: any) => {
     try {
-      const response = await fetch('https://localhost:5000/process-payment', {
+      // Check session and user
+      if (!session || !session.user) {
+        console.error('Session or session.user is undefined');
+        alert('You must be logged in to make a payment');
+        return;
+      }
+  
+      console.log('session.user.id:', session.user.id);
+      console.log('session.user.email:', session.user.email);
+      console.log('Token:', token);
+      console.log('Amount in cents:', parseInt(amount) * 100);
+  
+      const response = await fetch('http://localhost:5000/process-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nonce: token.token,
           googleProviderId: session.user.id,
           email: session.user.email,
+          nonce: token.token,
           amount: parseInt(amount) * 100, // Convert dollars to cents
         }),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         alert(errorData.error || 'An error occurred. Please try again.');
         return;
       }
-
+  
       const data = await response.json();
       setPaymentDetails(data); // Save payment details to state
       alert('Payment successful!');
     } catch (error) {
+      console.error('Payment error:', error);
       alert('An error occurred. Please try again.');
     }
   };
+  
 
   return (
     <div>

@@ -1,8 +1,7 @@
-// pages/api/auth/[...nextauth].ts
 import NextAuth, { NextAuthOptions, DefaultSession } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
-// Extend the `User` and `Session` types to include `email_verified`
+// Extend the `User`, `Session`, and `JWT` types to include custom fields
 declare module "next-auth" {
   interface User {
     email_verified?: boolean;
@@ -10,24 +9,23 @@ declare module "next-auth" {
 
   interface Session {
     user: {
+      id?: string; // Add the 'id' field
       email_verified?: boolean;
     } & DefaultSession["user"];
   }
 }
 
-// Extend the `JWT` type to include `email_verified`
 declare module "next-auth/jwt" {
   interface JWT {
     email_verified?: boolean;
   }
 }
 
-// Define and export the NextAuth options object
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "clientid-not-present",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "client-secret-not-present",
+      clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "clientid-not-present",
+      clientSecret: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET || "client-secret-not-present",
     }),
   ],
   debug: true,
@@ -35,28 +33,35 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async redirect({ url, baseUrl }) {
-      // Redirect to the payment page if the user is signing in
-      if (url.startsWith(baseUrl)) {
-        return url;
-      }
-      // Default redirect to payment page after sign-in
-      return baseUrl + "/payment";
-    },
     async jwt({ token, account, profile }) {
-      // Add `email_verified` to the JWT token on first sign-in
+      console.log("JWT callback - token before:", token);
+      console.log("JWT callback - account:", account);
+      console.log("JWT callback - profile:", profile);
+
+      // Add custom fields to the token
       if (account && profile) {
         token.email_verified = (profile as any).email_verified ?? false;
+        token.sub = account.providerAccountId; // Map user's ID to `sub`
       }
+
+      console.log("JWT callback - token after:", token);
       return token;
     },
+
     async session({ session, token }) {
-      // Pass `email_verified` to the session object
-      session.user.email_verified = token.email_verified;
+      console.log("Session callback - token:", token);
+
+      // Add custom fields to the session
+      session.user = {
+        ...session.user,
+        id: token.sub, // Map the user's ID from the token
+        email_verified: token.email_verified, // Map `email_verified` to the session
+      };
+
+      console.log("Session callback - session:", session);
       return session;
     },
   },
 };
 
-// Pass the authOptions to the NextAuth handler
 export default NextAuth(authOptions);
