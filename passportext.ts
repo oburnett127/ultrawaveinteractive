@@ -1,4 +1,4 @@
-import { Userinfo } from './app/models/userinfo.model.js';
+import { Userinfo } from './models/userinfo.model.js';
 import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 

@@ -20,8 +20,7 @@
       }
   },
   "include": [
-      "app/**/*"
-  ],
+    "config", "controllers", "models", "api", "routes", "services", "util", "index.ts", "userinfo.d.ts"  ],
   "exclude": [
     "dist","node_modules"
   ]

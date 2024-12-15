@@ -1,7 +1,7 @@
 import { controller, httpDelete, httpGet, httpPost, httpPut, interfaces, request, requestParam, response } from 'inversify-express-utils';
 import { inject, injectable } from 'inversify';
 import * as express from 'express';
-import localPassport from '../../passportext.js';
+import localPassport from '../passportext.js';
 import jwt, { Secret } from 'jsonwebtoken';
 import { UserinfoPayload, LoginPayload, UserinfoService } from '../services/userinfo.js';
 import { TYPES } from '../services/types.js';
