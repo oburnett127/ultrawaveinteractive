@@ -26,8 +26,6 @@
     "mysql2": "^3.6.3",
     "next": "^15.1.0",
     "node-fetch": "^3.3.2",
-    "passport": "^0.7.0",
-    "passport-jwt": "^4.0.1",
     "sequelize": "^6.35.1",
     "sequelize-typescript": "^2.1.6",
     "square": "^39.0.0",
@@ -41,7 +39,6 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/jwk-to-pem": "^2.0.3",
     "@types/node": "^22.10.1",
-    "@types/passport-jwt": "^3.0.13",
     "nodemon": "^3.0.1",
     "react-scripts": "^5.0.1"
   }

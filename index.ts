@@ -29,8 +29,8 @@ const app = express();
 const corsOptions = {
   origin: 'http://localhost:3000', // Allow requests from your frontend
 };
-
 app.use(cors(corsOptions));
+
 const PORT = process.env.PORT || 5000;
 
 // Configure middleware
@@ -39,7 +39,7 @@ app.use(express.json()); // Parse JSON bodies
 // Initialize Square client
 const squareClient = new Client({
   accessToken: process.env.SQUARE_ACCESS_TOKEN, // Securely stored in .env file
-  environment: Environment.Production, // Use Environment.Production for live
+  environment: Environment.Sandbox, // Use Environment.Production for live
 });
 
 // URL to fetch Google's public keys
@@ -87,26 +87,33 @@ const validateIdToken = async (idToken: string) => {
   return verifiedPayload;
 };
 
-
-// Define routes
-
-// // Health check route
-// app.get('/', (req, res) => {
-//   res.send('Square integration backend is running!');
-// });
-
 // Payment processing route
 app.post('/process-payment', async (req, res) => {
-  const { googleProviderId, email, nonce, amount } = req.body;
-
-  console.log(googleProviderId);
-  console.log(email);
-  console.log(nonce);
-  console.log(amount);
-
+  
   try {
+    //console.log('Payment request received:', req.body);
+    const { googleProviderId, email, nonce, amount } = req.body;
+
+    if (!googleProviderId || !email || !nonce || !amount) {
+      //console.error('Missing required fields in the request body');
+      return res.status(400).json({ error: 'Missing required fields in the request body' });
+    }
     // Create a unique idempotency key
     const idempotencyKey = crypto.randomUUID();
+
+    //console.log('Using idempotency key:', idempotencyKey);
+
+    // console.log("Attempting to call Square API with the following data:");
+    // console.log({
+    //   sourceId: nonce,
+    //   idempotencyKey,
+    //   amountMoney: {
+    //     amount, // Amount in cents
+    //     currency: "USD",
+    //   },
+    //   referenceId: googleProviderId,
+    //   note: `Payment by user: ${email}`,
+    // });
 
     // Ensure the amount is converted to BigInt
     const amountInCents = BigInt(amount); // Converts the amount to BigInt
@@ -123,6 +130,8 @@ app.post('/process-payment', async (req, res) => {
        note: `Payment by user: ${email}`,
     });
 
+    //console.log('Payment response from Square:', paymentResponse);
+
     // Convert BigInt values in the response to strings
     const sanitizedResponse = JSON.parse(
       JSON.stringify(paymentResponse.result, (_, value) =>
@@ -132,15 +141,22 @@ app.post('/process-payment', async (req, res) => {
 
     // Respond with success
     res.status(200).json(sanitizedResponse);
-  } catch (error) {
+  } catch (error: any) {
+
+    // if (error.response) {
+    //   console.error('Square API Response Error:', error.response.text);
+    // } else if (error.result) {
+    //   console.error('Square API Error Result:', error.result);
+    // }
+    // console.error('Error details:', error);
+    // console.error('Error during payment processing:', error);
+
     // Handle errors
     if (error instanceof Error) {
-      console.log('error is occuring: ', error.message);
-      console.error(error.message);
+      console.error('Square API Error Details:', error.message);
       res.status(500).json({ error: error.message });
     } else {
-      console.log('An unknown error occurred', error);
-      console.error('An unknown error occurred', error);
+      console.error('Unknown error occurred', error);
       res.status(500).json({ error: 'An unknown error occurred' });
     }
   }
@@ -148,8 +164,8 @@ app.post('/process-payment', async (req, res) => {
 
 // Token validation route
 app.post('/validate-token', async (req, res) => {
-  console.log('Route hit: /validate-token');
-  console.log('Request body:', req.body);
+  //console.log('Route hit: /validate-token');
+  //console.log('Request body:', req.body);
   
   const { idToken } = req.body;
 
