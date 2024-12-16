@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { PaymentForm, CreditCard } from 'react-square-web-payments-sdk';
 import { useRouter} from "next/router";
+import { getSession } from "next-auth/react";
 
 // Define the type for payment details
 interface PaymentDetails {
@@ -15,7 +16,10 @@ interface PaymentDetails {
 }
 
 const Payment = ({ session }: { session: any }) => {
-  console.log("Session prop received by Payment page:", session);
+  if (!session || !session.user) {
+    console.error("Session or session.user is missing");
+    return <p>You must be logged in to make a payment</p>;
+  }
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [amount, setAmount] = useState('');
@@ -70,10 +74,11 @@ const Payment = ({ session }: { session: any }) => {
         return;
       }
   
-      console.log('session.user.id:', session.user.id);
-      console.log('session.user.email:', session.user.email);
-      console.log('Token:', token);
-      console.log('Amount in cents:', parseInt(amount) * 100);
+      // console.log('session.user.id:', session.user.id);
+      // console.log('session.user.email:', session.user.email);
+      // console.log('Token:', token);
+      // console.log('token.token: ',token.token);
+      // console.log('Amount in cents:', parseInt(amount) * 100);
   
       const response = await fetch('http://localhost:5000/process-payment', {
         method: 'POST',
@@ -143,5 +148,27 @@ const Payment = ({ session }: { session: any }) => {
     </div>
   );
 };
+
+export async function getServerSideProps(context: any) {
+  // Fetch the session on the server side
+  const session = await getSession(context);
+
+  //console.log("Session fetched in getServerSideProps:", session);
+
+  // If there is no session, redirect to the sign-in page
+  if (!session) {
+    return {
+      redirect: {
+        destination: "/api/auth/signin", // Redirect to login page
+        permanent: false,
+      },
+    };
+  }
+
+  // Pass the session as a prop to the page
+  return {
+    props: { session },
+  };
+}
 
 export default Payment;

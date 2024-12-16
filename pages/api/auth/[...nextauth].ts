@@ -34,9 +34,9 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, account, profile }) {
-      console.log("JWT callback - token before:", token);
-      console.log("JWT callback - account:", account);
-      console.log("JWT callback - profile:", profile);
+      // console.log("JWT callback - token before:", token);
+      // console.log("JWT callback - account:", account);
+      // console.log("JWT callback - profile:", profile);
 
       // Add custom fields to the token
       if (account && profile) {
@@ -44,12 +44,12 @@ export const authOptions: NextAuthOptions = {
         token.sub = account.providerAccountId; // Map user's ID to `sub`
       }
 
-      console.log("JWT callback - token after:", token);
+      //console.log("JWT callback - token after:", token);
       return token;
     },
 
     async session({ session, token }) {
-      console.log("Session callback - token:", token);
+      //console.log("Session callback - token:", token);
 
       // Add custom fields to the session
       session.user = {
@@ -58,8 +58,13 @@ export const authOptions: NextAuthOptions = {
         email_verified: token.email_verified, // Map `email_verified` to the session
       };
 
-      console.log("Session callback - session:", session);
+      //console.log("Session callback - session:", session);
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // console.log("Redirect callback - url:", url);
+      // console.log("Redirect callback - baseUrl:", baseUrl);
+      return baseUrl; // Ensure the redirect is correct
     },
   },
 };
