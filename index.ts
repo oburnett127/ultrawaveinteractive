@@ -7,6 +7,8 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
 import jwkToPem from 'jwk-to-pem';
+import rateLimit from 'express-rate-limit';
+import bodyParser from 'body-parser';
 
 interface GooglePublicKey {
   kid: string; // key ID
@@ -33,8 +35,20 @@ app.use(cors(corsOptions));
 
 const PORT = process.env.PORT || 5000;
 
+// Configure the rate limiter
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 requests per `window` (15 minutes)
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: "Too many requests from this IP, please try again later.", // Custom message
+});
+
+app.use('/process-payment', apiLimiter);
+app.use('/validate-token', apiLimiter);
+
 // Configure middleware
-app.use(express.json()); // Parse JSON bodies
+app.use(bodyParser.json()); // Parse JSON bodies
 
 // Initialize Square client
 const squareClient = new Client({
@@ -92,9 +106,9 @@ app.post('/process-payment', async (req, res) => {
   
   try {
     //console.log('Payment request received:', req.body);
-    const { googleProviderId, email, nonce, amount } = req.body;
+    const { googleProviderId, email, receiptEmail, nonce, amount } = req.body;
 
-    if (!googleProviderId || !email || !nonce || !amount) {
+    if (!googleProviderId || !email || !receiptEmail || !nonce || !amount) {
       //console.error('Missing required fields in the request body');
       return res.status(400).json({ error: 'Missing required fields in the request body' });
     }
@@ -126,8 +140,9 @@ app.post('/process-payment', async (req, res) => {
         amount: amountInCents, // Amount in cents as BigInt
         currency: 'USD', // Replace with your preferred currency
       },
-       referenceId: googleProviderId,
-       note: `Payment by user: ${email}`,
+      buyerEmailAddress: receiptEmail,
+      referenceId: googleProviderId,
+      note: `Payment by user: ${email}`,
     });
 
     //console.log('Payment response from Square:', paymentResponse);
@@ -180,6 +195,55 @@ app.post('/validate-token', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(401).json({ error: "Invalid or expired token" });
+  }
+});
+
+app.post("/verify-recaptcha", async (req, res) => {
+  const { token } = req.body;
+
+  // Check if the token exists
+  if (!token) {
+    return res.status(400).json({ success: false, message: "Token is missing." });
+  }
+
+  try {
+    // reCAPTCHA secret key
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+
+    // Google's reCAPTCHA verification URL
+    const verificationURL = "https://www.google.com/recaptcha/api/siteverify";
+
+    // Make a POST request to Google for verification
+    const response = await fetch(verificationURL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        secret: secretKey || "secret-key-not-found",
+        response: token,
+      }).toString(),
+    });
+
+    // Parse the response from Google
+    const data: any = await response.json();
+
+    if (data.success) {
+      return res.status(200).json({ success: true, message: "reCAPTCHA verification successful." });
+    } else {
+      console.error("reCAPTCHA verification failed:", data["error-codes"]);
+      return res.status(400).json({
+        success: false,
+        message: "reCAPTCHA verification failed.",
+        errors: data["error-codes"],
+      });
+    }
+  } catch (error: any) {
+    console.error("Error verifying reCAPTCHA:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred during reCAPTCHA verification.",
+    });
   }
 });
 

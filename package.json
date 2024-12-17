@@ -13,11 +13,12 @@
   "dependencies": {
     "@types/node-fetch": "^2.6.12",
     "bcryptjs": "^2.4.3",
-    "body-parser": "^1.20.2",
+    "body-parser": "^1.20.3",
     "cookie": "^0.6.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
     "inversify": "^6.0.2",
     "inversify-binding-decorators": "^4.0.0",
     "inversify-express-utils": "^6.4.6",
