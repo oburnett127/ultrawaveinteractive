@@ -178,7 +178,7 @@ const Payment = ({ session }: { session: any }) => {
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Enter amount"
             />
-            <ReCAPTCHA ref={recaptchaRef} sitekey={RECAPTCHA_SITE_KEY} />
+            <ReCAPTCHA ref={recaptchaRef} sitekey={RECAPTCHA_SITE_KEY || "site-key-not-found"} />
             <p>{message}</p>
           </div>
         </form>
