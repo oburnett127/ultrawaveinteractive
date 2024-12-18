@@ -1,5 +1,5 @@
 // Import required modules
-import express from 'express';
+import express, { Request, Response, RequestHandler } from 'express';
 import cors from 'cors';
 import { Client, Environment } from 'square';
 import dotenv from 'dotenv';
@@ -9,6 +9,10 @@ import fetch from 'node-fetch';
 import jwkToPem from 'jwk-to-pem';
 import rateLimit from 'express-rate-limit';
 import bodyParser from 'body-parser';
+import { z } from 'zod';
+import csrf from 'csurf';
+import session from 'express-session';
+import './types';
 
 interface GooglePublicKey {
   kid: string; // key ID
@@ -38,7 +42,7 @@ const PORT = process.env.PORT || 5000;
 // Configure the rate limiter
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 requests per `window` (15 minutes)
+  max: 15, // Limit each IP to 5 requests per `window` (15 minutes)
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   message: "Too many requests from this IP, please try again later.", // Custom message
@@ -48,7 +52,27 @@ app.use('/process-payment', apiLimiter);
 app.use('/validate-token', apiLimiter);
 
 // Configure middleware
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json()); // Parse JSON bodies
+
+// Session middleware (required for CSRF tokens to persist)
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'secret-key-not-found',
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
+// CSRF middleware
+const csrfProtection = csrf() as unknown as RequestHandler;
+
+// Attach CSRF protection middleware to your routes
+app.use(csrfProtection);
+
+app.get('/csrf-token', csrfProtection, (req: Request, res: Response) => {
+  res.json({ csrfToken: req.csrfToken() });
+});
 
 // Initialize Square client
 const squareClient = new Client({
@@ -101,17 +125,43 @@ const validateIdToken = async (idToken: string) => {
   return verifiedPayload;
 };
 
-// Payment processing route
-app.post('/process-payment', async (req, res) => {
-  
+// Zod schema for payment validation
+const paymentSchema = z.object({
+  googleProviderId: z.string().min(1, "Google Provider ID is required"), // Must be a non-empty string
+  email: z.string().email("Invalid email format"), // Standard email validation
+  nonce: z.string().min(1, "Nonce is required"), // Nonce must be present
+  amount: z.number().positive("Amount must be greater than 0"), // Positive number validation
+});
+
+// Middleware to validate incoming data
+const validatePaymentRequest = (req: any, res: any, next: any) => {
   try {
+    const validatedData = paymentSchema.parse(req.body); // Validate request body
+    req.validatedData = validatedData; // Attach validated data to the request
+    next(); // Pass control to the next handler
+  } catch (error: any) {
+    return res.status(400).json({ errors: error.errors }); // Send validation errors
+  }
+};
+
+
+// Payment processing route
+app.post('/process-payment', csrfProtection, validatePaymentRequest, async (req, res) => {
+  try {
+    if (!req.validatedData) {
+      return res.status(400).json({ error: "Validation failed: Missing data" });
+    }
+
     //console.log('Payment request received:', req.body);
-    const { googleProviderId, email, receiptEmail, nonce, amount } = req.body;
+    const { googleProviderId, email, receiptEmail, nonce, amount } = req.validatedData;
 
     if (!googleProviderId || !email || !receiptEmail || !nonce || !amount) {
       //console.error('Missing required fields in the request body');
       return res.status(400).json({ error: 'Missing required fields in the request body' });
     }
+
+ 
+
     // Create a unique idempotency key
     const idempotencyKey = crypto.randomUUID();
 
@@ -178,7 +228,7 @@ app.post('/process-payment', async (req, res) => {
 });
 
 // Token validation route
-app.post('/validate-token', async (req, res) => {
+app.post('/validate-token', csrfProtection, async (req, res) => {
   //console.log('Route hit: /validate-token');
   //console.log('Request body:', req.body);
   

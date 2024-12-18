@@ -17,10 +17,13 @@
       "baseUrl": ".",
       "paths": {
         "UserinfoModule": ["./../userinfo.d.ts"]
-      }
+      },
+      "declaration": true,
+      "declarationDir": "./dist",
+      "emitDeclarationOnly": false
   },
   "include": [
-    "config", "controllers", "models", "api", "routes", "services", "util", "index.ts", "userinfo.d.ts"  ],
+    "config", "models", "services", "util", "index.ts", "userinfo.d.ts", "types.d.ts" ],
   "exclude": [
     "dist","node_modules"
   ]
