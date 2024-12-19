@@ -1,5 +1,5 @@
 // Import required modules
-import express, { Request, Response, RequestHandler } from 'express';
+import express, { Request, Response, RequestHandler, NextFunction } from 'express';
 import cors from 'cors';
 import { Client, Environment } from 'square';
 import dotenv from 'dotenv';
@@ -12,7 +12,7 @@ import bodyParser from 'body-parser';
 import { z } from 'zod';
 import csrf from 'csurf';
 import session from 'express-session';
-import './types';
+import cookieParser from 'cookie-parser';
 
 interface GooglePublicKey {
   kid: string; // key ID
@@ -26,52 +26,67 @@ interface GooglePublicKeysResponse {
   keys: GooglePublicKey[];
 }
 
-// Load environment variables
 dotenv.config();
 
-// Initialize Express app
 const app = express();
+const PORT = process.env.PORT || 5000;
 
+// Configure CORS
 const corsOptions = {
   origin: 'http://localhost:3000', // Allow requests from your frontend
+  credentials: true,
 };
 app.use(cors(corsOptions));
 
-const PORT = process.env.PORT || 5000;
-
-// Configure the rate limiter
+// Configure Rate Limiting
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 15, // Limit each IP to 5 requests per `window` (15 minutes)
+  max: 15, // Limit each IP to 15 requests per window
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  message: "Too many requests from this IP, please try again later.", // Custom message
+  message: 'Too many requests from this IP, please try again later.',
 });
 
+// Apply rate limiting to specific routes
 app.use('/process-payment', apiLimiter);
 app.use('/validate-token', apiLimiter);
 
-// Configure middleware
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json()); // Parse JSON bodies
+// Cookie parser middleware
+app.use(cookieParser());
 
-// Session middleware (required for CSRF tokens to persist)
+// Session middleware (required for CSRF tokens)
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'secret-key-not-found',
     resave: false,
     saveUninitialized: true,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+      httpOnly: true, // Prevent JavaScript from accessing cookies
+    },
   })
 );
 
-// CSRF middleware
-const csrfProtection = csrf() as unknown as RequestHandler;
+// Body parsers
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// Attach CSRF protection middleware to your routes
-app.use(csrfProtection);
+// CSRF middleware (use cookie-based tokens)
+const csrfProtection = csrf({ cookie: true }) as unknown as RequestHandler;
 
+// CSRF token endpoint
 app.get('/csrf-token', csrfProtection, (req: Request, res: Response) => {
-  res.json({ csrfToken: req.csrfToken() });
+  try {
+    console.log('CSRF Token Request Received'); // Log when the route is hit
+
+    const csrfToken = req.csrfToken(); // Generate the CSRF token
+    console.log('Generated CSRF Token:', csrfToken); // Log the generated token
+
+    res.json({ csrfToken }); // Respond with the token
+  } catch (error) {
+    console.error('Error generating CSRF token:', error); // Log any errors
+    res.status(500).json({ error: 'Failed to generate CSRF token' }); // Respond with a 500 error
+  }
 });
 
 // Initialize Square client
@@ -96,34 +111,102 @@ const getGooglePublicKeys = async (): Promise<GooglePublicKey[]> => {
   return data.keys;
 };
 
+// Add your existing validateIdToken function here
 const validateIdToken = async (idToken: string) => {
-  const publicKeys = await getGooglePublicKeys();
+  try {
+    const publicKeys = await getGooglePublicKeys();
 
-  // Decode the token header to get the "kid"
-  const decodedHeader = jwt.decode(idToken, { complete: true }) as { header: { kid: string } } | null;
+    // Decode the token header to get the "kid"
+    const decodedHeader = jwt.decode(idToken, { complete: true }) as { header: { kid: string } } | null;
 
-  if (!decodedHeader || !decodedHeader.header.kid) {
-    throw new Error("Invalid token header");
+    if (!decodedHeader || !decodedHeader.header.kid) {
+      throw new Error("Invalid token header");
+    }
+
+    const key = publicKeys.find((k) => k.kid === decodedHeader.header.kid);
+    if (!key) {
+      throw new Error("Invalid token key");
+    }
+
+    // Add the missing 'kty' field and ensure the type matches 'RSA'
+    const enhancedKey: { kty: "RSA"; kid: string; alg: string; use: string; n: string; e: string } = {
+      ...key,
+      kty: "RSA", // Ensure this is explicitly typed as "RSA"
+    };
+
+    // Convert the key from JWK to PEM format
+    const pem = jwkToPem(enhancedKey);
+
+    // Verify the token using the PEM public key
+    const verifiedPayload = jwt.verify(idToken, pem, { algorithms: ["RS256"] });
+    return verifiedPayload;
+  } catch (error: any) {
+    console.error('An error occurred during token validation: ', error);
+    throw new Error('Failed to validate token');
   }
-
-  const key = publicKeys.find((k) => k.kid === decodedHeader.header.kid);
-  if (!key) {
-    throw new Error("Invalid token key");
-  }
-
-  // Add the missing 'kty' field and ensure the type matches 'RSA'
-  const enhancedKey: { kty: "RSA"; kid: string; alg: string; use: string; n: string; e: string } = {
-    ...key,
-    kty: "RSA", // Ensure this is explicitly typed as "RSA"
-  };
-
-  // Convert the key from JWK to PEM format
-  const pem = jwkToPem(enhancedKey);
-
-  // Verify the token using the PEM public key
-  const verifiedPayload = jwt.verify(idToken, pem, { algorithms: ["RS256"] });
-  return verifiedPayload;
 };
+
+// `/validate-token` route
+app.post('/validate-token', csrfProtection, async (req: Request, res: Response) => {
+  try {
+    // Log incoming CSRF token for debugging
+    const csrfTokenFromHeader = req.headers['csrf-token'];
+    console.log('CSRF Token from Header:', csrfTokenFromHeader);
+
+    // Extract the ID token from the request body
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ error: 'Missing ID token' });
+    }
+
+    console.log('ID Token Received:', idToken);
+
+    // Validate the ID token
+    const verifiedPayload = await validateIdToken(idToken);
+
+    // If validation succeeds, return success
+    console.log('Token is valid. Verified Payload:', verifiedPayload);
+    return res.json({ success: true, payload: verifiedPayload });
+
+  } catch (error: any) {
+    console.error('Error validating ID token:', error.message);
+    return res.status(401).json({ error: 'Invalid ID token' });
+  }
+});
+
+
+// const validateIdToken = async (idToken: string) => {
+//   try {
+//     const publicKeys = await getGooglePublicKeys();
+
+//     // Decode the token header to get the "kid"
+//     const decodedHeader = jwt.decode(idToken, { complete: true }) as { header: { kid: string } } | null;
+
+//     if (!decodedHeader || !decodedHeader.header.kid) {
+//       throw new Error("Invalid token header");
+//     }
+
+//     const key = publicKeys.find((k) => k.kid === decodedHeader.header.kid);
+//     if (!key) {
+//       throw new Error("Invalid token key");
+//     }
+
+//     // Add the missing 'kty' field and ensure the type matches 'RSA'
+//     const enhancedKey: { kty: "RSA"; kid: string; alg: string; use: string; n: string; e: string } = {
+//       ...key,
+//       kty: "RSA", // Ensure this is explicitly typed as "RSA"
+//     };
+
+//     // Convert the key from JWK to PEM format
+//     const pem = jwkToPem(enhancedKey);
+
+//     // Verify the token using the PEM public key
+//     const verifiedPayload = jwt.verify(idToken, pem, { algorithms: ["RS256"] });
+//     return verifiedPayload;
+//   } catch(error: any) {
+//     console.error('An error occurred: ',error);
+//   }
+// };
 
 // Zod schema for payment validation
 const paymentSchema = z.object({
@@ -133,71 +216,63 @@ const paymentSchema = z.object({
   amount: z.number().positive("Amount must be greater than 0"), // Positive number validation
 });
 
-// Middleware to validate incoming data
-const validatePaymentRequest = (req: any, res: any, next: any) => {
-  try {
-    const validatedData = paymentSchema.parse(req.body); // Validate request body
-    req.validatedData = validatedData; // Attach validated data to the request
-    next(); // Pass control to the next handler
-  } catch (error: any) {
-    return res.status(400).json({ errors: error.errors }); // Send validation errors
+// Payment processing route
+// Middleware to validate the payment request body
+const validatePaymentRequest = (req: Request, res: Response, next: Function) => {
+  const { googleProviderId, email, receiptEmail, nonce, amount } = req.body;
+
+  if (!googleProviderId || !email || !receiptEmail || !nonce || !amount) {
+    console.error('Missing required fields in the request body');
+    return res.status(400).json({ error: 'Missing required fields in the request body' });
   }
+
+  // Validate amount
+  if (typeof amount !== 'number' || amount <= 0) {
+    console.error('Invalid amount');
+    return res.status(400).json({ error: 'Invalid amount. Amount must be a positive number.' });
+  }
+
+  // Attach validated data to the request object
+  req.validatedData = { googleProviderId, email, receiptEmail, nonce, amount };
+  next();
 };
 
-
-// Payment processing route
-app.post('/process-payment', csrfProtection, validatePaymentRequest, async (req, res) => {
+app.post('/process-payment', csrfProtection, validatePaymentRequest, async (req: Request, res: Response) => {
   try {
-    if (!req.validatedData) {
-      return res.status(400).json({ error: "Validation failed: Missing data" });
-    }
-
-    //console.log('Payment request received:', req.body);
     const { googleProviderId, email, receiptEmail, nonce, amount } = req.validatedData;
 
-    if (!googleProviderId || !email || !receiptEmail || !nonce || !amount) {
-      //console.error('Missing required fields in the request body');
-      return res.status(400).json({ error: 'Missing required fields in the request body' });
-    }
-
- 
+    // Convert the amount to cents (ensure it's a valid BigInt for Square)
+    const amountInCents = BigInt(amount);
 
     // Create a unique idempotency key
     const idempotencyKey = crypto.randomUUID();
 
-    //console.log('Using idempotency key:', idempotencyKey);
+    console.log('Processing payment with the following details:');
+    console.log({
+      googleProviderId,
+      email,
+      receiptEmail,
+      nonce,
+      amount: amountInCents.toString(),
+      idempotencyKey,
+    });
 
-    // console.log("Attempting to call Square API with the following data:");
-    // console.log({
-    //   sourceId: nonce,
-    //   idempotencyKey,
-    //   amountMoney: {
-    //     amount, // Amount in cents
-    //     currency: "USD",
-    //   },
-    //   referenceId: googleProviderId,
-    //   note: `Payment by user: ${email}`,
-    // });
-
-    // Ensure the amount is converted to BigInt
-    const amountInCents = BigInt(amount); // Converts the amount to BigInt
-
-    // Create payment request
+    // Create the payment request to Square API
     const paymentResponse = await squareClient.paymentsApi.createPayment({
       sourceId: nonce, // The payment token from the frontend
       idempotencyKey, // Ensures no duplicate payments
       amountMoney: {
         amount: amountInCents, // Amount in cents as BigInt
-        currency: 'USD', // Replace with your preferred currency
+        currency: 'USD', // Use your preferred currency
       },
       buyerEmailAddress: receiptEmail,
       referenceId: googleProviderId,
       note: `Payment by user: ${email}`,
     });
 
-    //console.log('Payment response from Square:', paymentResponse);
+    console.log('Payment response from Square:', paymentResponse);
 
-    // Convert BigInt values in the response to strings
+    // Convert BigInt values in the response to strings for JSON compatibility
     const sanitizedResponse = JSON.parse(
       JSON.stringify(paymentResponse.result, (_, value) =>
         typeof value === 'bigint' ? value.toString() : value
@@ -205,47 +280,64 @@ app.post('/process-payment', csrfProtection, validatePaymentRequest, async (req,
     );
 
     // Respond with success
-    res.status(200).json(sanitizedResponse);
+    res.status(200).json({
+      success: true,
+      payment: sanitizedResponse.payment,
+    });
   } catch (error: any) {
+    console.error('Error during payment processing:', error);
 
-    // if (error.response) {
-    //   console.error('Square API Response Error:', error.response.text);
-    // } else if (error.result) {
-    //   console.error('Square API Error Result:', error.result);
-    // }
-    // console.error('Error details:', error);
-    // console.error('Error during payment processing:', error);
-
-    // Handle errors
-    if (error instanceof Error) {
-      console.error('Square API Error Details:', error.message);
-      res.status(500).json({ error: error.message });
+    // Handle errors from Square API or other unknown errors
+    if (error instanceof Error && error.message) {
+      res.status(500).json({ error: `Square API Error: ${error.message}` });
+    } else if (error.result && error.result.errors) {
+      res.status(500).json({ error: error.result.errors[0]?.detail || 'Payment failed' });
     } else {
-      console.error('Unknown error occurred', error);
-      res.status(500).json({ error: 'An unknown error occurred' });
+      res.status(500).json({ error: 'An unknown error occurred during payment processing' });
     }
   }
 });
 
-// Token validation route
-app.post('/validate-token', csrfProtection, async (req, res) => {
-  //console.log('Route hit: /validate-token');
-  //console.log('Request body:', req.body);
+// // Token validation route
+// app.post('/validate-token', csrfProtection, async (req, res) => {
+//   //console.log('Route hit: /validate-token');
+//   //console.log('Request body:', req.body);
+
+//   const csrfTokenFromHeader = req.headers['csrf-token'];
+//   const csrfTokenFromCookie = req.cookies['next-auth.csrf-token'];
+
+//   console.log('CSRF Token from Header:', csrfTokenFromHeader);
+//   console.log('CSRF Token from Cookie:', csrfTokenFromCookie);
   
-  const { idToken } = req.body;
+//   const { idToken } = req.body;
 
-  if (!idToken) {
-    return res.status(400).json({ error: "ID token is required" });
-  }
+//   if (!idToken) {
+//     return res.status(400).json({ error: "ID token is required" });
+//   }
 
-  try {
-    res.set('Cross-Origin-Opener-Policy', 'unsafe-none');
-    const user = await validateIdToken(idToken);
-    res.status(200).json({ success: true, user });
-  } catch (error) {
-    console.error(error);
-    res.status(401).json({ error: "Invalid or expired token" });
+//   try {
+//     res.set('Cross-Origin-Opener-Policy', 'unsafe-none');
+//     const user = await validateIdToken(idToken);
+//     res.status(200).json({ success: true, user });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(401).json({ error: "Invalid or expired token" });
+//   }
+// });
+
+// Handle CSRF errors explicitly
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    console.error('Invalid CSRF Token:', err);
+    return res.status(403).json({ error: 'Invalid CSRF token' });
   }
+  next(err);
+});
+
+// Global error handler
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('Unhandled Error:', err);
+  res.status(500).send('Something went wrong');
 });
 
 app.post("/verify-recaptcha", async (req, res) => {
