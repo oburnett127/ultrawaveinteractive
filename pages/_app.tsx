@@ -7,8 +7,8 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <div>
       <SessionProvider session={pageProps.session}>
-        <header><h1>Ultrawave Interactive Web Design</h1></header>
-        <Component {...pageProps} />;
+        <header><h1><a href="/">Ultrawave Interactive Web Design</a></h1></header>
+        <Component {...pageProps} />
       </SessionProvider>
       <Footer />
     </div>

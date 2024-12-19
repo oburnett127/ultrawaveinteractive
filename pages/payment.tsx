@@ -22,34 +22,6 @@ interface ValidateTokenResponse {
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
-const validateToken = async (token: string, backendUrl: string): Promise<boolean> => {
-  try {
-    const response = await fetch(`${backendUrl}/validate-token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ idToken: token }),
-    });
-
-    if (response.status === 429) {
-      alert('Too many requests! Please try again later.');
-      return false; // Handle the rate-limiting scenario
-    }
-
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-
-    const data: ValidateTokenResponse = await response.json();
-
-    return data.success; // Return success status
-  } catch (error) {
-    console.error("Authentication error:", error);
-    return false;
-  }
-};
-
 const Payment = ({ session }: { session: any }) => {
   if (!session || !session.user) {
     console.error("Session or session.user is missing");
@@ -62,31 +34,106 @@ const Payment = ({ session }: { session: any }) => {
   const [customerEmail, setCustomerEmail] = useState('');
   const recaptchaRef = useRef<ReCAPTCHA>(null);
   const [message, setMessage] = useState("");
+  const [queryToken, setQueryToken] = useState<string | null>(null);
+  const [csrfToken, setCsrfToken] = useState<string | null>(null);
+
+
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   useEffect(() => {
-    const authenticateUser = async () => {
-      const token = router.query.token as string;
+    if (router.query.token) {
+      setQueryToken(router.query.token as string);
+    }
+  }, [router.query.token]);
 
-      if (!token) {
-        alert("You must log in first.");
-        router.push("/");
-        return;
-      }
-
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-
-      const isValid = await validateToken(token, backendUrl || "");
-
-      if (isValid) {
-        setIsAuthenticated(true);
-      } else {
-        alert("Authentication failed. Please log in again.");
-        router.push("/");
+  useEffect(() => {
+    const fetchCsrfAndAuthenticate = async () => {
+      try {
+        const res = await fetch(`${backendUrl}/csrf-token`, { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to fetch CSRF token');
+        const data = await res.json();
+  
+        const csrfTokenValue = data.csrfToken;
+        console.log('Fetched CSRF token:', csrfTokenValue);
+  
+        // Store CSRF token in state
+        setCsrfToken(csrfTokenValue);
+  
+        // Authenticate user
+        const token = router.query.token as string;
+        if (!token) {
+          alert('You must log in first.');
+          router.push('/');
+          return;
+        }
+  
+        const isValid = await validateToken(token, backendUrl || "", csrfTokenValue);
+        if (isValid) {
+          setIsAuthenticated(true);
+        } else {
+          alert('Authentication failed. Please log in again.');
+          router.push('/');
+        }
+      } catch (error) {
+        console.error('Error during authentication:', error);
       }
     };
+  
+    fetchCsrfAndAuthenticate();
+  }, [router.query.token, backendUrl]);
+  
 
-    authenticateUser();
-  }, [router]);
+  const fetchCsrfToken = async (backendUrl: string): Promise<string> => {
+    try {
+      const res = await fetch(`${backendUrl}/csrf-token`, { credentials: 'include' });
+      if (!res.ok) throw new Error(`Failed to fetch CSRF token: ${res.status}`);
+      const data = await res.json();
+      console.log('Fetched CSRF token:', data.csrfToken);
+      return data.csrfToken;
+    } catch (error: any) {
+      console.error('Error fetching CSRF token:', error.message);
+      throw error; // Re-throw for the caller to handle
+    }
+  };
+
+  const validateToken = async (token: string, backendUrl: string, csurfToken: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`${backendUrl}/validate-token`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "CSRF-Token": csurfToken,
+        },
+        credentials: "include", // Ensure cookies are sent
+        body: JSON.stringify({ idToken: token }),
+      });
+  
+      // Handle rate-limiting case
+      if (response.status === 429) {
+        alert('Too many requests! Please try again later.');
+        throw new Error('Too many requests'); // Explicitly throw for rate-limiting
+      }
+  
+      // Handle non-OK responses (like 403, 500, etc.)
+      if (!response.ok) {
+        const errorBody = await response.text(); // Log the response body for debugging
+        console.error('Response status:', response.status);
+        console.error('Response body:', errorBody);
+        throw new Error(`Failed to validate token. Status: ${response.status}`);
+      }
+  
+      // Parse and return the validation result
+      const data: ValidateTokenResponse = await response.json();
+      if (!data.success) {
+        throw new Error('Token validation failed');
+      }
+  
+      return true; // Validation succeeded
+    } catch (error: any) {
+      console.error("Error during token validation:", error.message);
+      throw error; // Re-throw the error for the caller to handle
+    }
+  };
 
   // If the user is not authenticated, don't render the payment page
   if (!isAuthenticated) return null;
@@ -99,42 +146,20 @@ const Payment = ({ session }: { session: any }) => {
         return;
       }
   
-      // console.log('session.user.id:', session.user.id);
-      // console.log('session.user.email:', session.user.email);
-      // console.log('Token:', token);
-      // console.log('token.token: ',token.token);
-      // console.log('Amount in cents:', parseInt(amount) * 100);
-      
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      
-      if (recaptchaRef.current) {
-        const token = recaptchaRef.current.getValue();
-        if (!token) {
-          setMessage("Please complete the reCAPTCHA.");
-          return;
-        }
-  
-        try {
-          const response = await fetch(`${backendUrl}/verify-recaptcha`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token }),
-          });
-  
-          const data = await response.json();
-          if (data.success) {
-            setMessage("reCAPTCHA verified successfully!");
-          } else {
-            setMessage("reCAPTCHA verification failed.");
-          }
-        } catch (err) {
-          setMessage("An error occurred while verifying.");
-        }
+      // Ensure the CSRF token is available
+      if (!csrfToken) {
+        alert('CSRF token is missing. Please reload the page.');
+        return;
       }
-
+  
+      // Make the payment request
       const response = await fetch(`${backendUrl}/process-payment`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'CSRF-Token': csrfToken, // Use CSRF token from state
+        },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({
           googleProviderId: session.user.id,
           email: session.user.email,
@@ -143,10 +168,10 @@ const Payment = ({ session }: { session: any }) => {
           amount: parseInt(amount) * 100, // Convert dollars to cents
         }),
       });
-
+  
       if (response.status === 429) {
         alert('Too many requests! Please try again later.');
-        return; // Handle the rate-limiting scenario
+        return;
       }
   
       if (!response.ok) {
@@ -159,7 +184,7 @@ const Payment = ({ session }: { session: any }) => {
       setPaymentDetails(data); // Save payment details to state
       alert('Payment successful!');
     } catch (error) {
-      console.error('error:', error);
+      console.error('Error during payment:', error);
       alert('An error occurred. Please try again.');
     }
   };
@@ -194,18 +219,56 @@ const Payment = ({ session }: { session: any }) => {
         </div>
       )}
 
-      <PaymentForm
-        applicationId={process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID || "missing-application-id"}
-        locationId={process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || "missing-location-id"}
-        cardTokenizeResponseReceived={handlePayment}
-      >
-        <input required type="email" id="customerEmail" name="customerEmail" onChange={(e) => setCustomerEmail(e.target.value)} 
-        placeholder='Enter your email for your receipt'></input>
-        <CreditCard />
-        <button disabled={!amount} type="submit">
-          Pay ${amount || 0}
-        </button>
-      </PaymentForm>
+        <PaymentForm
+          applicationId={process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID || "missing-application-id"}
+          locationId={process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || "missing-location-id"}
+          cardTokenizeResponseReceived={(token, verifiedBuyer) => {
+            // Call handlePayment when the card tokenization is complete
+            handlePayment(token, verifiedBuyer);
+          }}
+        >
+          <form
+            onSubmit={(e) => {
+              e.preventDefault(); // Prevent the default form submission behavior
+              if (!amount) {
+                alert("Please enter an amount to pay.");
+                return;
+              }
+              if (!csrfToken) {
+                alert("CSRF token is missing. Please reload the page and try again.");
+                return;
+              }
+              if (!customerEmail) {
+                alert("Please enter your email for the receipt.");
+                return;
+              }
+              // Tokenization will trigger handlePayment
+            }}
+          >
+            {/* Email Input */}
+            <input
+              required
+              type="email"
+              id="customerEmail"
+              name="customerEmail"
+              value={customerEmail}
+              onChange={(e) => setCustomerEmail(e.target.value)}
+              placeholder="Enter your email for your receipt"
+            />
+
+            {/* Credit Card Input */}
+            <CreditCard />
+
+            {/* Payment Button */}
+            <button
+              type="submit"
+              disabled={!amount || !csrfToken} // Disable button if no amount or CSRF token
+            >
+              Pay ${amount || 0}
+            </button>
+          </form>
+        </PaymentForm>
+
     </div>
   );
 };
