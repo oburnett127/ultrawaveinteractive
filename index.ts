@@ -13,6 +13,7 @@ import { z } from 'zod';
 import csrf from 'csurf';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
+import getGooglePublicKeys from "./getGooglePublicKeys"; // Assumes a function that fetches Google's public keys
 
 interface GooglePublicKey {
   kid: string; // key ID
@@ -95,23 +96,6 @@ const squareClient = new Client({
   environment: Environment.Sandbox, // Use Environment.Production for live
 });
 
-// URL to fetch Google's public keys
-const GOOGLE_PUBLIC_KEYS_URL = "https://www.googleapis.com/oauth2/v3/certs";
-
-const getGooglePublicKeys = async (): Promise<GooglePublicKey[]> => {
-  const response = await fetch(GOOGLE_PUBLIC_KEYS_URL);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch Google public keys");
-  }
-
-  // Use explicit typing for the JSON response
-  const data: GooglePublicKeysResponse = (await response.json()) as GooglePublicKeysResponse;
-
-  return data.keys;
-};
-
-// Add your existing validateIdToken function here
 const validateIdToken = async (idToken: string) => {
   try {
     const publicKeys = await getGooglePublicKeys();
@@ -131,22 +115,59 @@ const validateIdToken = async (idToken: string) => {
     // Add the missing 'kty' field and ensure the type matches 'RSA'
     const enhancedKey: { kty: "RSA"; kid: string; alg: string; use: string; n: string; e: string } = {
       ...key,
-      kty: "RSA", // Ensure this is explicitly typed as "RSA"
+      kty: "RSA",
     };
 
     // Convert the key from JWK to PEM format
     const pem = jwkToPem(enhancedKey);
 
     // Verify the token using the PEM public key
-    const verifiedPayload = jwt.verify(idToken, pem, { algorithms: ["RS256"] });
+    const verifiedPayload = jwt.verify(idToken, pem, { algorithms: ["RS256"] }) as {
+      aud: string;
+      exp: number;
+      iss: string;
+      sub: string;
+      email: string;
+      email_verified?: boolean;
+    };
+
+    // Validate audience
+    if (verifiedPayload.aud !== process.env.GOOGLE_CLIENT_ID) {
+      throw new Error("Invalid audience in token");
+    }
+
+    // Validate expiration
+    const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+    if (verifiedPayload.exp < currentTime) {
+      throw new Error("Token has expired");
+    }
+
+    // Validate issuer
+    if (verifiedPayload.iss !== "accounts.google.com" && verifiedPayload.iss !== "https://accounts.google.com") {
+      throw new Error("Invalid token issuer");
+    }
+
+    // Ensure required claims are present
+    if (!verifiedPayload.sub) {
+      throw new Error("Token is missing subject (sub)");
+    }
+    if (!verifiedPayload.email) {
+      throw new Error("Token is missing email");
+    }
+
+    // Optional: Enforce email verification
+    if (!verifiedPayload.email_verified) {
+      throw new Error("Email is not verified");
+    }
+
+    // Return the verified payload
     return verifiedPayload;
   } catch (error: any) {
-    console.error('An error occurred during token validation: ', error);
-    throw new Error('Failed to validate token');
+    console.error("An error occurred during token validation:", error.message || error);
+    throw new Error("Failed to validate token");
   }
 };
 
-// `/validate-token` route
 app.post('/validate-token', csrfProtection, async (req: Request, res: Response) => {
   try {
     // Log incoming CSRF token for debugging
@@ -173,40 +194,6 @@ app.post('/validate-token', csrfProtection, async (req: Request, res: Response) 
     return res.status(401).json({ error: 'Invalid ID token' });
   }
 });
-
-
-// const validateIdToken = async (idToken: string) => {
-//   try {
-//     const publicKeys = await getGooglePublicKeys();
-
-//     // Decode the token header to get the "kid"
-//     const decodedHeader = jwt.decode(idToken, { complete: true }) as { header: { kid: string } } | null;
-
-//     if (!decodedHeader || !decodedHeader.header.kid) {
-//       throw new Error("Invalid token header");
-//     }
-
-//     const key = publicKeys.find((k) => k.kid === decodedHeader.header.kid);
-//     if (!key) {
-//       throw new Error("Invalid token key");
-//     }
-
-//     // Add the missing 'kty' field and ensure the type matches 'RSA'
-//     const enhancedKey: { kty: "RSA"; kid: string; alg: string; use: string; n: string; e: string } = {
-//       ...key,
-//       kty: "RSA", // Ensure this is explicitly typed as "RSA"
-//     };
-
-//     // Convert the key from JWK to PEM format
-//     const pem = jwkToPem(enhancedKey);
-
-//     // Verify the token using the PEM public key
-//     const verifiedPayload = jwt.verify(idToken, pem, { algorithms: ["RS256"] });
-//     return verifiedPayload;
-//   } catch(error: any) {
-//     console.error('An error occurred: ',error);
-//   }
-// };
 
 // Zod schema for payment validation
 const paymentSchema = z.object({
@@ -297,33 +284,6 @@ app.post('/process-payment', csrfProtection, validatePaymentRequest, async (req:
     }
   }
 });
-
-// // Token validation route
-// app.post('/validate-token', csrfProtection, async (req, res) => {
-//   //console.log('Route hit: /validate-token');
-//   //console.log('Request body:', req.body);
-
-//   const csrfTokenFromHeader = req.headers['csrf-token'];
-//   const csrfTokenFromCookie = req.cookies['next-auth.csrf-token'];
-
-//   console.log('CSRF Token from Header:', csrfTokenFromHeader);
-//   console.log('CSRF Token from Cookie:', csrfTokenFromCookie);
-  
-//   const { idToken } = req.body;
-
-//   if (!idToken) {
-//     return res.status(400).json({ error: "ID token is required" });
-//   }
-
-//   try {
-//     res.set('Cross-Origin-Opener-Policy', 'unsafe-none');
-//     const user = await validateIdToken(idToken);
-//     res.status(200).json({ success: true, user });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(401).json({ error: "Invalid or expired token" });
-//   }
-// });
 
 // Handle CSRF errors explicitly
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
