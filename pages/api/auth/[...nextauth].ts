@@ -21,6 +21,7 @@ declare module "next-auth/jwt" {
   }
 }
 
+//GOOGLE_CLIENT_ID is same as GMAIL_CLIENT_ID
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -38,6 +39,7 @@ export const authOptions: NextAuthOptions = {
       if (account && profile) {
         token.email_verified = (profile as any).email_verified ?? false;
         token.sub = account.providerAccountId; // Map user's ID to `sub`
+        token.email = profile.email;
       }
       return token;
     },
@@ -49,6 +51,7 @@ export const authOptions: NextAuthOptions = {
         id: token.sub, // Map the user's ID from the token
         email_verified: token.email_verified, // Map `email_verified` to the session
       };
+      session.user.email = token.email;
       return session;
     },
 

@@ -3,6 +3,7 @@ import ReCAPTCHA from 'react-google-recaptcha';
 import { PaymentForm, CreditCard } from 'react-square-web-payments-sdk';
 import { useRouter} from "next/router";
 import { getSession } from "next-auth/react";
+import DOMPurify from 'dompurify';
 
 // Define the type for payment details
 interface PaymentDetails {
@@ -152,6 +153,11 @@ const Payment = ({ session }: { session: any }) => {
         return;
       }
   
+      const sanitizedAmountInCents = parseInt(DOMPurify.sanitize(amount)) * 100;
+      const sanitizedReceiptEmail = DOMPurify.sanitize(customerEmail);
+      const sanitizedEmail = DOMPurify.sanitize(session.user.email);
+
+
       // Make the payment request
       const response = await fetch(`${backendUrl}/process-payment`, {
         method: 'POST',
@@ -162,10 +168,10 @@ const Payment = ({ session }: { session: any }) => {
         credentials: 'include', // Include cookies
         body: JSON.stringify({
           googleProviderId: session.user.id,
-          email: session.user.email,
-          receiptEmail: customerEmail,
+          email: sanitizedEmail,
+          receiptEmail: sanitizedReceiptEmail,
           nonce: token.token,
-          amount: parseInt(amount) * 100, // Convert dollars to cents
+          amount: sanitizedAmountInCents,
         }),
       });
   
@@ -189,9 +195,24 @@ const Payment = ({ session }: { session: any }) => {
     }
   };
   
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+
+    if (id === "amount") {
+      // Sanitize amount: allow only numbers and a maximum value
+      const sanitizedValue = value.replace(/[^0-9.]/g, "");
+      setAmount(sanitizedValue);
+    } else if (id === "customerEmail") {
+      // Sanitize email input
+      const sanitizedEmail = DOMPurify.sanitize(value);
+      setCustomerEmail(sanitizedEmail);
+    }
+  };
+
   return (
     <div>
-      <h1>Payment Page - Payment submission may take between 30 seconds to 1 minute</h1>
+      <h1>Payment Page</h1>
+      <h2>Payment submission may take between 30 seconds to 1 minute</h2>
       {!paymentDetails ? (
         <form>
           <div>
@@ -200,8 +221,11 @@ const Payment = ({ session }: { session: any }) => {
               type="number"
               id="amount"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={handleInputChange}
               placeholder="Enter amount"
+              min="1"
+              step="0.01"
+              required
             />
             <ReCAPTCHA ref={recaptchaRef} sitekey={RECAPTCHA_SITE_KEY || "site-key-not-found"} />
             <p>{message}</p>
@@ -252,7 +276,7 @@ const Payment = ({ session }: { session: any }) => {
               id="customerEmail"
               name="customerEmail"
               value={customerEmail}
-              onChange={(e) => setCustomerEmail(e.target.value)}
+              onChange={handleInputChange}
               placeholder="Enter your email for your receipt"
             />
 
@@ -268,7 +292,6 @@ const Payment = ({ session }: { session: any }) => {
             </button>
           </form>
         </PaymentForm>
-
     </div>
   );
 };
