@@ -14,6 +14,8 @@ import csrf from 'csurf';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
 import getGooglePublicKeys from "./getGooglePublicKeys"; // Assumes a function that fetches Google's public keys
+import { generateOTP, storeOTP, validateOTP, deleteOTP } from './otp';
+import { sendOTPEmail } from './email';
 
 interface GooglePublicKey {
   kid: string; // key ID
@@ -51,6 +53,7 @@ const apiLimiter = rateLimit({
 // Apply rate limiting to specific routes
 app.use('/process-payment', apiLimiter);
 app.use('/validate-token', apiLimiter);
+app.use('/send-otp', apiLimiter);
 
 // Cookie parser middleware
 app.use(cookieParser());
@@ -282,6 +285,36 @@ app.post('/process-payment', csrfProtection, validatePaymentRequest, async (req:
     } else {
       res.status(500).json({ error: 'An unknown error occurred during payment processing' });
     }
+  }
+});
+
+app.post('/send-otp', csrfProtection, async (req: Request, res: Response) => {
+  if (req.method === 'POST') {
+    const { email } = req.body;
+
+    const otp = generateOTP(); // Generate a 6-digit OTP
+    await storeOTP(email, otp); // Store it in Redis
+    await sendOTPEmail(email, otp); // Send the OTP via email
+
+    res.status(200).json({ message: 'OTP sent successfully' });
+  } else {
+    res.status(405).json({ message: 'Method not allowed' });
+  }
+});
+
+app.post('/verify-otp', csrfProtection, async (req: Request, res: Response) => {
+  if (req.method === 'POST') {
+    const { email, otp } = req.body;
+
+    const isValid = await validateOTP(email, otp);
+    if (!isValid) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    await deleteOTP(email); // Cleanup
+    res.status(200).json({ message: 'OTP verified successfully' });
+  } else {
+    res.status(405).json({ message: 'Method not allowed' });
   }
 });
 
