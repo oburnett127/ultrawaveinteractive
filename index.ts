@@ -302,20 +302,39 @@ app.post('/send-otp', csrfProtection, async (req: Request, res: Response) => {
   }
 });
 
-app.post('/verify-otp', csrfProtection, async (req: Request, res: Response) => {
-  if (req.method === 'POST') {
-    const { email, otp } = req.body;
+const secret = process.env.NEXTAUTH_SECRET; // Use the same secret from your NextAuth configuration
 
-    const isValid = await validateOTP(email, otp);
-    if (!isValid) {
-      return res.status(400).json({ message: 'Invalid or expired OTP' });
-    }
-
-    await deleteOTP(email); // Cleanup
-    res.status(200).json({ message: 'OTP verified successfully' });
-  } else {
-    res.status(405).json({ message: 'Method not allowed' });
+export function verifyToken(token: string) {
+  try {
+    // Verify and decode the JWT
+    const decodedToken = jwt.verify(token, secret as any) as any;
+    return decodedToken; // Contains the user's data (e.g., email, otpVerified, etc.)
+  } catch (err) {
+    console.error("Invalid or expired token:", err);
+    return null; // Token is invalid
   }
+}
+app.post('/verify-otp', csrfProtection, async (req: Request, res: Response) => {
+  const authHeader = req.headers.authorization || ""; // Example: "Bearer <token>"
+  const token = authHeader.split(" ")[1]; // Extract the token from the "Authorization" header
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const decodedToken = verifyToken(token);
+
+  if (!decodedToken) {
+    return res.status(403).json({ message: "Invalid or expired token" });
+  }
+
+  // Use the decoded data (e.g., check if OTP is verified)
+  if (!decodedToken.otpVerified) {
+    return res.status(403).json({ message: "OTP verification required" });
+  }
+
+  // Continue with your logic (e.g., return user data or allow access)
+  res.status(200).json({ message: "Access granted" });
 });
 
 // Handle CSRF errors explicitly
