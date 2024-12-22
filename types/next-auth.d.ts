@@ -1,22 +1,17 @@
-import { DefaultSession, DefaultUser } from "next-auth";
-import { JWT } from "next-auth/jwt";
+import NextAuth from "next-auth";
 
-// Extend the `User` type
 declare module "next-auth" {
-  interface User extends DefaultUser {
-    email_verified?: boolean;
-  }
-
   interface Session {
     user: {
-      email_verified?: boolean;
-    } & DefaultSession["user"];
+      id?: string; // Add the 'id' field here
+      email_verified?: boolean; // Add 'email_verified'
+      otpVerified?: boolean; // Add 'otpVerified'
+    } & DefaultSession["user"]; // Inherit default properties like name, email, image
   }
-}
 
-// Extend the `JWT` type
-declare module "next-auth/jwt" {
   interface JWT {
-    email_verified?: boolean;
+    id?: string; // Add the 'id' field here for JWT
+    email_verified?: boolean; // Add 'email_verified'
+    otpVerified?: boolean; // Add 'otpVerified'
   }
 }

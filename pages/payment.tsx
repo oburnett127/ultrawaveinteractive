@@ -306,7 +306,17 @@ export async function getServerSideProps(context: any) {
   if (!session) {
     return {
       redirect: {
-        destination: "/api/auth/signin", // Redirect to login page
+        destination: "/", // Redirect to login page
+        permanent: false,
+      },
+    };
+  }
+
+  if (!session.user.otpVerified) {
+    // Redirect to /verify-otp if OTP is not verified
+    return {
+      redirect: {
+        destination: "/verify-otp",
         permanent: false,
       },
     };
@@ -314,7 +324,7 @@ export async function getServerSideProps(context: any) {
 
   // Pass the session as a prop to the page
   return {
-    props: { session },
+    props: {},
   };
 }
 
