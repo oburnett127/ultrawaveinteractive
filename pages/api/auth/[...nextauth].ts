@@ -20,6 +20,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, account, profile }) {
       if (account && profile) {
+        token.idToken = account.id_token;
         token.email_verified = (profile as any).email_verified ?? false; // Add `email_verified`
         token.sub = account.providerAccountId; // Store the user's unique ID
         token.email = profile.email; // Store the email
@@ -31,6 +32,7 @@ export const authOptions: NextAuthOptions = {
       // Add custom fields to the session object
       session.user = {
         ...session.user,
+        idToken: token.idToken,
         id: token.sub, // Add the user's unique ID
         email_verified: token.email_verified, // Add `email_verified`
         otpVerified: token.otpVerified, // Add `otpVerified`

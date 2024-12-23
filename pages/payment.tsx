@@ -84,18 +84,18 @@ const Payment = ({ session }: { session: any }) => {
   }, [router.query.token, backendUrl]);
   
 
-  const fetchCsrfToken = async (backendUrl: string): Promise<string> => {
-    try {
-      const res = await fetch(`${backendUrl}/csrf-token`, { credentials: 'include' });
-      if (!res.ok) throw new Error(`Failed to fetch CSRF token: ${res.status}`);
-      const data = await res.json();
-      console.log('Fetched CSRF token:', data.csrfToken);
-      return data.csrfToken;
-    } catch (error: any) {
-      console.error('Error fetching CSRF token:', error.message);
-      throw error; // Re-throw for the caller to handle
-    }
-  };
+  // const fetchCsrfToken = async (backendUrl: string): Promise<string> => {
+  //   try {
+  //     const res = await fetch(`${backendUrl}/csrf-token`, { credentials: 'include' });
+  //     if (!res.ok) throw new Error(`Failed to fetch CSRF token: ${res.status}`);
+  //     const data = await res.json();
+  //     console.log('Fetched CSRF token:', data.csrfToken);
+  //     return data.csrfToken;
+  //   } catch (error: any) {
+  //     console.error('Error fetching CSRF token:', error.message);
+  //     throw error; // Re-throw for the caller to handle
+  //   }
+  // };
 
   const validateToken = async (token: string, backendUrl: string, csurfToken: string): Promise<boolean> => {
     try {
