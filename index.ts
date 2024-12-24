@@ -29,36 +29,23 @@ interface GooglePublicKeysResponse {
   keys: GooglePublicKey[];
 }
 
-dotenv.config();
+dotenv.config(); // 1️⃣ Load environment variables
 
 const app = express();
+
 const PORT = process.env.PORT || 5000;
 
-// Configure CORS
+// 2️⃣ Cookie parser: Parses cookies so `req.cookies` is populated
+app.use(cookieParser());
+
+// 3️⃣ CORS middleware: Add CORS headers
 const corsOptions = {
   origin: 'http://localhost:3000', // Allow requests from your frontend
-  credentials: true,
+  credentials: true, // Allow cookies to be sent with requests
 };
 app.use(cors(corsOptions));
 
-// Configure Rate Limiting
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 15, // Limit each IP to 15 requests per window
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  message: 'Too many requests from this IP, please try again later.',
-});
-
-// Apply rate limiting to specific routes
-app.use('/process-payment', apiLimiter);
-app.use('/validate-token', apiLimiter);
-app.use('/send-otp', apiLimiter);
-
-// Cookie parser middleware
-app.use(cookieParser());
-
-// Session middleware (required for CSRF tokens)
+// 4️⃣ Session middleware: Required for CSRF protection and session management
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'secret-key-not-found',
@@ -71,12 +58,77 @@ app.use(
   })
 );
 
-// Body parsers
+// 5️⃣ Body parsers: Required for parsing JSON or URL-encoded request bodies
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// CSRF middleware (use cookie-based tokens)
+// 6️⃣ Rate limiter: Apply rate limiting to specific routes (optional but good)
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 15, // Limit each IP to 15 requests per window
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: 'Too many requests from this IP, please try again later.',
+});
+
+// Apply rate limiting to sensitive routes
+app.use('/process-payment', apiLimiter);
+app.use('/validate-token', apiLimiter);
+app.use('/send-otp', apiLimiter);
+app.use('/verify-otp', apiLimiter);
+
+// 7️⃣ CSRF protection middleware: Use cookie-based tokens
 const csrfProtection = csrf({ cookie: true }) as unknown as RequestHandler;
+
+// dotenv.config();
+
+// const app = express();
+
+// app.use(cookieParser());
+
+// const PORT = process.env.PORT || 5000;
+
+// // Configure CORS
+// const corsOptions = {
+//   origin: 'http://localhost:3000', // Allow requests from your frontend
+//   credentials: true,
+// };
+// app.use(cors(corsOptions));
+
+// // Configure Rate Limiting
+// const apiLimiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 15, // Limit each IP to 15 requests per window
+//   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+//   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+//   message: 'Too many requests from this IP, please try again later.',
+// });
+
+// // Apply rate limiting to specific routes
+// app.use('/process-payment', apiLimiter);
+// app.use('/validate-token', apiLimiter);
+// app.use('/send-otp', apiLimiter);
+// app.use('/verify-otp', apiLimiter);
+
+// // Session middleware (required for CSRF tokens)
+// app.use(
+//   session({
+//     secret: process.env.SESSION_SECRET || 'secret-key-not-found',
+//     resave: false,
+//     saveUninitialized: true,
+//     cookie: {
+//       secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+//       httpOnly: true, // Prevent JavaScript from accessing cookies
+//     },
+//   })
+// );
+
+// // Body parsers
+// app.use(bodyParser.json());
+// app.use(bodyParser.urlencoded({ extended: true }));
+
+// // CSRF middleware (use cookie-based tokens)
+// const csrfProtection = csrf({ cookie: true }) as unknown as RequestHandler;
 
 // CSRF token endpoint
 app.get('/csrf-token', csrfProtection, (req: Request, res: Response) => {
@@ -171,30 +223,59 @@ const validateIdToken = async (idToken: string) => {
   }
 };
 
-app.post('/validate-token', csrfProtection, async (req: Request, res: Response) => {
+app.post('/validate-token', async (req: Request, res: Response) => {
   try {
-    // Log incoming CSRF token for debugging
-    const csrfTokenFromHeader = req.headers['csrf-token'];
-    console.log('CSRF Token from Header:', csrfTokenFromHeader);
+    console.log("Raw Cookie Header:", req.headers.cookie); // Log the raw cookie header
 
-    // Extract the ID token from the request body
-    const { idToken } = req.body;
-    if (!idToken) {
-      return res.status(400).json({ error: 'Missing ID token' });
+    // Parse cookies
+    console.log("Parsed Cookies:", req.cookies); // Log all parsed cookies
+
+    // Get the CSRF token from the `csrf-token` header
+    const csrfTokenFromHeader = req.headers["csrf-token"];
+
+    if (!csrfTokenFromHeader) {
+      console.log('403 error, csrfTokenFromHeader missing');
+      return res.status(403).json({ error: "Missing CSRF token in header" });
     }
 
-    console.log('ID Token Received:', idToken);
+    // Get the CSRF token from the `next-auth.csrf-token` cookie
+    const csrfTokenFromCookie = req.cookies["next-auth.csrf-token"];
+    
+    if (!csrfTokenFromCookie) {
+      console.log('403 error, csrfTokenFromCookie missing');
+      return res.status(403).json({ error: "Missing CSRF token in cookie" });
+    }
+
+    // Split the cookie value into [csrfToken, csrfHash]
+    const [csrfToken, csrfHash] = csrfTokenFromCookie.split("%");
+    if (!csrfToken || !csrfHash) {
+      console.log('403 error, invalid csrf token format in cookie');
+      return res.status(403).json({ error: "Invalid CSRF token format in cookie" });
+    }
+
+    // Compare the CSRF token from the header with the one in the cookie
+    if (csrfToken !== csrfTokenFromHeader) {
+      console.log('403 error, CSRF token mismatch');
+      return res.status(403).json({ error: "CSRF token mismatch" });
+    }
+
+    // CSRF validation passed, continue with your logic (e.g., validate user token)
+    const { token } = req.body;
+    if (!token) {
+      console.log('missing token in request body');
+      return res.status(400).json({ error: "Missing token in request body" });
+    }
 
     // Validate the ID token
-    const verifiedPayload = await validateIdToken(idToken);
+    const verifiedPayload = await validateIdToken(token);
 
-    // If validation succeeds, return success
-    console.log('Token is valid. Verified Payload:', verifiedPayload);
-    return res.json({ success: true, payload: verifiedPayload });
+    console.log("Token to validate:", token);
 
-  } catch (error: any) {
-    console.error('Error validating ID token:', error.message);
-    return res.status(401).json({ error: 'Invalid ID token' });
+    // Respond with success
+    res.json({ message: "CSRF token validated successfully", isValid: true });
+  } catch (error) {
+    console.error("error 500 Error during CSRF validation:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -290,7 +371,7 @@ app.post('/process-payment', csrfProtection, validatePaymentRequest, async (req:
 
 app.post('/send-otp', csrfProtection, async (req: Request, res: Response) => {
   if (req.method === 'POST') {
-    const { email } = req.body;
+    const { email, csrfToken } = req.body;
 
     const otp = generateOTP(); // Generate a 6-digit OTP
     await storeOTP(email, otp); // Store it in Redis
