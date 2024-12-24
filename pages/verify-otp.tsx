@@ -10,20 +10,14 @@ export default function VerifyOTP() {
   const router = useRouter();
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const [tttoken, setTttoken] = useState("");
-  
+
   useEffect(() => {
     const fetchCsrfAndAuthenticate = async () => {
-      // if (!queryToken) {
-      //   console.warn("No token found in URL.");
-      //   return;
-      // }
-
       try {
         //console.log('verify-otp: router.query.token: ', router.query.token);
 
         // Fetch CSRF token from backend
-        //const res = await fetch(`${backendUrl}/csrf-token`, {
-          const res = await fetch('/api/auth/csrf', {
+          const res = await fetch('http://localhost:3000/api/auth/csrf', {
           credentials: "include", // Ensures cookies are sent with the request
         });
         if (!res.ok) throw new Error("Failed to fetch CSRF token");
@@ -52,14 +46,18 @@ export default function VerifyOTP() {
 
   async function validateToken(token: string, backendUrl: string, csrfToken: string): Promise<boolean> {
     try {
-      const res = await fetch(`${backendUrl}/validate-token`, {
-        method: "POST",
-        headers: {
+        const headers: HeadersInit = {
           "Content-Type": "application/json",
-          "csrf-token": csrfToken,
-        },
-        body: JSON.stringify({ token }),
-      });
+        };
+      
+        headers["csrf-token"] = csrfToken;
+
+        const res = await fetch(`${backendUrl}/validate-token`, {
+          method: "POST",
+          headers,
+          credentials: "include",
+          body: JSON.stringify({ token }),
+        });
   
       if (!res.ok) {
         console.error("Token validation failed:", res.statusText);
