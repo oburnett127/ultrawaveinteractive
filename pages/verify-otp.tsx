@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
+import axios from "axios";
 
 export default function VerifyOTP() {
   const { data: session } = useSession();
@@ -26,7 +27,7 @@ export default function VerifyOTP() {
         console.log("Fetched CSRF token:", data.csrfToken);
 
         // Authenticate user using token and CSRF token
-        const isValid = await validateToken(router.query.token as string, backendUrl || "", data.csrfToken);
+        const isValid = await validateTokenWithAxios(router.query.token as string, backendUrl || "", data.csrfToken);
         if (isValid) {
         } else {
           alert("Authentication failed. Please log in again.");
@@ -44,33 +45,113 @@ export default function VerifyOTP() {
     }
   }, [router.query.token, backendUrl]);
 
-  async function validateToken(token: string, backendUrl: string, csrfToken: string): Promise<boolean> {
-    try {
-        const headers: HeadersInit = {
-          "Content-Type": "application/json",
-        };
-      
-        headers["csrf-token"] = csrfToken;
+  // async function validateToken(token: string, backendUrl: string, csrfCookieValue: string): Promise<boolean> {
+  //   try {
+  //       // Split the csrfCookieValue on '%7C' to extract the CSRF token
+  //       const csrfParts = csrfCookieValue.split("%7C");
+  //       const csrfToken = csrfParts[0]; // First part before '%7C' is the CSRF token
 
-        const res = await fetch(`${backendUrl}/validate-token`, {
-          method: "POST",
-          headers,
-          credentials: "include",
-          body: JSON.stringify({ token }),
-        });
-  
-      if (!res.ok) {
-        console.error("Token validation failed:", res.statusText);
+  //       // Create the headers
+  //       const headers: HeadersInit = {
+  //           "Content-Type": "application/json",
+  //           "csrf-token": csrfToken, // Send the extracted CSRF token in the header
+  //           "Cookie: next-auth.csrf-token=": csrfCookieValue,
+  //       };
+
+  //       // Make the POST request to validate the token
+  //       const res = await fetch(`${backendUrl}/validate-token`, {
+  //           method: "POST",
+  //           headers,
+  //           credentials: "include", // Ensure cookies are included in the request
+  //           body: JSON.stringify({ token }), // Include the `token` in the request body
+  //       });
+  // async function validateToken(token: string, backendUrl: string, csrfCookieValue: string): Promise<boolean> {
+  //   try {
+  //       // Split the csrfCookieValue on '%7C' to extract the CSRF token
+  //       const csrfParts = csrfCookieValue.split("%7C");
+  //       const csrfToken = csrfParts[0]; // First part before '%7C' is the CSRF token
+
+  //       // Manually construct the Cookie header
+  //       const cookieHeader = `next-auth.csrf-token=${csrfCookieValue}`;
+
+  //       // Create the headers
+  //       const headers: HeadersInit = {
+  //           "Content-Type": "application/json",
+  //           "csrf-token": csrfToken, // Send the extracted CSRF token in the header
+  //           "Cookie: ": cookieHeader, // Manually set the Cookie header
+  //       };
+
+  //       // Make the POST request to validate the token
+  //       const res = await fetch(`${backendUrl}/validate-token`, {
+  //           method: "POST",
+  //           headers,
+  //           credentials: "include", // Ensure cookies are included in the request
+  //           body: JSON.stringify({ token }), // Include the `token` in the request body
+  //       });
+
+async function validateTokenWithAxios(token: string, backendUrl: string, csrfCookieValue: string): Promise<boolean> {
+    try {
+        // Split the csrfCookieValue on '%7C' to extract the CSRF token
+        const csrfParts = csrfCookieValue.split("%7C");
+        const csrfToken = csrfParts[0]; // First part before '%7C' is the CSRF token
+
+        // Make the POST request
+        const response = await axios.post(
+            `${backendUrl}/validate-token`,
+            { token }, // The request body (e.g., JSON payload)
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    "csrf-token": csrfToken, // Send the extracted CSRF token in the header
+                },
+                withCredentials: true, // Include credentials like cookies in the request
+            }
+        );
+
+        // Handle the response
+        return response.data.isValid; // Assume the backend returns `isValid` in the response body
+    } catch (error: any) {
+        console.error("Error validating token:", error.response?.data || error.message);
         return false;
-      }
-  
-      const data = await res.json();
-      return data.isValid; // Assume your backend returns `isValid: true` if valid
-    } catch (error) {
-      console.error("Error validating token:", error);
-      return false;
     }
-  }
+}
+
+  // async function validateToken(token: string, backendUrl: string, csrfCookieValue: string): Promise<boolean> {
+  //   try {
+  //       // Split the csrfCookieValue on '%7C' to extract the CSRF token
+  //       const csrfParts = csrfCookieValue.split("%7C");
+  //       const csrfToken = csrfParts[0]; // First part before '%7C' is the CSRF token
+
+  //       // Manually construct the Cookie header
+  //       const cookieHeader = `next-auth.csrf-token=${csrfCookieValue}`;
+
+  //       // Create the headers
+  //       const headers: Record<string, string> = {
+  //           "Content-Type": "application/json",
+  //           "csrf-token": csrfToken, // Send the extracted CSRF token in the header
+  //           "Cookie": cookieHeader,    // Manually set the Cookie header
+  //       };
+
+  //       // Make the POST request to validate the token
+  //       const res = await fetch(`${backendUrl}/validate-token`, {
+  //           method: "POST",
+  //           headers,
+  //           credentials: "include", // Ensure cookies are included in the request
+  //           body: JSON.stringify({ token }), // Include the `token` in the request body
+  //       });
+
+  //     if (!res.ok) {
+  //       console.error("Token validation failed:", res.statusText);
+  //       return false;
+  //     }
+  
+  //     const data = await res.json();
+  //     return data.isValid; // Assume your backend returns `isValid: true` if valid
+  //   } catch (error) {
+  //     console.error("Error validating token:", error);
+  //     return false;
+  //   }
+  // }
 
   // Automatically send the OTP when the page loads
   // useEffect(() => {

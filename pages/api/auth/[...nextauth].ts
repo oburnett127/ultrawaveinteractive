@@ -46,15 +46,14 @@ export const authOptions: NextAuthOptions = {
   },
   cookies: {
     csrfToken: {
-      name: "next-auth.csrf-token",
-      options: {
-        httpOnly: true,
-        sameSite: process.env.NODE_ENV === "production" ? "lax" : "none", // Use "none" for cross-origin requests
-        secure: process.env.NODE_ENV === "production", // Use secure cookies in production
-        path: "/", // <-- Set the cookie's path to `/` so it's sent to all endpoints
-        domain: "localhost",
-      },
-    },
+          name: "next-auth.csrf-token",
+          options: {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production", // Only secure in production
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // "lax" for local dev
+            path: "/",
+          },
+        },
     sessionToken: {
       name: "next-auth.session-token",
       options: {
