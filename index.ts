@@ -12,7 +12,6 @@ import bodyParser from 'body-parser';
 import { z } from 'zod';
 import csrf from 'csurf';
 import session from 'express-session';
-import cookieParser from 'cookie-parser';
 import getGooglePublicKeys from "./getGooglePublicKeys"; // Assumes a function that fetches Google's public keys
 import { generateOTP, storeOTP, validateOTP, deleteOTP } from './otp';
 import { sendOTPEmail } from './email';
@@ -36,7 +35,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // 2️⃣ Cookie parser: Parses cookies so `req.cookies` is populated
-app.use(cookieParser());
+//app.use(cookieParser());
 
 // 3️⃣ CORS middleware: Add CORS headers
 const corsOptions = {
@@ -61,6 +60,13 @@ app.use(
 // 5️⃣ Body parsers: Required for parsing JSON or URL-encoded request bodies
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+  next();
+});
+
 
 // 6️⃣ Rate limiter: Apply rate limiting to specific routes (optional but good)
 const apiLimiter = rateLimit({
@@ -223,40 +229,32 @@ const validateIdToken = async (idToken: string) => {
   }
 };
 
-app.post('/validate-token', async (req: Request, res: Response) => {
+app.post('/validate-token', async(req: Request, res: Response) => {
   try {
-    console.log("Raw Cookie Header:", req.headers.cookie); // Log the raw cookie header
+    // Log raw cookie header
+    console.log("Raw Cookie Header:", req.headers.cookie);
 
-    // Parse cookies
-    console.log("Parsed Cookies:", req.cookies); // Log all parsed cookies
+    // Extract the CSRF token manually from the raw cookie header
+    const rawCookieHeader = req.headers.cookie || "";
+    const csrfTokenFromRawCookie = rawCookieHeader
+      .split("; ")
+      .find((cookie) => cookie.startsWith("next-auth.csrf-token="))
+      ?.split("=")[1]; // Get the value after the `=` sign
 
-    // Get the CSRF token from the `csrf-token` header
+    if (!csrfTokenFromRawCookie) {
+      return res.status(403).json({ error: "Missing CSRF token in raw cookie" });
+    }
+
+    // Split on `%7C` since we're handling the URL-encoded cookie
+    const [csrfToken, csrfSignature] = csrfTokenFromRawCookie.split("%7C");
+
+    console.log("CSRF Token from Raw Cookie:", csrfToken);
+    console.log("CSRF Signature from Raw Cookie:", csrfSignature);
+
+    // Validate the CSRF token against the one sent in the header
     const csrfTokenFromHeader = req.headers["csrf-token"];
-
-    if (!csrfTokenFromHeader) {
-      console.log('403 error, csrfTokenFromHeader missing');
-      return res.status(403).json({ error: "Missing CSRF token in header" });
-    }
-
-    // Get the CSRF token from the `next-auth.csrf-token` cookie
-    const csrfTokenFromCookie = req.cookies["next-auth.csrf-token"];
-    
-    if (!csrfTokenFromCookie) {
-      console.log('403 error, csrfTokenFromCookie missing');
-      return res.status(403).json({ error: "Missing CSRF token in cookie" });
-    }
-
-    // Split the cookie value into [csrfToken, csrfHash]
-    const [csrfToken, csrfHash] = csrfTokenFromCookie.split("%");
-    if (!csrfToken || !csrfHash) {
-      console.log('403 error, invalid csrf token format in cookie');
-      return res.status(403).json({ error: "Invalid CSRF token format in cookie" });
-    }
-
-    // Compare the CSRF token from the header with the one in the cookie
-    if (csrfToken !== csrfTokenFromHeader) {
-      console.log('403 error, CSRF token mismatch');
-      return res.status(403).json({ error: "CSRF token mismatch" });
+    if (!csrfTokenFromHeader || csrfTokenFromHeader !== csrfToken) {
+      return res.status(403).json({ error: "Invalid CSRF token" });
     }
 
     // CSRF validation passed, continue with your logic (e.g., validate user token)
