@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { PaymentForm, CreditCard } from 'react-square-web-payments-sdk';
 import { useRouter} from "next/router";
 import { getSession } from "next-auth/react";
 import DOMPurify from 'dompurify';
+import { useCsrf } from '../components/CsrfContext';
 
 // Define the type for payment details
 interface PaymentDetails {
@@ -35,109 +36,10 @@ const Payment = ({ session }: { session: any }) => {
   const [customerEmail, setCustomerEmail] = useState('');
   const recaptchaRef = useRef<ReCAPTCHA>(null);
   const [message, setMessage] = useState("");
-  const [queryToken, setQueryToken] = useState<string | null>(null);
-  const [csrfToken, setCsrfToken] = useState<string | null>(null);
-
-
+  const { csrfToken, setCsrfToken } = useCsrf();
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-
-  useEffect(() => {
-    if (router.query.token) {
-      setQueryToken(router.query.token as string);
-    }
-  }, [router.query.token]);
-
-  useEffect(() => {
-    const fetchCsrfAndAuthenticate = async () => {
-      try {
-        const res = await fetch(`${backendUrl}/csrf-token`, { credentials: 'include' });
-        if (!res.ok) throw new Error('Failed to fetch CSRF token');
-        const data = await res.json();
-  
-        const csrfTokenValue = data.csrfToken;
-        console.log('Fetched CSRF token:', csrfTokenValue);
-  
-        // Store CSRF token in state
-        setCsrfToken(csrfTokenValue);
-  
-        // Authenticate user
-        const token = router.query.token as string;
-        if (!token) {
-          alert('You must log in first.');
-          router.push('/');
-          return;
-        }
-  
-        const isValid = await validateToken(token, backendUrl || "", csrfTokenValue);
-        if (isValid) {
-          setIsAuthenticated(true);
-        } else {
-          alert('Authentication failed. Please log in again.');
-          router.push('/');
-        }
-      } catch (error) {
-        console.error('Error during authentication:', error);
-      }
-    };
-  
-    fetchCsrfAndAuthenticate();
-  }, [router.query.token, backendUrl]);
-  
-
-  // const fetchCsrfToken = async (backendUrl: string): Promise<string> => {
-  //   try {
-  //     const res = await fetch(`${backendUrl}/csrf-token`, { credentials: 'include' });
-  //     if (!res.ok) throw new Error(`Failed to fetch CSRF token: ${res.status}`);
-  //     const data = await res.json();
-  //     console.log('Fetched CSRF token:', data.csrfToken);
-  //     return data.csrfToken;
-  //   } catch (error: any) {
-  //     console.error('Error fetching CSRF token:', error.message);
-  //     throw error; // Re-throw for the caller to handle
-  //   }
-  // };
-
-  const validateToken = async (token: string, backendUrl: string, csurfToken: string): Promise<boolean> => {
-    try {
-      const response = await fetch(`${backendUrl}/validate-token`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "CSRF-Token": csurfToken,
-        },
-        credentials: "include", // Ensure cookies are sent
-        body: JSON.stringify({ idToken: token }),
-      });
-  
-      // Handle rate-limiting case
-      if (response.status === 429) {
-        alert('Too many requests! Please try again later.');
-        throw new Error('Too many requests'); // Explicitly throw for rate-limiting
-      }
-  
-      // Handle non-OK responses (like 403, 500, etc.)
-      if (!response.ok) {
-        const errorBody = await response.text(); // Log the response body for debugging
-        console.error('Response status:', response.status);
-        console.error('Response body:', errorBody);
-        throw new Error(`Failed to validate token. Status: ${response.status}`);
-      }
-  
-      // Parse and return the validation result
-      const data: ValidateTokenResponse = await response.json();
-      if (!data.success) {
-        throw new Error('Token validation failed');
-      }
-  
-      return true; // Validation succeeded
-    } catch (error: any) {
-      console.error("Error during token validation:", error.message);
-      throw error; // Re-throw the error for the caller to handle
-    }
-  };
-
-  // If the user is not authenticated, don't render the payment page
-  if (!isAuthenticated) return null;
+    
+  //MAKE SURE THE USER HAS BEEN AUTHENTICATED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   const handlePayment = async (token: any, verifiedBuyer: any) => {
     try {
