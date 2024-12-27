@@ -16,9 +16,10 @@ import peopleInGym from '../images/peopleingym.jpg';
 import petCare from '../images/petcare.jpg';
 import plumber from '../images/plumberlookingatpipe.jpg';
 import Head from 'next/head';
-import { useEffect } from "react";
+
 import { useRouter } from "next/router";
-import { useSession, signOut } from 'next-auth/react';
+import { signIn, signOut, useSession } from 'next-auth/react';
+//import { useCsrf } from '../components/CsrfContext';
 
 function Home() {
   const router = useRouter();
@@ -45,38 +46,54 @@ function Home() {
             "openingHours": "Su-Sa 08:00-20:00"
           }`;
 
-  useEffect(() => {
-    if(status === "unauthenticated") {
-      // Dynamically load the Google Identity Services (GIS) script
-      const script = document.createElement("script");
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      document.body.appendChild(script);
+  // useEffect(() => {
+  //   const fetchCsrfToken = async () => {
+  //     const res = await fetch('/api/auth/csrf', {
+  //         credentials: "include", // Ensures cookies are sent with the request
+  //       });
 
-      script.onload = () => {
-        window.google.accounts.id.initialize({
-          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "missing-google-client-id",
-          callback: handleCredentialResponse,
-        });
+  //       if (!res.ok) console.log("Failed to fetch CSRF token");
+  //       const data = await res.json();
 
-        window.google.accounts.id.renderButton(
-          document.getElementById("google-login-button"),
-          { theme: "outline", size: "large" }
-        );
-      };
-    }
-  }, [status]); //Only run when authentication status changes
+  //       console.log("Fetched CSRF token:", data.csrfToken);
+  //       setCsrfToken(data.csrfToken);
+  //   };
+  
+  //   fetchCsrfToken();
+  // }, []);
 
-  const handleCredentialResponse = (response: any) => {
-    console.log("Google ID Token:", response.credential);
+  // useEffect(() => {
+  //   if(status === "unauthenticated") {
+  //     // Dynamically load the Google Identity Services (GIS) script
+  //     const script = document.createElement("script");
+  //     script.src = "https://accounts.google.com/gsi/client";
+  //     script.async = true;
+  //     script.defer = true;
+  //     document.body.appendChild(script);
 
-    // Redirect to the verify-otp page with the token
-    router.push({
-      pathname: "/verify-otp",
-      query: { token: response.credential },
-    });
-  };
+  //     script.onload = () => {
+  //       window.google.accounts.id.initialize({
+  //         client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "missing-google-client-id",
+  //         callback: handleCredentialResponse,
+  //       });
+
+  //       window.google.accounts.id.renderButton(
+  //         document.getElementById("google-login-button"),
+  //         { theme: "outline", size: "large" }
+  //       );
+  //     };
+  //   }
+  // }, [status]); //Only run when authentication status changes
+
+  // const handleCredentialResponse = (response: any) => {
+  //   console.log("Google ID Token:", response.credential);
+
+  //   // Redirect to the verify-otp page with the token
+  //   router.push({
+  //     pathname: "/verify-otp",
+  //     query: { token: response.credential },
+  //   });
+  // };
 
   return (
     <>
@@ -104,16 +121,7 @@ function Home() {
           <p>You don't pay me until you are satisfied with the quality of my work!</p>
           <p>Fully customized websites, tailored to the specific and unique needs of your business!</p>
 
-          {status === "unauthenticated" && (
-            <div id="google-login-button"></div>
-          )}
-
-          {status === "authenticated" && (
-            <div>
-              <h1>Welcome, {session?.user?.name}!</h1>
-              <button onClick={() => signOut()}>Sign Out</button>
-            </div>
-          )}
+          {/*login UI*/}
 
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="20vh">
             <Stack direction="row" spacing={6}>
