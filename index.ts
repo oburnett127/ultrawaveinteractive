@@ -67,7 +67,6 @@ app.use((req, res, next) => {
   next();
 });
 
-
 // 6️⃣ Rate limiter: Apply rate limiting to specific routes (optional but good)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -77,79 +76,15 @@ const apiLimiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.',
 });
 
+// BEFORE PUTTING IN PRODUCTION UNCOMMENT THESE LINES ABOUT RATE LIMITER
 // Apply rate limiting to sensitive routes
-app.use('/process-payment', apiLimiter);
-app.use('/validate-token', apiLimiter);
-app.use('/send-otp', apiLimiter);
-app.use('/verify-otp', apiLimiter);
-
-// 7️⃣ CSRF protection middleware: Use cookie-based tokens
-const csrfProtection = csrf({ cookie: true }) as unknown as RequestHandler;
-
-// dotenv.config();
-
-// const app = express();
-
-// app.use(cookieParser());
-
-// const PORT = process.env.PORT || 5000;
-
-// // Configure CORS
-// const corsOptions = {
-//   origin: 'http://localhost:3000', // Allow requests from your frontend
-//   credentials: true,
-// };
-// app.use(cors(corsOptions));
-
-// // Configure Rate Limiting
-// const apiLimiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 15, // Limit each IP to 15 requests per window
-//   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-//   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-//   message: 'Too many requests from this IP, please try again later.',
-// });
-
-// // Apply rate limiting to specific routes
 // app.use('/process-payment', apiLimiter);
 // app.use('/validate-token', apiLimiter);
 // app.use('/send-otp', apiLimiter);
 // app.use('/verify-otp', apiLimiter);
 
-// // Session middleware (required for CSRF tokens)
-// app.use(
-//   session({
-//     secret: process.env.SESSION_SECRET || 'secret-key-not-found',
-//     resave: false,
-//     saveUninitialized: true,
-//     cookie: {
-//       secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-//       httpOnly: true, // Prevent JavaScript from accessing cookies
-//     },
-//   })
-// );
-
-// // Body parsers
-// app.use(bodyParser.json());
-// app.use(bodyParser.urlencoded({ extended: true }));
-
-// // CSRF middleware (use cookie-based tokens)
-// const csrfProtection = csrf({ cookie: true }) as unknown as RequestHandler;
-
-// CSRF token endpoint
-app.get('/csrf-token', csrfProtection, (req: Request, res: Response) => {
-  try {
-    console.log('CSRF Token Request Received'); // Log when the route is hit
-
-    const csrfToken = req.csrfToken(); // Generate the CSRF token
-    console.log('Generated CSRF Token:', csrfToken); // Log the generated token
-
-    res.json({ csrfToken }); // Respond with the token
-  } catch (error) {
-    console.error('Error generating CSRF token:', error); // Log any errors
-    res.status(500).json({ error: 'Failed to generate CSRF token' }); // Respond with a 500 error
-  }
-});
+// 7️⃣ CSRF protection middleware: Use cookie-based tokens
+const csrfProtection = csrf({ cookie: true }) as unknown as RequestHandler;
 
 // Initialize Square client
 const squareClient = new Client({
