@@ -1,41 +1,23 @@
 // Import required modules
-import express, { Request, Response, RequestHandler, NextFunction } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { Client, Environment } from 'square';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
-import jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
-import jwkToPem from 'jwk-to-pem';
 import rateLimit from 'express-rate-limit';
 import bodyParser from 'body-parser';
 import { z } from 'zod';
-import csrf from 'csurf';
-import session from 'express-session';
-import getGooglePublicKeys from "./getGooglePublicKeys"; // Assumes a function that fetches Google's public keys
-import { generateOTP, storeOTP, validateOTP, deleteOTP } from './otp';
-import { sendOTPEmail } from './email';
-
-interface GooglePublicKey {
-  kid: string; // key ID
-  alg: string; // algorithm
-  use: string; // usage
-  n: string;   // modulus
-  e: string;   // exponent
-}
-
-interface GooglePublicKeysResponse {
-  keys: GooglePublicKey[];
-}
+import Redis from "ioredis";
+import nodemailer from 'nodemailer';
+import { google } from "googleapis";
+import { OAuth2Client } from 'google-auth-library';
 
 dotenv.config(); // 1️⃣ Load environment variables
 
 const app = express();
 
 const PORT = process.env.PORT || 5000;
-
-// 2️⃣ Cookie parser: Parses cookies so `req.cookies` is populated
-//app.use(cookieParser());
 
 // 3️⃣ CORS middleware: Add CORS headers
 const corsOptions = {
@@ -44,28 +26,40 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// 4️⃣ Session middleware: Required for CSRF protection and session management
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'secret-key-not-found',
-    resave: false,
-    saveUninitialized: true,
-    cookie: {
-      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-      httpOnly: true, // Prevent JavaScript from accessing cookies
-    },
-  })
-);
+// // 4️⃣ Session middleware: Required for CSRF protection and session management
+// app.use(
+//   session({
+//     secret: process.env.SESSION_SECRET || 'secret-key-not-found',
+//     resave: false,
+//     saveUninitialized: true,
+//     cookie: {
+//       secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+//       httpOnly: true, // Prevent JavaScript from accessing cookies
+//     },
+//   })
+// );
 
 // 5️⃣ Body parsers: Required for parsing JSON or URL-encoded request bodies
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use((req, res, next) => {
-  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
-  res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-  next();
+const redis = new Redis(process.env.REDIS_URL || "redis://127.0.0.1:6379");
+
+const oAuth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_REDIRECT_URI
+);
+
+oAuth2Client.setCredentials({
+  refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
 });
+
+// app.use((req, res, next) => {
+//   res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+//   res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+//   next();
+// });
 
 // 6️⃣ Rate limiter: Apply rate limiting to specific routes (optional but good)
 const apiLimiter = rateLimit({
@@ -77,14 +71,11 @@ const apiLimiter = rateLimit({
 });
 
 // BEFORE PUTTING IN PRODUCTION UNCOMMENT THESE LINES ABOUT RATE LIMITER
-// Apply rate limiting to sensitive routes
-// app.use('/process-payment', apiLimiter);
-// app.use('/validate-token', apiLimiter);
-// app.use('/send-otp', apiLimiter);
-// app.use('/verify-otp', apiLimiter);
-
-// 7️⃣ CSRF protection middleware: Use cookie-based tokens
-const csrfProtection = csrf({ cookie: true }) as unknown as RequestHandler;
+//Apply rate limiting to sensitive routes
+app.use('/process-payment', apiLimiter);
+//app.use('/validate-token', apiLimiter);
+app.use('/send-otp', apiLimiter);
+app.use('/verify-otp', apiLimiter);
 
 // Initialize Square client
 const squareClient = new Client({
@@ -92,123 +83,109 @@ const squareClient = new Client({
   environment: Environment.Sandbox, // Use Environment.Production for live
 });
 
-const validateIdToken = async (idToken: string) => {
-  try {
-    const publicKeys = await getGooglePublicKeys();
+async function validateToken(req: any, res: any, next: any) {
+  const authHeader = req.headers.authorization;
 
-    // Decode the token header to get the "kid"
-    const decodedHeader = jwt.decode(idToken, { complete: true }) as { header: { kid: string } } | null;
-
-    if (!decodedHeader || !decodedHeader.header.kid) {
-      throw new Error("Invalid token header");
-    }
-
-    const key = publicKeys.find((k) => k.kid === decodedHeader.header.kid);
-    if (!key) {
-      throw new Error("Invalid token key");
-    }
-
-    // Add the missing 'kty' field and ensure the type matches 'RSA'
-    const enhancedKey: { kty: "RSA"; kid: string; alg: string; use: string; n: string; e: string } = {
-      ...key,
-      kty: "RSA",
-    };
-
-    // Convert the key from JWK to PEM format
-    const pem = jwkToPem(enhancedKey);
-
-    // Verify the token using the PEM public key
-    const verifiedPayload = jwt.verify(idToken, pem, { algorithms: ["RS256"] }) as {
-      aud: string;
-      exp: number;
-      iss: string;
-      sub: string;
-      email: string;
-      email_verified?: boolean;
-    };
-
-    // Validate audience
-    if (verifiedPayload.aud !== process.env.GOOGLE_CLIENT_ID) {
-      throw new Error("Invalid audience in token");
-    }
-
-    // Validate expiration
-    const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
-    if (verifiedPayload.exp < currentTime) {
-      throw new Error("Token has expired");
-    }
-
-    // Validate issuer
-    if (verifiedPayload.iss !== "accounts.google.com" && verifiedPayload.iss !== "https://accounts.google.com") {
-      throw new Error("Invalid token issuer");
-    }
-
-    // Ensure required claims are present
-    if (!verifiedPayload.sub) {
-      throw new Error("Token is missing subject (sub)");
-    }
-    if (!verifiedPayload.email) {
-      throw new Error("Token is missing email");
-    }
-
-    // Optional: Enforce email verification
-    if (!verifiedPayload.email_verified) {
-      throw new Error("Email is not verified");
-    }
-
-    // Return the verified payload
-    return verifiedPayload;
-  } catch (error: any) {
-    console.error("An error occurred during token validation:", error.message || error);
-    throw new Error("Failed to validate token");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized: No token provided" });
   }
-};
 
-app.post('/validate-token', async(req: Request, res: Response) => {
+  const token = authHeader.split(" ")[1];
+
   try {
-    // Log raw cookie header
-    console.log("Raw Cookie Header:", req.headers.cookie);
+    const ticket = await oAuth2Client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
 
-    // Extract the CSRF token manually from the raw cookie header
-    const rawCookieHeader = req.headers.cookie || "";
-    const csrfTokenFromRawCookie = rawCookieHeader
-      .split("; ")
-      .find((cookie) => cookie.startsWith("next-auth.csrf-token="))
-      ?.split("=")[1]; // Get the value after the `=` sign
-
-    if (!csrfTokenFromRawCookie) {
-      return res.status(403).json({ error: "Missing CSRF token in raw cookie" });
-    }
-
-    // Split on `%7C` since we're handling the URL-encoded cookie
-    const [csrfToken, csrfSignature] = csrfTokenFromRawCookie.split("%7C");
-
-    console.log("CSRF Token from Raw Cookie:", csrfToken);
-    console.log("CSRF Signature from Raw Cookie:", csrfSignature);
-
-    // Validate the CSRF token against the one sent in the header
-    const csrfTokenFromHeader = req.headers["csrf-token"];
-    if (!csrfTokenFromHeader || csrfTokenFromHeader !== csrfToken) {
-      return res.status(403).json({ error: "Invalid CSRF token" });
-    }
-
-    // CSRF validation passed, continue with your logic (e.g., validate user token)
-    const { token } = req.body;
-    if (!token) {
-      console.log('missing token in request body');
-      return res.status(400).json({ error: "Missing token in request body" });
-    }
-
-    // Validate the ID token
-    const verifiedPayload = await validateIdToken(token);
-
-    console.log("Token to validate:", token);
-
-    // Respond with success
-    res.json({ message: "CSRF token validated successfully", isValid: true });
+    const payload = ticket.getPayload();
+    req.user = payload; // Attach user info to the request object for downstream use
+    next();
   } catch (error) {
-    console.error("error 500 Error during CSRF validation:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Token validation failed:", error);
+    return res.status(401).json({ error: "Unauthorized: Invalid or expired token" });
+  }
+}
+
+// Function to create a Nodemailer transporter with OAuth2
+async function createTransporter() {
+  const accessToken = await oAuth2Client.getAccessToken();
+
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      type: "OAuth2",
+      user: process.env.EMAIL_USER,
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+      accessToken: accessToken.token || "",
+    },
+  });
+}
+
+// Endpoint to send OTP
+app.post("/send-otp", validateToken, async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  // Generate a random 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Store OTP in Redis with a TTL (e.g., 10 minutes)
+  try {
+    await redis.set(`otp:${email}`, otp, "EX", 600); // Key: `otp:<email>`, Expires in 10 minutes
+  } catch (error) {
+    console.error("Error storing OTP in Redis:", error);
+    return res.status(500).json({ message: "Failed to store OTP" });
+  }
+
+  try {
+    const transporter = await createTransporter();
+    console.log('before mail options');
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Your One-Time Password (OTP)",
+      text: `Your OTP is: ${otp}. It is valid for 10 minutes.`,
+    };
+    console.log('before sendMail');
+    await transporter.sendMail(mailOptions);
+    console.log(`OTP sent to ${email}`);
+    res.status(200).json({ message: "OTP sent successfully" });
+  } catch (error) {
+    console.error("Error sending OTP:", error);
+    res.status(500).json({ message: "Failed to send OTP: ", error });
+  }
+});
+
+// Endpoint to verify OTP
+app.post("/verify-otp", validateToken, async (req: Request, res: Response) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return res.status(400).json({ message: "Email and OTP are required" });
+  }
+
+  try {
+    // Retrieve OTP from Redis
+    const storedOtp = await redis.get(`otp:${email}`);
+
+    if (storedOtp === otp) {
+      // OTP is valid; delete it from Redis to prevent reuse
+      await redis.del(`otp:${email}`);
+      console.log(`OTP verified for ${email}`);
+      res.status(200).json({ message: "OTP verified successfully" });
+    } else {
+      console.error(`Invalid OTP for ${email}`);
+      res.status(400).json({ message: "Invalid OTP" });
+    }
+  } catch (error) {
+    console.error("Error verifying OTP:", error);
+    res.status(500).json({ message: "Failed to verify OTP" });
   }
 });
 
@@ -220,7 +197,6 @@ const paymentSchema = z.object({
   amount: z.number().positive("Amount must be greater than 0"), // Positive number validation
 });
 
-// Payment processing route
 // Middleware to validate the payment request body
 const validatePaymentRequest = (req: Request, res: Response, next: Function) => {
   const { googleProviderId, email, receiptEmail, nonce, amount } = req.body;
@@ -241,7 +217,7 @@ const validatePaymentRequest = (req: Request, res: Response, next: Function) => 
   next();
 };
 
-app.post('/process-payment', csrfProtection, validatePaymentRequest, async (req: Request, res: Response) => {
+app.post('/process-payment', validateToken, validatePaymentRequest, async (req: Request, res: Response) => {
   try {
     const { googleProviderId, email, receiptEmail, nonce, amount } = req.validatedData;
 
@@ -302,54 +278,7 @@ app.post('/process-payment', csrfProtection, validatePaymentRequest, async (req:
   }
 });
 
-app.post('/send-otp', csrfProtection, async (req: Request, res: Response) => {
-  if (req.method === 'POST') {
-    const { email, csrfToken } = req.body;
-
-    const otp = generateOTP(); // Generate a 6-digit OTP
-    await storeOTP(email, otp); // Store it in Redis
-    await sendOTPEmail(email, otp); // Send the OTP via email
-
-    res.status(200).json({ message: 'OTP sent successfully' });
-  } else {
-    res.status(405).json({ message: 'Method not allowed' });
-  }
-});
-
-const secret = process.env.NEXTAUTH_SECRET; // Use the same secret from your NextAuth configuration
-
-export function verifyToken(token: string) {
-  try {
-    // Verify and decode the JWT
-    const decodedToken = jwt.verify(token, secret as any) as any;
-    return decodedToken; // Contains the user's data (e.g., email, otpVerified, etc.)
-  } catch (err) {
-    console.error("Invalid or expired token:", err);
-    return null; // Token is invalid
-  }
-}
-app.post('/verify-otp', csrfProtection, async (req: Request, res: Response) => {
-  const authHeader = req.headers.authorization || ""; // Example: "Bearer <token>"
-  const token = authHeader.split(" ")[1]; // Extract the token from the "Authorization" header
-
-  if (!token) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  const decodedToken = verifyToken(token);
-
-  if (!decodedToken) {
-    return res.status(403).json({ message: "Invalid or expired token" });
-  }
-
-  // Use the decoded data (e.g., check if OTP is verified)
-  if (!decodedToken.otpVerified) {
-    return res.status(403).json({ message: "OTP verification required" });
-  }
-
-  // Continue with your logic (e.g., return user data or allow access)
-  res.status(200).json({ message: "Access granted" });
-});
+//const secret = process.env.NEXTAUTH_SECRET; // Use the same secret from your NextAuth configuration
 
 // Handle CSRF errors explicitly
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -366,7 +295,7 @@ app.use((err: any, req: any, res: any, next: any) => {
   res.status(500).send('Something went wrong');
 });
 
-app.post("/verify-recaptcha", async (req, res) => {
+app.post("/verify-recaptcha", validateToken, async (req, res) => {
   const { token } = req.body;
 
   // Check if the token exists
