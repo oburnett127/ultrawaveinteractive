@@ -1,5 +1,38 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import axios from 'axios';
+import qs from 'qs';
+
+async function refreshAccessToken(token: any) {
+  try {
+    const response = await axios.post(
+      "https://oauth2.googleapis.com/token",
+      qs.stringify({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        client_secret: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET,
+        refresh_token: token.refreshToken,
+        grant_type: "refresh_token",
+      }),
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    const refreshedTokens = response.data;
+
+    return {
+      ...token,
+      accessToken: refreshedTokens.access_token,
+      accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000,
+      refreshToken: refreshedTokens.refresh_token || token.refreshToken,
+    };
+  } catch (error) {
+    console.error("Error refreshing access token:", error);
+    return { ...token, error: "RefreshAccessTokenError" };
+  }
+}
 
 // Define the authOptions with explicit typing
 export const authOptions: NextAuthOptions = {
@@ -7,21 +40,52 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET || "",
+      authorization: {
+        params: {
+          scope: "openid email profile https://www.googleapis.com/auth/userinfo.email",
+        },
+      },
     }),
   ],
   callbacks: {
-    async session({ session, token }: { session: any; token: any }) {
-      // Add custom properties to the session object
-      session.user.id = token.sub; // Use sub from the JWT token
-      return session;
-    },
     async jwt({ token, account, user }: { token: any; account?: any; user?: any }) {
       if (account) {
-        token.accessToken = account.access_token; // Save the access token
-        token.id = user?.id; // Save user ID if available
+        token.accessToken = account.access_token;
+        token.refreshToken = account.refresh_token;
+        token.accessTokenExpires = Date.now() + account.expires_in * 1000; // Set expiration time
+        token.id = user?.id;
+
+        console.log("Axios Request:", {
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+          client_secret: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET,
+          refresh_token: account.refresh_token,
+          grant_type: "refresh_token",
+        });        
+
+        return token;
       }
-      return token;
+
+      // Return previous token if not expired
+      if (Date.now() < token.accessTokenExpires) {
+        return token;
+      }
+
+      // Refresh token if expired
+      return refreshAccessToken(token);
     },
+    async session({ session, token }: { session: any; token: any; account?: any;}) {
+      // Add custom properties to the session object
+      session.user.id = token.sub; // Use sub from the JWT token
+      session.user.accessToken = token.accessToken;
+      session.error = token.error;
+      return session;
+    },
+    async redirect({ url, baseUrl }) {
+      if (url.includes("/verify-otp")) {
+        return url; // Redirect to callbackUrl if provided
+      }
+      return `${baseUrl}/verify-otp`; // Default fallback
+    }
   },
   session: {
     strategy: "jwt",

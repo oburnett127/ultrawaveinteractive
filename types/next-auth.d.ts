@@ -1,11 +1,12 @@
 import NextAuth from "next-auth";
 
 declare module "next-auth" {
-  interface Session {
+  export interface Session {
     user: {
       id?: string; // Add the 'id' field here
       email_verified?: boolean; // Add 'email_verified'
       otpVerified?: boolean; // Add 'otpVerified'
+      accessToken?: string;
     } & DefaultSession["user"]; // Inherit default properties like name, email, image
   }
 
@@ -13,5 +14,6 @@ declare module "next-auth" {
     id?: string; // Add the 'id' field here for JWT
     email_verified?: boolean; // Add 'email_verified'
     otpVerified?: boolean; // Add 'otpVerified'
+    accessToken?: string;
   }
 }

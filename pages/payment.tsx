@@ -4,7 +4,6 @@ import { PaymentForm, CreditCard } from 'react-square-web-payments-sdk';
 import { useRouter} from "next/router";
 import { getSession } from "next-auth/react";
 import DOMPurify from 'dompurify';
-import { useCsrf } from '../components/CsrfContext';
 
 // Define the type for payment details
 interface PaymentDetails {
@@ -29,14 +28,12 @@ const Payment = ({ session }: { session: any }) => {
     console.error("Session or session.user is missing");
     return <p>You must be logged in to make a payment</p>;
   }
-  const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
   const [amount, setAmount] = useState('');
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
   const [customerEmail, setCustomerEmail] = useState('');
   const recaptchaRef = useRef<ReCAPTCHA>(null);
   const [message, setMessage] = useState("");
-  const { csrfToken, setCsrfToken } = useCsrf();
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     
   //MAKE SURE THE USER HAS BEEN AUTHENTICATED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -49,23 +46,15 @@ const Payment = ({ session }: { session: any }) => {
         return;
       }
   
-      // Ensure the CSRF token is available
-      if (!csrfToken) {
-        alert('CSRF token is missing. Please reload the page.');
-        return;
-      }
-  
       const sanitizedAmountInCents = parseInt(DOMPurify.sanitize(amount)) * 100;
       const sanitizedReceiptEmail = DOMPurify.sanitize(customerEmail);
       const sanitizedEmail = DOMPurify.sanitize(session.user.email);
-
 
       // Make the payment request
       const response = await fetch(`${backendUrl}/process-payment`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'CSRF-Token': csrfToken, // Use CSRF token from state
         },
         credentials: 'include', // Include cookies
         body: JSON.stringify({
@@ -160,10 +149,6 @@ const Payment = ({ session }: { session: any }) => {
                 alert("Please enter an amount to pay.");
                 return;
               }
-              if (!csrfToken) {
-                alert("CSRF token is missing. Please reload the page and try again.");
-                return;
-              }
               if (!customerEmail) {
                 alert("Please enter your email for the receipt.");
                 return;
@@ -188,7 +173,7 @@ const Payment = ({ session }: { session: any }) => {
             {/* Payment Button */}
             <button
               type="submit"
-              disabled={!amount || !csrfToken} // Disable button if no amount or CSRF token
+              disabled={!amount} // Disable button if no amount
             >
               Pay ${amount || 0}
             </button>
@@ -226,7 +211,7 @@ export async function getServerSideProps(context: any) {
 
   // Pass the session as a prop to the page
   return {
-    props: {},
+    props: { user: session.user },
   };
 }
 

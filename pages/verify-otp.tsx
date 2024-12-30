@@ -1,150 +1,81 @@
 import { useEffect, useState } from "react";
-import { getSession, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
-import axios from "axios";
-import { useCsrf } from "../components/CsrfContext";
+import session from '../types/next-auth';
 
 export default function VerifyOTP() {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
-  const [isValidated, setIsValidated] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const router = useRouter();
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-  const { csrfToken, setCsrfToken } = useCsrf();
   const { data: session, status } = useSession();
 
+  // Ensure user is authenticated before accessing this page
   useEffect(() => {
-    if (!router.query.token) {
-      console.log('router.query.token is not set');
-      return;
+    if (status === "unauthenticated") {
+      router.push("/"); // Redirect to home if not authenticated
     }
+  }, [status]);
 
-    const authenticate = async () => {
-      try {
-        const isValid = await validateToken(
-          router.query.token as string,
-          backendUrl || "",
-          csrfToken || "no-csrf-token-available"
-        );
+  // Automatically send OTP when the user is authenticated
+  // Automatically send OTP when the user is authenticated
+useEffect(() => {
+  console.log("Status:", status, "Session:", session); // Debugging log
 
-        if (isValid) {
-          console.log('the token is valid');
-          setIsValidated(true);
-        } else {
-          alert("Authentication failed. Please log in again.");
-          router.push("/");
-        }
-      } catch (error) {
-        console.error("Error during authentication:", error);
-        alert("An error occurred. Please try again.");
-        router.push("/");
-      }
-    };
-
-    console.log('calling authenticate');
-    authenticate();
-  }, [router.query.token, backendUrl]);
-
-  useEffect(() => {
-    const refreshSession = async () => {
-      const updatedSession = useSession();
-      console.log("Refreshed Session: ", updatedSession);
-    };
-  
-    refreshSession();
-  }, []);
-
-  useEffect(() => {
-    console.log('before the if');
-    if (isValidated && session?.user?.email && !otpSent) {
-      console.log('before sendOTP');
-      sendOTP(session.user.email);
-      setOtpSent(true); // Prevent further calls
-    }
-  }, [isValidated, session]);
-
-  async function validateToken(token: any, backendUrl: any, csrfCookieValue: any) {
-    try {
-      const csrfParts = csrfCookieValue.split("%7C");
-      setCsrfToken(csrfParts[0]);
-
-      const response = await axios.post(
-        `${backendUrl}/validate-token`,
-        { token },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "CSRF-Token": csrfParts[0],
-          },
-          withCredentials: true,
-        }
-      );
-
-      if (response.status === 429) {
-        alert("Too many requests! Please try again later.");
-        return false;
-      }
-
-      console.log('end of validateToken');
-      return response.data.isValid;
-    } catch (error: any) {
-      console.error("Error validating token:", error.response?.data || error.message);
-      return false;
-    }
+  if (session && session.user) {
+    console.log("Access Token:", session.user.accessToken);
   }
 
-  useEffect(() => {
-    console.log("Session Status: ", status);
-    console.log("Session Data: ", session);
-  }, [status, session]);
-
-  async function sendOTP(email: any) {
-    try {
-      const res = await fetch(`${backendUrl}/send-otp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "CSRF-Token": csrfToken as any,
-        },
-        credentials: "include",
-        body: JSON.stringify({ email }),
-      });
-
-      if (!res.ok) {
-        console.log("failed to send otp.");
-        throw new Error("Failed to send OTP.");
-      }
-      console.log("OTP sent successfully.");
-    } catch (error) {
-      console.error("Error sending OTP:", error);
-      setError("Failed to send OTP. Please try again.");
-    }
+  if (status === "authenticated" && session?.user?.email && !otpSent) {
+    sendOTP(session.user.email);
+    setOtpSent(true); // Prevent duplicate OTP sending
   }
+}, [status, session]);
 
-  async function handleVerifyOTP() {
-    try {
-      const res = await fetch(`${backendUrl}/verify-otp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "CSRF-Token": csrfToken as any,
-        },
-        credentials: "include",
-        body: JSON.stringify({ otp }),
-      });
+async function sendOTP(email: string) {
+  try {
+    const res = await fetch(`${backendUrl}/send-otp`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include", // Replaces `withCredentials: true`
+      body: JSON.stringify({ email }),
+    });
 
-      if (res.ok) {
-        router.push("/payment");
-      } else {
-        const data = await res.json();
-        throw new Error(data.message || "Invalid OTP.");
-      }
-    } catch (err: any) {
-      console.error("Error verifying OTP:", err.message);
-      setError(err.message || "Failed to verify OTP. Please try again.");
+    if (!res.ok) {
+      throw new Error("Failed to send OTP.");
     }
+
+    console.log("OTP sent successfully.");
+  } catch (error) {
+    console.error("Error sending OTP:", error);
+    setError("Failed to send OTP. Please try again.");
   }
+}
+
+async function handleVerifyOTP() {
+  try {
+    const res = await fetch(`${backendUrl}/verify-otp`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include", // Replaces `withCredentials: true`
+      body: JSON.stringify({ otp }),
+    });
+
+    if (res.ok) {
+      router.push("/payment"); // Redirect to payment page on success
+    } else {
+      throw new Error("Invalid OTP.");
+    }
+  } catch (err: any) {
+    console.error("Error verifying OTP:", err.message);
+    setError(err.message || "Failed to verify OTP. Please try again.");
+  }
+}
 
   return (
     <div>

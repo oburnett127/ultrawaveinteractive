@@ -19,11 +19,10 @@ import Head from 'next/head';
 
 import { useRouter } from "next/router";
 import { signIn, signOut, useSession } from 'next-auth/react';
-//import { useCsrf } from '../components/CsrfContext';
 
 function Home() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
   const items = ["Marketing", "Landscaping", "Catering", "Pet Care", "Dental Care", "Gyms", "Fitness Training", "Plumbing", "Cleaning", "HVAC", "Electrical"];
 
@@ -45,55 +44,6 @@ function Home() {
             "url": "https://ultrawaveinteractive.com",
             "openingHours": "Su-Sa 08:00-20:00"
           }`;
-
-  // useEffect(() => {
-  //   const fetchCsrfToken = async () => {
-  //     const res = await fetch('/api/auth/csrf', {
-  //         credentials: "include", // Ensures cookies are sent with the request
-  //       });
-
-  //       if (!res.ok) console.log("Failed to fetch CSRF token");
-  //       const data = await res.json();
-
-  //       console.log("Fetched CSRF token:", data.csrfToken);
-  //       setCsrfToken(data.csrfToken);
-  //   };
-  
-  //   fetchCsrfToken();
-  // }, []);
-
-  // useEffect(() => {
-  //   if(status === "unauthenticated") {
-  //     // Dynamically load the Google Identity Services (GIS) script
-  //     const script = document.createElement("script");
-  //     script.src = "https://accounts.google.com/gsi/client";
-  //     script.async = true;
-  //     script.defer = true;
-  //     document.body.appendChild(script);
-
-  //     script.onload = () => {
-  //       window.google.accounts.id.initialize({
-  //         client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "missing-google-client-id",
-  //         callback: handleCredentialResponse,
-  //       });
-
-  //       window.google.accounts.id.renderButton(
-  //         document.getElementById("google-login-button"),
-  //         { theme: "outline", size: "large" }
-  //       );
-  //     };
-  //   }
-  // }, [status]); //Only run when authentication status changes
-
-  // const handleCredentialResponse = (response: any) => {
-  //   console.log("Google ID Token:", response.credential);
-
-  //   // Redirect to the verify-otp page with the token
-  //   router.push({
-  //     pathname: "/verify-otp",
-  //     query: { token: response.credential },
-  //   });
-  // };
 
   return (
     <>
@@ -121,7 +71,18 @@ function Home() {
           <p>You don't pay me until you are satisfied with the quality of my work!</p>
           <p>Fully customized websites, tailored to the specific and unique needs of your business!</p>
 
-          {/*login UI*/}
+          {!session ? (
+            <>
+              <button onClick={() => signIn("google", {callbackUrl: "/verify-otp"})}>Sign in with Google</button>
+            </>
+          ) : (
+            <>
+              <h1>Welcome, {session.user.name}!</h1>
+              <p>Your email: {session.user.email}</p>
+              <img src={session.user.image} alt="Profile" style={{ borderRadius: "50%" }} />
+              <button onClick={() => signOut()}>Sign out</button>
+            </>
+          )}
 
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="20vh">
             <Stack direction="row" spacing={6}>
