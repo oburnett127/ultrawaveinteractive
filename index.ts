@@ -11,7 +11,6 @@ import { z } from 'zod';
 import Redis from "ioredis";
 import nodemailer from 'nodemailer';
 import { google } from "googleapis";
-import { OAuth2Client } from 'google-auth-library';
 
 dotenv.config(); // 1️⃣ Load environment variables
 
@@ -83,7 +82,9 @@ const squareClient = new Client({
   environment: Environment.Sandbox, // Use Environment.Production for live
 });
 
-async function validateToken(req: any, res: any, next: any) {
+//For validating the jwt ID token for a user, not for validating access tokens, access
+//tokens are not jwt tokens and they do not need to be validated by this app.
+async function validateIdToken(req: any, res: any, next: any) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -91,42 +92,60 @@ async function validateToken(req: any, res: any, next: any) {
   }
 
   const token = authHeader.split(" ")[1];
+  console.log("ID Token received for validation:", token);
 
   try {
     const ticket = await oAuth2Client.verifyIdToken({
       idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: process.env.GOOGLE_CLIENT_ID, // Replace with your client ID
     });
 
     const payload = ticket.getPayload();
     req.user = payload; // Attach user info to the request object for downstream use
     next();
   } catch (error) {
-    console.error("Token validation failed:", error);
-    return res.status(401).json({ error: "Unauthorized: Invalid or expired token" });
+    console.error("ID Token validation failed:", error);
+    return res.status(401).json({ error: "Unauthorized: Invalid or expired ID token" });
   }
 }
 
 // Function to create a Nodemailer transporter with OAuth2
 async function createTransporter() {
-  const accessToken = await oAuth2Client.getAccessToken();
+  try {
+    console.log("Requesting Access Token with the following credentials:");
+    console.log("Client ID:", process.env.GOOGLE_CLIENT_ID);
+    console.log("Client Secret:", process.env.GOOGLE_CLIENT_SECRET ? "Present" : "Missing");
+    console.log("Refresh Token:", process.env.GOOGLE_REFRESH_TOKEN);
 
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      type: "OAuth2",
-      user: process.env.EMAIL_USER,
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
-      accessToken: accessToken.token || "",
-    },
-  });
+    const accessToken = await oAuth2Client.getAccessToken();
+
+    console.log("Access Token retrieved:", accessToken.token);
+
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        type: "OAuth2",
+        user: process.env.EMAIL_USER,
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+        //accessToken: accessToken.token || "ya29.a0ARW5m75tNSMgJnFRnJDOEiko4htHDaN2joFr8R34YvX1MK9hCZU7Hepb-2DzZ-AsXCBq0rXEeU8SBJvkK-akIdnpDdZPaDgUnK0lZPSotWkCyHNdil7_JW6yTQzrKs8nW5dKoYxH8ta8eN3KL4KDFqFJ4qmN1n4X5CSSUAUaaCgYKAXgSARASFQHGX2MixTYfIkm0CCmlUMu4FsE5Nw0175",
+        accessToken: "ya29.a0ARW5m75tNSMgJnFRnJDOEiko4htHDaN2joFr8R34YvX1MK9hCZU7Hepb-2DzZ-AsXCBq0rXEeU8SBJvkK-akIdnpDdZPaDgUnK0lZPSotWkCyHNdil7_JW6yTQzrKs8nW5dKoYxH8ta8eN3KL4KDFqFJ4qmN1n4X5CSSUAUaaCgYKAXgSARASFQHGX2MixTYfIkm0CCmlUMu4FsE5Nw0175",
+      },
+      debug: true, // Enable debug logs
+      logger: true, // Log to console
+    });
+  } catch (error: any) {
+    console.error("Error in createTransporter:", error.response?.data || error.message);
+    throw error;
+  }
 }
 
 // Endpoint to send OTP
-app.post("/send-otp", validateToken, async (req: Request, res: Response) => {
+app.post("/send-otp", async (req: Request, res: Response) => {
   const { email } = req.body;
+
+  console.log('send-otp endpoint is running');
 
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
@@ -137,7 +156,9 @@ app.post("/send-otp", validateToken, async (req: Request, res: Response) => {
 
   // Store OTP in Redis with a TTL (e.g., 10 minutes)
   try {
+    console.log('before setting otp in redis');
     await redis.set(`otp:${email}`, otp, "EX", 600); // Key: `otp:<email>`, Expires in 10 minutes
+    console.log('after setting otp in redis');
   } catch (error) {
     console.error("Error storing OTP in Redis:", error);
     return res.status(500).json({ message: "Failed to store OTP" });
@@ -145,6 +166,15 @@ app.post("/send-otp", validateToken, async (req: Request, res: Response) => {
 
   try {
     const transporter = await createTransporter();
+
+    transporter.verify((error, success) => {
+      if (error) {
+        console.error("SMTP verification failed:", error);
+      } else {
+        console.log("SMTP verification successful:", success);
+      }
+    });
+    
     console.log('before mail options');
     const mailOptions = {
       from: process.env.EMAIL_USER,
@@ -163,8 +193,10 @@ app.post("/send-otp", validateToken, async (req: Request, res: Response) => {
 });
 
 // Endpoint to verify OTP
-app.post("/verify-otp", validateToken, async (req: Request, res: Response) => {
+app.post("/verify-otp", validateIdToken, async (req: Request, res: Response) => {
   const { email, otp } = req.body;
+
+  console.log('verify-otp endpoint is running');
 
   if (!email || !otp) {
     return res.status(400).json({ message: "Email and OTP are required" });
@@ -172,8 +204,9 @@ app.post("/verify-otp", validateToken, async (req: Request, res: Response) => {
 
   try {
     // Retrieve OTP from Redis
+    console.log('before await redis.get()');
     const storedOtp = await redis.get(`otp:${email}`);
-
+    console.log('after await redis.get()');
     if (storedOtp === otp) {
       // OTP is valid; delete it from Redis to prevent reuse
       await redis.del(`otp:${email}`);
@@ -217,7 +250,7 @@ const validatePaymentRequest = (req: Request, res: Response, next: Function) => 
   next();
 };
 
-app.post('/process-payment', validateToken, validatePaymentRequest, async (req: Request, res: Response) => {
+app.post('/process-payment', validateIdToken, validatePaymentRequest, async (req: Request, res: Response) => {
   try {
     const { googleProviderId, email, receiptEmail, nonce, amount } = req.validatedData;
 
@@ -295,7 +328,7 @@ app.use((err: any, req: any, res: any, next: any) => {
   res.status(500).send('Something went wrong');
 });
 
-app.post("/verify-recaptcha", validateToken, async (req, res) => {
+app.post("/verify-recaptcha", validateIdToken, async (req, res) => {
   const { token } = req.body;
 
   // Check if the token exists
