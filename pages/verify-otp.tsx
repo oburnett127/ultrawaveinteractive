@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
-import session from '../types/next-auth';
 
 export default function VerifyOTP() {
   const [otp, setOtp] = useState("");
@@ -9,7 +8,7 @@ export default function VerifyOTP() {
   const [otpSent, setOtpSent] = useState(false);
   const router = useRouter();
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-  const { data: session, status } = useSession();
+  const { data: session, update, status } = useSession();
 
   // Ensure user is authenticated before accessing this page
   useEffect(() => {
@@ -18,7 +17,6 @@ export default function VerifyOTP() {
     }
   }, [status]);
 
-  // Automatically send OTP when the user is authenticated
   // Automatically send OTP when the user is authenticated
 useEffect(() => {
   console.log("Status:", status, "Session:", session); // Debugging log
@@ -39,6 +37,7 @@ async function sendOTP(email: string) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${session?.user.idToken}`,
       },
       credentials: "include", // Replaces `withCredentials: true`
       body: JSON.stringify({ email }),
@@ -57,16 +56,19 @@ async function sendOTP(email: string) {
 
 async function handleVerifyOTP() {
   try {
+    const email = session?.user.email;
     const res = await fetch(`${backendUrl}/verify-otp`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${session?.user.idToken}`,
       },
       credentials: "include", // Replaces `withCredentials: true`
-      body: JSON.stringify({ otp }),
+      body: JSON.stringify({ email, otp }),
     });
 
     if (res.ok) {
+      await update({ otpVerified: true });
       router.push("/payment"); // Redirect to payment page on success
     } else {
       throw new Error("Invalid OTP.");

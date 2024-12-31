@@ -1,38 +1,6 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import axios from 'axios';
-import qs from 'qs';
-
-async function refreshAccessToken(token: any) {
-  try {
-    const response = await axios.post(
-      "https://oauth2.googleapis.com/token",
-      qs.stringify({
-        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-        client_secret: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET,
-        refresh_token: token.refreshToken,
-        grant_type: "refresh_token",
-      }),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
-
-    const refreshedTokens = response.data;
-
-    return {
-      ...token,
-      accessToken: refreshedTokens.access_token,
-      accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000,
-      refreshToken: refreshedTokens.refresh_token || token.refreshToken,
-    };
-  } catch (error) {
-    console.error("Error refreshing access token:", error);
-    return { ...token, error: "RefreshAccessTokenError" };
-  }
-}
+import { refreshIdToken } from '../../../utility/auth';
 
 // Define the authOptions with explicit typing
 export const authOptions: NextAuthOptions = {
@@ -43,6 +11,8 @@ export const authOptions: NextAuthOptions = {
       authorization: {
         params: {
           scope: "openid email profile https://www.googleapis.com/auth/userinfo.email",
+          access_type: "offline", // Request a refresh token
+          prompt: "consent",
         },
       },
     }),
@@ -50,42 +20,42 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, account, user }: { token: any; account?: any; user?: any }) {
       if (account) {
-        token.accessToken = account.access_token;
+        token.idToken = account.id_token; // Save the ID token
         token.refreshToken = account.refresh_token;
-        token.accessTokenExpires = Date.now() + account.expires_in * 1000; // Set expiration time
-        token.id = user?.id;
-
-        console.log("Axios Request:", {
-          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-          client_secret: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET,
-          refresh_token: account.refresh_token,
-          grant_type: "refresh_token",
-        });        
-
+        token.idTokenExpires = Date.now() + account.expires_in * 1000; // Save the expiration time     
+        if (user?.otpVerified) {
+          token.otpVerified = true;
+        }
+        token.otpVerified = token.otpVerified ?? false;
+      }
+      // If ID token is still valid, return it
+      if (Date.now() < token.idTokenExpires) {
+        console.log("ID Token still valid:", token.idToken);
         return token;
       }
 
-      // Return previous token if not expired
-      if (Date.now() < token.accessTokenExpires) {
-        return token;
-      }
+      // Refresh the ID token if expired
+      console.log("Refreshing ID token...");
+      const refreshedToken = await refreshIdToken(token.refreshToken);
+      console.log("New ID Token:", refreshedToken.idToken);
 
-      // Refresh token if expired
-      return refreshAccessToken(token);
+      return {
+        ...token,
+        idToken: refreshedToken.idToken,
+        idTokenExpires: refreshedToken.idTokenExpires,
+        refreshToken: refreshedToken.refreshToken,
+      };
     },
     async session({ session, token }: { session: any; token: any; account?: any;}) {
-      // Add custom properties to the session object
-      session.user.id = token.sub; // Use sub from the JWT token
-      session.user.accessToken = token.accessToken;
-      session.error = token.error;
+      if(token) {
+        session.user.id = token.sub; // Use sub from the JWT token
+        session.user.idToken = token.idToken; // Pass the ID token to the session
+        session.user.refreshToken = token.refreshToken;
+        session.otpVerified = token.otpVerified ?? false;
+        session.error = token.error;
+      }
       return session;
     },
-    async redirect({ url, baseUrl }) {
-      if (url.includes("/verify-otp")) {
-        return url; // Redirect to callbackUrl if provided
-      }
-      return `${baseUrl}/verify-otp`; // Default fallback
-    }
   },
   session: {
     strategy: "jwt",

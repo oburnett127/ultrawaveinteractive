@@ -1,8 +1,7 @@
 import React, { useState, useRef } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { PaymentForm, CreditCard } from 'react-square-web-payments-sdk';
-import { useRouter} from "next/router";
-import { getSession } from "next-auth/react";
+import { getSession, useSession } from "next-auth/react";
 import DOMPurify from 'dompurify';
 
 // Define the type for payment details
@@ -23,7 +22,9 @@ interface ValidateTokenResponse {
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
-const Payment = ({ session }: { session: any }) => {
+const Payment = () => {
+  const { data: session, update, status } = useSession();
+
   if (!session || !session.user) {
     console.error("Session or session.user is missing");
     return <p>You must be logged in to make a payment</p>;
@@ -34,6 +35,7 @@ const Payment = ({ session }: { session: any }) => {
   const [customerEmail, setCustomerEmail] = useState('');
   const recaptchaRef = useRef<ReCAPTCHA>(null);
   const [message, setMessage] = useState("");
+  
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     
   //MAKE SURE THE USER HAS BEEN AUTHENTICATED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -55,6 +57,7 @@ const Payment = ({ session }: { session: any }) => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
+          "Authorization": `Bearer ${session?.user.idToken}`,
         },
         credentials: 'include', // Include cookies
         body: JSON.stringify({
@@ -191,6 +194,7 @@ export async function getServerSideProps(context: any) {
 
   // If there is no session, redirect to the sign-in page
   if (!session) {
+    console.log('payment page: session is null')
     return {
       redirect: {
         destination: "/", // Redirect to login page
@@ -201,6 +205,7 @@ export async function getServerSideProps(context: any) {
 
   if (!session.user.otpVerified) {
     // Redirect to /verify-otp if OTP is not verified
+    console.log('payment page: ', session.user.otpVerified)
     return {
       redirect: {
         destination: "/verify-otp",
@@ -211,7 +216,7 @@ export async function getServerSideProps(context: any) {
 
   // Pass the session as a prop to the page
   return {
-    props: { user: session.user },
+    props: { session },
   };
 }
 
