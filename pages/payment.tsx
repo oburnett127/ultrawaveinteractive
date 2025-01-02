@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { PaymentForm, CreditCard } from 'react-square-web-payments-sdk';
-import { getSession, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import DOMPurify from 'dompurify';
+import { getToken } from 'next-auth/jwt';
 
 // Define the type for payment details
 interface PaymentDetails {
@@ -50,7 +51,7 @@ const Payment = () => {
   
       const sanitizedAmountInCents = parseInt(DOMPurify.sanitize(amount)) * 100;
       const sanitizedReceiptEmail = DOMPurify.sanitize(customerEmail);
-      const sanitizedEmail = DOMPurify.sanitize(session.user.email);
+      const sanitizedEmail = DOMPurify.sanitize(session.user.email || "");
 
       // Make the payment request
       const response = await fetch(`${backendUrl}/process-payment`, {
@@ -187,37 +188,18 @@ const Payment = () => {
 };
 
 export async function getServerSideProps(context: any) {
-  // Fetch the session on the server side
-  const session = await getSession(context);
+  const token = await getToken({ req: context.req, secret: process.env.NEXTAUTH_SECRET });
 
-  //console.log("Session fetched in getServerSideProps:", session);
-
-  // If there is no session, redirect to the sign-in page
-  if (!session) {
-    console.log('payment page: session is null')
+  if (!token?.otpVerified) {
     return {
       redirect: {
-        destination: "/", // Redirect to login page
+        destination: "/",
         permanent: false,
       },
     };
   }
 
-  if (!session.user.otpVerified) {
-    // Redirect to /verify-otp if OTP is not verified
-    console.log('payment page: ', session.user.otpVerified)
-    return {
-      redirect: {
-        destination: "/verify-otp",
-        permanent: false,
-      },
-    };
-  }
-
-  // Pass the session as a prop to the page
-  return {
-    props: { session },
-  };
+  return { props: {} }; // Session now reflects updated otpVerified state
 }
 
 export default Payment;

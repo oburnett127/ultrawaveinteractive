@@ -79,7 +79,6 @@ function Home() {
             <>
               <h1>Welcome, {session.user.name}!</h1>
               <p>Your email: {session.user.email}</p>
-              <img src={session.user.image} alt="Profile" style={{ borderRadius: "50%" }} />
               <button onClick={() => signOut()}>Sign out</button>
             </>
           )}

@@ -22,12 +22,19 @@ export const authOptions: NextAuthOptions = {
       if (account) {
         token.idToken = account.id_token; // Save the ID token
         token.refreshToken = account.refresh_token;
-        token.idTokenExpires = Date.now() + account.expires_in * 1000; // Save the expiration time     
-        if (user?.otpVerified) {
-          token.otpVerified = true;
-        }
-        token.otpVerified = token.otpVerified ?? false;
+        token.idTokenExpires = Date.now() + account.expires_in * 1000; // Save the expiration time
       }
+
+      console.log('inside nextauth, user: ', user);
+      console.log('inside nextauth, user?.otpVerified: ', user?.otpVerified);
+
+      if (user?.otpVerified !== undefined) {
+        token.otpVerified = user.otpVerified;
+      }
+    
+      // Set default value if not defined
+      token.otpVerified = token.otpVerified ?? false;
+
       // If ID token is still valid, return it
       if (Date.now() < token.idTokenExpires) {
         console.log("ID Token still valid:", token.idToken);
@@ -51,7 +58,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub; // Use sub from the JWT token
         session.user.idToken = token.idToken; // Pass the ID token to the session
         session.user.refreshToken = token.refreshToken;
-        session.otpVerified = token.otpVerified ?? false;
+        session.user.otpVerified = token.otpVerified ?? false;
         session.error = token.error;
       }
       return session;

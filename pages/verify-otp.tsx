@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 
 export default function VerifyOTP() {
@@ -43,6 +43,8 @@ async function sendOTP(email: string) {
       body: JSON.stringify({ email }),
     });
 
+    console.log('from verify-otp after send-otp, session?.idToken: ', session?.user.idToken);
+
     if (!res.ok) {
       throw new Error("Failed to send OTP.");
     }
@@ -56,26 +58,40 @@ async function sendOTP(email: string) {
 
 async function handleVerifyOTP() {
   try {
-    const email = session?.user.email;
     const res = await fetch(`${backendUrl}/verify-otp`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${session?.user.idToken}`,
+        Authorization: `Bearer ${session?.user.idToken}`,
       },
-      credentials: "include", // Replaces `withCredentials: true`
-      body: JSON.stringify({ email, otp }),
+      credentials: "include",
+      body: JSON.stringify({ email: session?.user.email, otp }),
     });
 
+    console.log('from verify-otp, session?.idToken: ', session?.user.idToken);
+
     if (res.ok) {
-      await update({ otpVerified: true });
-      router.push("/payment"); // Redirect to payment page on success
+      // Update token via API route
+      await fetch("/api/auth/update-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+        // Refresh session
+      const sessionRes = await fetch("/api/auth/session", {
+        method: "GET",
+        headers: { "Cache-Control": "no-cache" },
+      });
+
+      const sessionData = await sessionRes.json();
+      console.log("Session data after refresh:", sessionData);
+
+      router.push("/payment");
     } else {
       throw new Error("Invalid OTP.");
     }
   } catch (err: any) {
     console.error("Error verifying OTP:", err.message);
-    setError(err.message || "Failed to verify OTP. Please try again.");
   }
 }
 
