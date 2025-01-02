@@ -142,7 +142,7 @@ async function createTransporter() {
 }
 
 // Endpoint to send OTP
-app.post("/send-otp", async (req: Request, res: Response) => {
+app.post("/send-otp", validateIdToken, async (req: Request, res: Response) => {
   const { email } = req.body;
 
   console.log('send-otp endpoint is running');
