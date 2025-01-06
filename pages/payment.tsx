@@ -24,7 +24,7 @@ interface ValidateTokenResponse {
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
 const Payment = () => {
-  const { data: session, update, status } = useSession();
+  const { data: session } = useSession();
 
   if (!session || !session.user) {
     console.error("Session or session.user is missing");
@@ -34,8 +34,9 @@ const Payment = () => {
   const [amount, setAmount] = useState('');
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
   const [customerEmail, setCustomerEmail] = useState('');
+  const [recaptchaError, setRecaptchaError] = useState<string>("");
   const recaptchaRef = useRef<ReCAPTCHA>(null);
-  const [message, setMessage] = useState("");
+  const [recaptchaToken, setRecaptchaToken] = useState<string>("");
   
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     
@@ -48,19 +49,55 @@ const Payment = () => {
         alert('You must be logged in to make a payment');
         return;
       }
-  
+
+      // Ensure the reCAPTCHA token is available
+      if (!recaptchaToken) {
+        alert("Please complete the reCAPTCHA.");
+        return;
+      }
+
+      console.log("Sending reCAPTCHA token to backend:", recaptchaToken); // Debugging
+
+      // Verify the reCAPTCHA token with the backend
+      const verifyRecaptchaResp = await fetch(`${backendUrl}/verify-recaptcha`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ recaptchaToken }),
+      });
+
+      const result = await verifyRecaptchaResp.json();
+      console.log("reCAPTCHA verification result:", result);
+
+      if (!result.success) {
+        setRecaptchaError(result.message || "reCAPTCHA verification failed.");
+        alert("reCAPTCHA verification failed. Payment has been canceled.");
+        return; // Stop payment process
+      }
+    } catch (err: any) {
+      console.error("Error during reCAPTCHA verification:", err);
+      alert("An error occurred during reCAPTCHA verification. Please try again.");
+      return; // Stop payment process
+    } finally {
+      recaptchaRef.current?.reset(); // Reset reCAPTCHA
+      setRecaptchaToken(""); // Clear token
+    }
+
+    // Continue to payment processing (if reCAPTCHA passed)
+    try {
       const sanitizedAmountInCents = parseInt(DOMPurify.sanitize(amount)) * 100;
       const sanitizedReceiptEmail = DOMPurify.sanitize(customerEmail);
       const sanitizedEmail = DOMPurify.sanitize(session.user.email || "");
 
       // Make the payment request
       const response = await fetch(`${backendUrl}/process-payment`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
           "Authorization": `Bearer ${session?.user.idToken}`,
         },
-        credentials: 'include', // Include cookies
+        credentials: "include",
         body: JSON.stringify({
           googleProviderId: session.user.id,
           email: sanitizedEmail,
@@ -69,24 +106,24 @@ const Payment = () => {
           amount: sanitizedAmountInCents,
         }),
       });
-  
+
       if (response.status === 429) {
-        alert('Too many requests! Please try again later.');
+        alert("Too many requests! Please try again later.");
         return;
       }
-  
+
       if (!response.ok) {
         const errorData = await response.json();
-        alert(errorData.error || 'An error occurred. Please try again.');
+        alert(errorData.error || "An error occurred. Please try again.");
         return;
       }
-  
+
       const data = await response.json();
       setPaymentDetails(data); // Save payment details to state
-      alert('Payment successful!');
+      alert("Payment successful!");
     } catch (error) {
-      console.error('Error during payment:', error);
-      alert('An error occurred. Please try again.');
+      console.error("Error during payment:", error);
+      alert("An error occurred. Please try again.");
     }
   };
   
@@ -122,8 +159,19 @@ const Payment = () => {
               step="0.01"
               required
             />
-            <ReCAPTCHA ref={recaptchaRef} sitekey={RECAPTCHA_SITE_KEY || "site-key-not-found"} />
-            <p>{message}</p>
+            <ReCAPTCHA 
+              ref={recaptchaRef} 
+              size="compact" 
+              sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "site-key-not-found"} 
+              onChange={(token) => {
+                if (token) {
+                  setRecaptchaToken(token); // Set the token
+                  setRecaptchaError(""); // Clear any previous error
+                  console.log("Generated reCAPTCHA token:", token);
+                } else {
+                  console.error("reCAPTCHA token is undefined or null"); // Debugging
+                }
+              }} />
           </div>
         </form>
       ) : (

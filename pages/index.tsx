@@ -45,6 +45,10 @@ function Home() {
             "openingHours": "Su-Sa 08:00-20:00"
           }`;
 
+  function redirectToVerfification() {
+    router.push("/verify-otp"); // Redirects to the /verify-otp route
+  }
+  
   return (
     <>
       <Head>
@@ -80,6 +84,7 @@ function Home() {
               <h1>Welcome, {session.user.name}!</h1>
               <p>Your email: {session.user.email}</p>
               <button onClick={() => signOut()}>Sign out</button>
+              <button onClick={() => redirectToVerfification()}>Make a payment</button>
             </>
           )}
 
