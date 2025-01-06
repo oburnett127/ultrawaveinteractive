@@ -1,4 +1,3 @@
-// Import required modules
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { Client, Environment } from 'square';
@@ -11,6 +10,13 @@ import { z } from 'zod';
 import Redis from "ioredis";
 import nodemailer from 'nodemailer';
 import { google } from "googleapis";
+
+type RecaptchaResponse = {
+    success: boolean;
+    challenge_ts?: string;
+    hostname?: string;
+    "error-codes"?: string[];
+}
 
 dotenv.config(); // 1️⃣ Load environment variables
 
@@ -75,6 +81,7 @@ app.use('/process-payment', apiLimiter);
 //app.use('/validate-token', apiLimiter);
 app.use('/send-otp', apiLimiter);
 app.use('/verify-otp', apiLimiter);
+app.use('/contact', apiLimiter);
 
 // Initialize Square client
 const squareClient = new Client({
@@ -92,7 +99,7 @@ async function validateIdToken(req: any, res: any, next: any) {
   }
 
   const token = authHeader.split(" ")[1];
-  console.log("ID Token received for validation:", token);
+  //console.log("ID Token received for validation:", token);
 
   try {
     const ticket = await oAuth2Client.verifyIdToken({
@@ -112,14 +119,14 @@ async function validateIdToken(req: any, res: any, next: any) {
 // Function to create a Nodemailer transporter with OAuth2
 async function createTransporter() {
   try {
-    console.log("Requesting Access Token with the following credentials:");
-    console.log("Client ID:", process.env.GOOGLE_CLIENT_ID);
-    console.log("Client Secret:", process.env.GOOGLE_CLIENT_SECRET ? "Present" : "Missing");
-    console.log("Refresh Token:", process.env.GOOGLE_REFRESH_TOKEN);
+    // console.log("Requesting Access Token with the following credentials:");
+    // console.log("Client ID:", process.env.GOOGLE_CLIENT_ID);
+    // console.log("Client Secret:", process.env.GOOGLE_CLIENT_SECRET ? "Present" : "Missing");
+    // console.log("Refresh Token:", process.env.GOOGLE_REFRESH_TOKEN);
 
     const accessToken = await oAuth2Client.getAccessToken();
 
-    console.log("Access Token retrieved:", accessToken.token);
+    //console.log("Access Token retrieved:", accessToken.token);
 
     return nodemailer.createTransport({
       service: "gmail",
@@ -129,11 +136,11 @@ async function createTransporter() {
         clientId: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
-        //accessToken: accessToken.token || "ya29.a0ARW5m75tNSMgJnFRnJDOEiko4htHDaN2joFr8R34YvX1MK9hCZU7Hepb-2DzZ-AsXCBq0rXEeU8SBJvkK-akIdnpDdZPaDgUnK0lZPSotWkCyHNdil7_JW6yTQzrKs8nW5dKoYxH8ta8eN3KL4KDFqFJ4qmN1n4X5CSSUAUaaCgYKAXgSARASFQHGX2MixTYfIkm0CCmlUMu4FsE5Nw0175",
-        accessToken: "ya29.a0ARW5m75tNSMgJnFRnJDOEiko4htHDaN2joFr8R34YvX1MK9hCZU7Hepb-2DzZ-AsXCBq0rXEeU8SBJvkK-akIdnpDdZPaDgUnK0lZPSotWkCyHNdil7_JW6yTQzrKs8nW5dKoYxH8ta8eN3KL4KDFqFJ4qmN1n4X5CSSUAUaaCgYKAXgSARASFQHGX2MixTYfIkm0CCmlUMu4FsE5Nw0175",
+        accessToken: accessToken.token || "no-access-token",
+        
       },
-      debug: true, // Enable debug logs
-      logger: true, // Log to console
+      debug: false, // Enable debug logs
+      logger: false, // Log to console
     });
   } catch (error: any) {
     console.error("Error in createTransporter:", error.response?.data || error.message);
@@ -145,7 +152,7 @@ async function createTransporter() {
 app.post("/send-otp", validateIdToken, async (req: Request, res: Response) => {
   const { email } = req.body;
 
-  console.log('send-otp endpoint is running');
+  //console.log('send-otp endpoint is running');
 
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
@@ -156,9 +163,9 @@ app.post("/send-otp", validateIdToken, async (req: Request, res: Response) => {
 
   // Store OTP in Redis with a TTL (e.g., 10 minutes)
   try {
-    console.log('before setting otp in redis');
+    //console.log('before setting otp in redis');
     await redis.set(`otp:${email}`, otp, "EX", 600); // Key: `otp:<email>`, Expires in 10 minutes
-    console.log('after setting otp in redis');
+    //console.log('after setting otp in redis');
   } catch (error) {
     console.error("Error storing OTP in Redis:", error);
     return res.status(500).json({ message: "Failed to store OTP" });
@@ -171,20 +178,20 @@ app.post("/send-otp", validateIdToken, async (req: Request, res: Response) => {
       if (error) {
         console.error("SMTP verification failed:", error);
       } else {
-        console.log("SMTP verification successful:", success);
+        //console.log("SMTP verification successful:", success);
       }
     });
     
-    console.log('before mail options');
+    //console.log('before mail options');
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
       subject: "Your One-Time Password (OTP)",
       text: `Your OTP is: ${otp}. It is valid for 10 minutes.`,
     };
-    console.log('before sendMail');
+    //console.log('before sendMail');
     await transporter.sendMail(mailOptions);
-    console.log(`OTP sent to ${email}`);
+    //console.log(`OTP sent to ${email}`);
     res.status(200).json({ message: "OTP sent successfully" });
   } catch (error) {
     console.error("Error sending OTP:", error);
@@ -196,7 +203,7 @@ app.post("/send-otp", validateIdToken, async (req: Request, res: Response) => {
 app.post("/verify-otp", validateIdToken, async (req: Request, res: Response) => {
   const { email, otp } = req.body;
 
-  console.log('verify-otp endpoint is running');
+  //console.log('verify-otp endpoint is running');
 
   if (!email || !otp) {
     return res.status(400).json({ message: "Email and OTP are required" });
@@ -204,13 +211,13 @@ app.post("/verify-otp", validateIdToken, async (req: Request, res: Response) => 
 
   try {
     // Retrieve OTP from Redis
-    console.log('before await redis.get()');
+    //console.log('before await redis.get()');
     const storedOtp = await redis.get(`otp:${email}`);
-    console.log('after await redis.get()');
+    //console.log('after await redis.get()');
     if (storedOtp === otp) {
       // OTP is valid; delete it from Redis to prevent reuse
       await redis.del(`otp:${email}`);
-      console.log(`OTP verified for ${email}`);
+      //console.log(`OTP verified for ${email}`);
       res.status(200).json({ message: "OTP verified successfully" });
     } else {
       console.error(`Invalid OTP for ${email}`);
@@ -260,15 +267,15 @@ app.post('/process-payment', validateIdToken, validatePaymentRequest, async (req
     // Create a unique idempotency key
     const idempotencyKey = crypto.randomUUID();
 
-    console.log('Processing payment with the following details:');
-    console.log({
-      googleProviderId,
-      email,
-      receiptEmail,
-      nonce,
-      amount: amountInCents.toString(),
-      idempotencyKey,
-    });
+    // console.log('Processing payment with the following details:');
+    // console.log({
+    //   googleProviderId,
+    //   email,
+    //   receiptEmail,
+    //   nonce,
+    //   amount: amountInCents.toString(),
+    //   idempotencyKey,
+    // });
 
     // Create the payment request to Square API
     const paymentResponse = await squareClient.paymentsApi.createPayment({
@@ -283,7 +290,7 @@ app.post('/process-payment', validateIdToken, validatePaymentRequest, async (req
       note: `Payment by user: ${email}`,
     });
 
-    console.log('Payment response from Square:', paymentResponse);
+    //console.log('Payment response from Square:', paymentResponse);
 
     // Convert BigInt values in the response to strings for JSON compatibility
     const sanitizedResponse = JSON.parse(
@@ -311,7 +318,57 @@ app.post('/process-payment', validateIdToken, validatePaymentRequest, async (req
   }
 });
 
-//const secret = process.env.NEXTAUTH_SECRET; // Use the same secret from your NextAuth configuration
+app.post("/contact", async (req, res) => {
+  try {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+
+    // Destructure and sanitize input data
+    const { formData, recaptchaToken } = req.body;
+
+    if (!formData || !formData.firstName || !formData.lastName || !formData.email || !formData.message) {
+      return res.status(400).json({ error: "Missing required fields." });
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      return res.status(400).json({ error: "Invalid email address." });
+    }
+
+    // Verify reCAPTCHA token
+    const response: RecaptchaResponse = await verifyRecaptchaToken(recaptchaToken);
+    if (response.success === false) {
+      return res.status(400).json({ error: "Failed reCAPTCHA verification" });
+    }
+
+    const transporter = await createTransporter();
+
+    // Email details
+    const mailOptions = {
+      from: formData.email, // The user's email address
+      to: process.env.EMAIL_USER, // Replace with your email address
+      subject: "ALERT a customer has sent you a message!!!",
+      text: `
+        First Name: ${formData.firstName}
+        Last Name: ${formData.lastName}
+        Email: ${formData.email}
+        Phone: ${formData.phone || "N/A"}
+        Message: ${formData.message}
+      `,
+    };
+
+    // Send email
+    await transporter.sendMail(mailOptions);
+
+    // Respond to the client
+    res.status(200).json({ message: "Message sent successfully!" });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    res.status(500).json({ error: "Failed to send message. Please try again." });
+  }
+});
 
 // Handle CSRF errors explicitly
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -328,39 +385,75 @@ app.use((err: any, req: any, res: any, next: any) => {
   res.status(500).send('Something went wrong');
 });
 
-app.post("/verify-recaptcha", validateIdToken, async (req, res) => {
-  const { token } = req.body;
-
-  // Check if the token exists
+async function verifyRecaptchaToken(token: string): Promise<{
+  success: boolean;
+  challenge_ts?: string;
+  hostname?: string;
+  "error-codes"?: string[];
+}> {
   if (!token) {
-    return res.status(400).json({ success: false, message: "Token is missing." });
+    return { success: false, "error-codes": ["missing-input-response"] }; // Token is missing
   }
 
+  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+
+  if (!secretKey) {
+    console.error("Missing reCAPTCHA secret key in environment variables.");
+    return { success: false, "error-codes": ["missing-secret-key"] };
+  }
+
+  const verificationURL = "https://www.google.com/recaptcha/api/siteverify";
+
   try {
-    // reCAPTCHA secret key
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-
-    // Google's reCAPTCHA verification URL
-    const verificationURL = "https://www.google.com/recaptcha/api/siteverify";
-
-    // Make a POST request to Google for verification
     const response = await fetch(verificationURL, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        secret: secretKey || "secret-key-not-found",
+        secret: secretKey,
         response: token,
       }).toString(),
     });
 
-    // Parse the response from Google
-    const data: any = await response.json();
+    if (response.ok === false) {
+      console.error(`reCAPTCHA verification failed: ${response.statusText}`);
+      return { success: false, "error-codes": ["verification-failed"] };
+    }
 
-    if (data.success) {
+    const data = (await response.json()) as RecaptchaResponse;
+    console.log("Google's reCAPTCHA verification response:", data); // Debugging
+
+    // Handle failure from Google's response
+    if (data.success === false) {
+      console.error("reCAPTCHA verification failed:", data);
+      return { success: false, "error-codes": data["error-codes"] };
+    }
+
+    // Success case
+    return data;
+  } catch (error) {
+    console.error("Error verifying reCAPTCHA token:", error);
+    return { success: false, "error-codes": ["internal-error"] };
+  }
+}
+
+app.post("/verify-recaptcha", async (req, res) => {
+  const { recaptchaToken } = req.body; //Recaptcha token generated on the frontend by the recaptcha widget
+
+  console.log("Received reCAPTCHA token:", recaptchaToken); // Debugging
+
+  // Check if the token exists
+  if (!recaptchaToken) {
+    return res.status(400).json({ success: false, message: "Token is missing." });
+  }
+
+  try {
+    const data = await verifyRecaptchaToken(recaptchaToken);
+
+    if (data.success === true) {
       return res.status(200).json({ success: true, message: "reCAPTCHA verification successful." });
-    } else {
+    } else if(data.success === false) {
       console.error("reCAPTCHA verification failed:", data["error-codes"]);
       return res.status(400).json({
         success: false,
