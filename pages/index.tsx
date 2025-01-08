@@ -83,7 +83,7 @@ function Home() {
             <>
               <h1>Welcome, {session.user.name}!</h1>
               <p>Your email: {session.user.email}</p>
-              <button onClick={() => signOut()}>Sign out</button>
+              <button onClick={() => signOut()}>Sign out</button><br></br><br></br>
               <button onClick={() => redirectToVerfification()}>Make a payment</button>
             </>
           )}

@@ -56,19 +56,26 @@ const Payment = () => {
         return;
       }
 
-      console.log("Sending reCAPTCHA token to backend:", recaptchaToken); // Debugging
+      //console.log("Sending reCAPTCHA token to backend:", recaptchaToken); // Debugging
 
       // Verify the reCAPTCHA token with the backend
       const verifyRecaptchaResp = await fetch(`${backendUrl}/verify-recaptcha`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.user.idToken}`,
         },
+        credentials: "include",
         body: JSON.stringify({ recaptchaToken }),
       });
 
+      if (verifyRecaptchaResp.status === 429) {
+        alert("Too many requests! Please try again later.");
+        return;
+      }
+
       const result = await verifyRecaptchaResp.json();
-      console.log("reCAPTCHA verification result:", result);
+      //console.log("reCAPTCHA verification result:", result);
 
       if (!result.success) {
         setRecaptchaError(result.message || "reCAPTCHA verification failed.");
@@ -167,11 +174,12 @@ const Payment = () => {
                 if (token) {
                   setRecaptchaToken(token); // Set the token
                   setRecaptchaError(""); // Clear any previous error
-                  console.log("Generated reCAPTCHA token:", token);
+                  //console.log("Generated reCAPTCHA token:", token);
                 } else {
                   console.error("reCAPTCHA token is undefined or null"); // Debugging
                 }
               }} />
+            {recaptchaError && <p style={{ color: "red" }}>{recaptchaError}</p>}
           </div>
         </form>
       ) : (

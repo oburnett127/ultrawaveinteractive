@@ -19,10 +19,10 @@ export default function VerifyOTP() {
 
   // Automatically send OTP when the user is authenticated
 useEffect(() => {
-  console.log("Status:", status, "Session:", session); // Debugging log
+  //console.log("Status:", status, "Session:", session); // Debugging log
 
   if (session && session.user) {
-    console.log("Access Token:", session.user.accessToken);
+    //console.log("Access Token:", session.user.accessToken);
   }
 
   if (status === "authenticated" && session?.user?.email && !otpSent) {
@@ -43,13 +43,13 @@ async function sendOTP(email: string) {
       body: JSON.stringify({ email }),
     });
 
-    console.log('from verify-otp after send-otp, session?.idToken: ', session?.user.idToken);
+    //console.log('from verify-otp after send-otp, session?.idToken: ', session?.user.idToken);
 
     if (!res.ok) {
       throw new Error("Failed to send OTP.");
     }
 
-    console.log("OTP sent successfully.");
+    //console.log("OTP sent successfully.");
   } catch (error) {
     console.error("Error sending OTP:", error);
     setError("Failed to send OTP. Please try again.");
@@ -68,7 +68,7 @@ async function handleVerifyOTP() {
       body: JSON.stringify({ email: session?.user.email, otp }),
     });
 
-    console.log('from verify-otp, session?.idToken: ', session?.user.idToken);
+    //console.log('from verify-otp, session?.idToken: ', session?.user.idToken);
 
     if (res.ok) {
       // Update token via API route
@@ -84,7 +84,7 @@ async function handleVerifyOTP() {
       });
 
       const sessionData = await sessionRes.json();
-      console.log("Session data after refresh:", sessionData);
+      //console.log("Session data after refresh:", sessionData);
 
       router.push("/payment");
     } else {

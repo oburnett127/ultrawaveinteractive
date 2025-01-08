@@ -12,7 +12,7 @@ export default async (req: any, res: any) => {
   // Update the `otpVerified` field
   token.otpVerified = true;
 
-  console.log('from update-token.ts, token.otpVerified: ', token.otpVerified);
+  //console.log('from update-token.ts, token.otpVerified: ', token.otpVerified);
 
   // Re-encode the updated token
   const updatedToken = await encode({
@@ -20,7 +20,7 @@ export default async (req: any, res: any) => {
     secret: process.env.NEXTAUTH_SECRET || "",
   });
 
-  console.log("Encoded token in update-token:", updatedToken);
+  //console.log("Encoded token in update-token:", updatedToken);
 
   res.setHeader("Set-Cookie", `next-auth.session-token=${updatedToken}; Path=/; HttpOnly; Secure`);
   
