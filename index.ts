@@ -10,6 +10,7 @@ import { z } from 'zod';
 import Redis from "ioredis";
 import nodemailer from 'nodemailer';
 import { google } from "googleapis";
+import helmet from 'helmet';
 
 type RecaptchaResponse = {
     success: boolean;
@@ -21,6 +22,44 @@ type RecaptchaResponse = {
 dotenv.config(); // 1️⃣ Load environment variables
 
 const app = express();
+
+app.use(helmet());
+app.use(helmet.noSniff());
+app.use(helmet.frameguard({ action: 'deny' }));
+app.use(helmet.hsts({
+  maxAge: 31536000, // 1 year
+  includeSubDomains: true, // Apply HSTS to subdomains
+}));
+app.use(helmet.xssFilter());
+app.use(helmet.referrerPolicy({ policy: 'no-referrer-when-downgrade' }));
+app.use(helmet.permittedCrossDomainPolicies());
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  next();
+});
+
+app.use((req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy-Report-Only',
+    `
+      default-src 'self'; 
+      script-src 'self' https://js.squareup.com https://accounts.google.com https://apis.google.com; 
+      style-src 'self' 'unsafe-inline' https://js.squareup.com; 
+      frame-src 'self' https://*.squarecdn.com https://accounts.google.com https://apis.google.com; 
+      img-src 'self' data: https://*.squarecdn.com https://accounts.google.com https://www.googleapis.com; 
+      connect-src 'self' https://connect.squareup.com https://*.squareupsandbox.com https://oauth2.googleapis.com https://accounts.google.com https://smtp.gmail.com;
+      report-uri /csp-violation-report; 
+      object-src 'none';
+    `.trim()
+  );
+  next();
+});
+
+// Endpoint to handle CSP violation reports
+app.post('/csp-violation-report', express.json(), (req, res) => {
+  console.log('CSP Violation Report:', JSON.stringify(req.body, null, 2));
+  res.status(204).end(); // Respond with no content
+});
 
 const PORT = process.env.PORT || 5000;
 
@@ -82,6 +121,7 @@ app.use('/process-payment', apiLimiter);
 app.use('/send-otp', apiLimiter);
 app.use('/verify-otp', apiLimiter);
 app.use('/contact', apiLimiter);
+app.use('/verify-recaptcha', apiLimiter);
 
 // Initialize Square client
 const squareClient = new Client({
@@ -370,21 +410,6 @@ app.post("/contact", async (req, res) => {
   }
 });
 
-// Handle CSRF errors explicitly
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  if (err.code === 'EBADCSRFTOKEN') {
-    console.error('Invalid CSRF Token:', err);
-    return res.status(403).json({ error: 'Invalid CSRF token' });
-  }
-  next(err);
-});
-
-// Global error handler
-app.use((err: any, req: any, res: any, next: any) => {
-  console.error('Unhandled Error:', err);
-  res.status(500).send('Something went wrong');
-});
-
 async function verifyRecaptchaToken(token: string): Promise<{
   success: boolean;
   challenge_ts?: string;
@@ -422,7 +447,7 @@ async function verifyRecaptchaToken(token: string): Promise<{
     }
 
     const data = (await response.json()) as RecaptchaResponse;
-    console.log("Google's reCAPTCHA verification response:", data); // Debugging
+    //console.log("Google's reCAPTCHA verification response:", data); // Debugging
 
     // Handle failure from Google's response
     if (data.success === false) {
@@ -438,10 +463,10 @@ async function verifyRecaptchaToken(token: string): Promise<{
   }
 }
 
-app.post("/verify-recaptcha", async (req, res) => {
+app.post("/verify-recaptcha", validateIdToken, async (req, res) => {
   const { recaptchaToken } = req.body; //Recaptcha token generated on the frontend by the recaptcha widget
 
-  console.log("Received reCAPTCHA token:", recaptchaToken); // Debugging
+  //console.log("Received reCAPTCHA token:", recaptchaToken); // Debugging
 
   // Check if the token exists
   if (!recaptchaToken) {
@@ -468,6 +493,21 @@ app.post("/verify-recaptcha", async (req, res) => {
       message: "An error occurred during reCAPTCHA verification.",
     });
   }
+});
+
+// Handle CSRF errors explicitly
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    console.error('Invalid CSRF Token:', err);
+    return res.status(403).json({ error: 'Invalid CSRF token' });
+  }
+  next(err);
+});
+
+// Global error handler
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('Unhandled Error:', err);
+  res.status(500).send('Something went wrong');
 });
 
 // Start the server

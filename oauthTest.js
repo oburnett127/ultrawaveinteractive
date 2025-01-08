@@ -11,15 +11,15 @@ const oAuth2Client = new google.auth.OAuth2(
 
 async function testOAuth() {
   try {
-    console.log("Testing OAuth credentials...");
+    //console.log("Testing OAuth credentials...");
 
     oAuth2Client.setCredentials({
       refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
     });
 
     const accessToken = await oAuth2Client.getAccessToken();
-    console.log("Access Token:", accessToken.token);
-    console.log("OAuth setup is working correctly.");
+    //console.log("Access Token:", accessToken.token);
+    //console.log("OAuth setup is working correctly.");
   } catch (error) {
     console.error("Error Details:");
     console.error("Message:", error.message);

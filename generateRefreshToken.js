@@ -14,7 +14,7 @@ const authUrl = oauth2Client.generateAuthUrl({
   scope: ['https://mail.google.com/'], // Gmail API scope
 });
 
-console.log('Authorize this app by visiting this URL:', authUrl);
+//console.log('Authorize this app by visiting this URL:', authUrl);
 
 // After visiting the URL and authorizing, you'll get a code in the URL query
 // Paste that code below
@@ -24,5 +24,5 @@ oauth2Client.getToken(code, (err, token) => {
   if (err) {
     return console.error('Error retrieving access token', err);
   }
-  console.log('Your refresh token is:', token?.refresh_token);
+  //console.log('Your refresh token is:', token?.refresh_token);
 });
