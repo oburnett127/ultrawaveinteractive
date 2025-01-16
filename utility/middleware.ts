@@ -5,7 +5,7 @@ export function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
   response.headers.set(
-    'Content-Security-Policy-Report-Only',
+    'Content-Security-Policy',
     `
       default-src 'self'; 
       script-src 'self' https://js.squareup.com https://accounts.google.com https://apis.google.com https://www.gstatic.com; 
@@ -19,3 +19,4 @@ export function middleware(request: NextRequest) {
 
   return response;
 }
+ 
