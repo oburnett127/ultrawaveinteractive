@@ -23,52 +23,76 @@ dotenv.config(); // 1️⃣ Load environment variables
 
 const app = express();
 
+// 3️⃣ CORS middleware: Add CORS headers. This middleware must be before any route handling or method-restricting middleware
+const corsOptions = {
+  origin: 'http://localhost:3000', // Allow requests from your frontend
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'], // Include any custom headers you use
+  credentials: true, // Allow cookies to be sent with requests
+};
+app.use(cors(corsOptions));
+
+// Block other HTTP methods globally
+app.use((req: any, res: any, next: any) => {
+  const allowedMethods = ['GET', 'POST', 'DELETE', 'OPTIONS'];
+
+  if (!allowedMethods.includes(req.method)) {
+    return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+  }
+
+  next();
+});
+
 app.use(helmet());
 app.use(helmet.noSniff());
 app.use(helmet.frameguard({ action: 'deny' }));
-app.use(helmet.hsts({
-  maxAge: 31536000, // 1 year
-  includeSubDomains: true, // Apply HSTS to subdomains
-}));
+
+//ENABLE THIS BEFORE DEPLOY TO PRODUCTION!!!
+// app.use(helmet.hsts({
+//   maxAge: 31536000, // 1 year
+//   includeSubDomains: true, // Apply HSTS to subdomains
+// }));
+
 app.use(helmet.xssFilter());
 app.use(helmet.referrerPolicy({ policy: 'no-referrer-when-downgrade' }));
 app.use(helmet.permittedCrossDomainPolicies());
-app.use((req, res, next) => {
+app.use((req: any, res: any, next: any) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   next();
 });
 
-app.use((req, res, next) => {
-  res.setHeader(
-    'Content-Security-Policy-Report-Only',
-    `
-      default-src 'self'; 
-      script-src 'self' https://js.squareup.com https://accounts.google.com https://apis.google.com; 
-      style-src 'self' 'unsafe-inline' https://js.squareup.com; 
-      frame-src 'self' https://*.squarecdn.com https://accounts.google.com https://apis.google.com; 
-      img-src 'self' data: https://*.squarecdn.com https://accounts.google.com https://www.googleapis.com; 
-      connect-src 'self' https://connect.squareup.com https://*.squareupsandbox.com https://oauth2.googleapis.com https://accounts.google.com https://smtp.gmail.com;
-      report-uri /csp-violation-report; 
-      object-src 'none';
-    `.trim()
-  );
-  next();
-});
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "https://js.squareup.com", "https://accounts.google.com", "https://apis.google.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://js.squareup.com"],
+        frameSrc: ["'self'", "https://*.squarecdn.com", "https://accounts.google.com"],
+        imgSrc: ["'self'", "data:", "https://*.squarecdn.com", "https://accounts.google.com", "https://www.googleapis.com"],
+        connectSrc: [
+          "'self'",
+          "https://connect.squareup.com",
+          "https://*.squareupsandbox.com",
+          "https://oauth2.googleapis.com",
+          "https://accounts.google.com",
+          "https://smtp.gmail.com",
+        ],
+        objectSrc: ["'none'"],
+      },
+      reportOnly: false, // Enable Report-Only mode
+    },
+  })
+);
 
 // Endpoint to handle CSP violation reports
-app.post('/csp-violation-report', express.json(), (req, res) => {
+app.post('/csp-violation-report', express.json(), (req: any, res: any) => {
   console.log('CSP Violation Report:', JSON.stringify(req.body, null, 2));
   res.status(204).end(); // Respond with no content
 });
 
 const PORT = process.env.PORT || 5000;
-
-// 3️⃣ CORS middleware: Add CORS headers
-const corsOptions = {
-  origin: 'http://localhost:3000', // Allow requests from your frontend
-  credentials: true, // Allow cookies to be sent with requests
-};
-app.use(cors(corsOptions));
 
 // // 4️⃣ Session middleware: Required for CSRF protection and session management
 // app.use(
@@ -214,11 +238,11 @@ app.post("/send-otp", validateIdToken, async (req: Request, res: Response) => {
   try {
     const transporter = await createTransporter();
 
-    transporter.verify((error, success) => {
+    transporter.verify((error: any, success: any) => {
       if (error) {
         console.error("SMTP verification failed:", error);
       } else {
-        //console.log("SMTP verification successful:", success);
+        console.log("SMTP verification successful:", success);
       }
     });
     
@@ -358,7 +382,7 @@ app.post('/process-payment', validateIdToken, validatePaymentRequest, async (req
   }
 });
 
-app.post("/contact", async (req, res) => {
+app.post("/contact", async (req: any, res: any) => {
   try {
     if (req.method !== "POST") {
       return res.status(405).json({ error: "Method not allowed" });
@@ -463,7 +487,7 @@ async function verifyRecaptchaToken(token: string): Promise<{
   }
 }
 
-app.post("/verify-recaptcha", validateIdToken, async (req, res) => {
+app.post("/verify-recaptcha", validateIdToken, async (req: any, res: any) => {
   const { recaptchaToken } = req.body; //Recaptcha token generated on the frontend by the recaptcha widget
 
   //console.log("Received reCAPTCHA token:", recaptchaToken); // Debugging

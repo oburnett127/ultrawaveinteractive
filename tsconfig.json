@@ -23,7 +23,7 @@
       "emitDeclarationOnly": false
   },
   "include": [
-    "config", "models", "services", "util", "index.ts", "userinfo.d.ts", "types.d.ts" ],
+    "config", "models", "services", "util", "index.ts", "userinfo.d.ts", "types.d.ts", "generateRefreshToken.js", "getGooglePublicKeys.ts", "oauthTest.js", "rotateSecretsBatch.ts", "SecretManager.ts"],
   "exclude": [
     "dist","node_modules"
   ]
