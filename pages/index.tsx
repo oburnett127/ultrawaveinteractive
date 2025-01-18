@@ -21,6 +21,10 @@ import { useRouter } from "next/router";
 import { signIn, signOut, useSession } from 'next-auth/react';
 
 function Home() {
+
+  console.log('GOOGLE_CLIENT_ID=',process.env.GOOGLE_CLIENT_ID);
+  console.log('GOOGLE_CLIENT_SECRET=',process.env.GOOGLE_CLIENT_SECRET);
+
   const router = useRouter();
   const { data: session } = useSession();
 

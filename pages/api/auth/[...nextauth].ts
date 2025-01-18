@@ -6,11 +6,11 @@ import { refreshIdToken } from '../../../utility/auth';
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
-      clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET || "",
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
       authorization: {
         params: {
-          scope: "openid email profile https://www.googleapis.com/auth/userinfo.email",
+          scope: "openid email profile",
           access_type: "offline", // Request a refresh token
           prompt: "consent",
         },
@@ -18,7 +18,18 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async signIn({ user, account, profile }) {
+      console.log("Sign In Callback Triggered", profile);
+      console.log("Google Profile:", profile);
+      
+      return true;
+    },
     async jwt({ token, account, user }: { token: any; account?: any; user?: any }) {
+      console.log('jwt callback running');
+      
+      console.log('GOOGLE_CLIENT_ID=',process.env.GOOGLE_CLIENT_ID);
+      console.log('GOOGLE_CLIENT_SECRET=',process.env.GOOGLE_CLIENT_SECRET);
+
       if (account) {
         token.idToken = account.id_token; // Save the ID token
         token.refreshToken = account.refresh_token;
@@ -54,6 +65,12 @@ export const authOptions: NextAuthOptions = {
       };
     },
     async session({ session, token }: { session: any; token: any; account?: any;}) {
+
+      console.log('session callback running');
+
+      console.log('GOOGLE_CLIENT_ID=',process.env.GOOGLE_CLIENT_ID);
+      console.log('GOOGLE_CLIENT_SECRET=',process.env.GOOGLE_CLIENT_SECRET);
+
       if(token) {
         session.user.id = token.sub; // Use sub from the JWT token
         session.user.idToken = token.idToken; // Pass the ID token to the session
@@ -68,6 +85,27 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   secret: process.env.NEXTAUTH_SECRET,
+  debug: true,
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Use 'none' only for cross-site cookies in production
+        path: "/",
+        secure: process.env.NODE_ENV === "production", // Only secure in production with HTTPS
+      },
+    },
+    csrfToken: {
+      name: `next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },  
 };
 
 export default NextAuth(authOptions);
