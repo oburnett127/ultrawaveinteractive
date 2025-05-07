@@ -1,0 +1,77 @@
+/* Foreground image container */
+.image-container {
+  display: block;
+  justify-content: center;
+  align-items: center;
+  height: auto;
+  margin: 0 auto;
+  width: 50%;
+}
+
+/* Reset default image styles (important if global styles are interfering) */
+/* .content{
+  img {
+    width: 50%;
+    height: auto;
+    display: block;
+    margin: auto;
+  }
+
+  p {
+    text-align: center;
+    font-size: 1.2rem;
+  }
+} */
+
+/* Centering header text */
+.headerText {
+  text-align: center;
+}
+
+/* Padding for block container */
+.blockContainer {
+  padding: 20px;
+}
+
+/* Flex centering for various elements */
+.flexCenter {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* General image styling */
+.image {
+  max-width: 300px;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Button styling */
+.button {
+  background-color: white;
+  color: black;
+  width: 100%;
+  max-width: 300px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* Center button wrapper */
+.centerButton {
+  display: flex;
+  justify-content: center;
+  margin: 20px auto;
+  width: 100%;
+  max-width: 300px;
+}
+
+.flexContainer {
+  display: flex;
+  justify-content: flex-end;/* Aligns the links to the right */
+  gap: 10px; /* Adds space between the links */
+  width: 100%;
+}
