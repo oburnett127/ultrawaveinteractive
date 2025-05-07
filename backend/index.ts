@@ -13,139 +13,129 @@ import { google } from "googleapis";
 import helmet from 'helmet';
 
 type RecaptchaResponse = {
-    success: boolean;
-    challenge_ts?: string;
-    hostname?: string;
-    "error-codes"?: string[];
-}
-
-dotenv.config(); // 1️⃣ Load environment variables
-
-const app = express();
-
-// 3️⃣ CORS middleware: Add CORS headers. This middleware must be before any route handling or method-restricting middleware
-const corsOptions = {
-  origin: 'http://localhost:3000', // Allow requests from your frontend
-  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'], // Include any custom headers you use
-  credentials: true, // Allow cookies to be sent with requests
+  success: boolean;
+  challenge_ts?: string;
+  hostname?: string;
+  "error-codes"?: string[];
 };
-app.use(cors(corsOptions));
 
-// Block other HTTP methods globally
-app.use((req: any, res: any, next: any) => {
-  const allowedMethods = ['GET', 'POST', 'DELETE', 'OPTIONS'];
+// ⬇️ Exported setup function
+export default function initBackend(app: express.Express) {
+  dotenv.config(); // Load environment variables
 
-  if (!allowedMethods.includes(req.method)) {
-    return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
-  }
+  // CORS middleware
+  const corsOptions = {
+    origin: "http://localhost:3000", // Adjust as needed
+    methods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  };
+  app.use(cors(corsOptions));
 
-  next();
-});
+  // Restrict HTTP methods
+  app.use((req, res, next) => {
+    const allowedMethods = ["GET", "POST", "DELETE", "OPTIONS"];
+    if (!allowedMethods.includes(req.method)) {
+      return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+    }
+    next();
+  });
 
-app.use(helmet());
-app.use(helmet.noSniff());
-app.use(helmet.frameguard({ action: 'deny' }));
+  // Helmet security headers
+  app.use(helmet());
+  app.use(helmet.noSniff());
+  app.use(helmet.frameguard({ action: "deny" }));
+  app.use(helmet.xssFilter());
+  app.use(helmet.referrerPolicy({ policy: "no-referrer-when-downgrade" }));
+  app.use(helmet.permittedCrossDomainPolicies());
 
-//ENABLE THIS BEFORE DEPLOY TO PRODUCTION!!!
-// app.use(helmet.hsts({
-//   maxAge: 31536000, // 1 year
-//   includeSubDomains: true, // Apply HSTS to subdomains
-// }));
+  // Custom headers
+  app.use((req, res, next) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+    next();
+  });
 
-app.use(helmet.xssFilter());
-app.use(helmet.referrerPolicy({ policy: 'no-referrer-when-downgrade' }));
-app.use(helmet.permittedCrossDomainPolicies());
-app.use((req: any, res: any, next: any) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-  next();
-});
-
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      useDefaults: true,
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "https://js.squareup.com", "https://accounts.google.com", "https://apis.google.com"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://js.squareup.com"],
-        frameSrc: ["'self'", "https://*.squarecdn.com", "https://accounts.google.com"],
-        imgSrc: ["'self'", "data:", "https://*.squarecdn.com", "https://accounts.google.com", "https://www.googleapis.com"],
-        connectSrc: [
-          "'self'",
-          "https://connect.squareup.com",
-          "https://*.squareupsandbox.com",
-          "https://oauth2.googleapis.com",
-          "https://accounts.google.com",
-          "https://smtp.gmail.com",
-        ],
-        objectSrc: ["'none'"],
+  // CSP
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "https://js.squareup.com", "https://accounts.google.com", "https://apis.google.com"],
+          styleSrc: ["'self'", "'unsafe-inline'", "https://js.squareup.com"],
+          frameSrc: ["'self'", "https://*.squarecdn.com", "https://accounts.google.com"],
+          imgSrc: ["'self'", "data:", "https://*.squarecdn.com", "https://accounts.google.com", "https://www.googleapis.com"],
+          connectSrc: [
+            "'self'",
+            "https://connect.squareup.com",
+            "https://*.squareupsandbox.com",
+            "https://oauth2.googleapis.com",
+            "https://accounts.google.com",
+            "https://smtp.gmail.com",
+          ],
+          objectSrc: ["'none'"],
+        },
+        reportOnly: false,
       },
-      reportOnly: false, // Enable Report-Only mode
-    },
-  })
-);
+    })
+  );
 
-// Endpoint to handle CSP violation reports
-app.post('/csp-violation-report', express.json(), (req: any, res: any) => {
-  console.log('CSP Violation Report:', JSON.stringify(req.body, null, 2));
-  res.status(204).end(); // Respond with no content
-});
+  // CSP report endpoint
+  app.post("/csp-violation-report", express.json(), (req, res) => {
+    console.log("CSP Violation Report:", JSON.stringify(req.body, null, 2));
+    res.status(204).end();
+  });
 
-const PORT = process.env.PORT || 5000;
+  // Body parsers
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({ extended: true }));
 
-// // 4️⃣ Session middleware: Required for CSRF protection and session management
-// app.use(
-//   session({
-//     secret: process.env.SESSION_SECRET || 'secret-key-not-found',
-//     resave: false,
-//     saveUninitialized: true,
-//     cookie: {
-//       secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-//       httpOnly: true, // Prevent JavaScript from accessing cookies
-//     },
-//   })
-// );
+  // Redis
+  const redis = new Redis(process.env.REDIS_URL || "redis://127.0.0.1:6379");
 
-// 5️⃣ Body parsers: Required for parsing JSON or URL-encoded request bodies
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+  // Google OAuth
+  const oAuth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
+  );
 
-const redis = new Redis(process.env.REDIS_URL || "redis://127.0.0.1:6379");
+  oAuth2Client.setCredentials({
+    refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+  });
 
-const oAuth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI
-);
+  // 🧩 You can attach redis or oAuth2Client to app.locals if needed:
+  // app.locals.redis = redis;
+  // app.locals.oAuth2Client = oAuth2Client;
 
-oAuth2Client.setCredentials({
-  refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
-});
+  // 🧩 Add route registration below or in separate route files
+  // app.use('/userinfo', userinfoRoutes);
 
-// app.use((req, res, next) => {
-//   res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
-//   res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-//   next();
-// });
 
-// 6️⃣ Rate limiter: Apply rate limiting to specific routes (optional but good)
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 15, // Limit each IP to 15 requests per window
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  message: 'Too many requests from this IP, please try again later.',
-});
+  // app.use((req, res, next) => {
+  //   res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  //   res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+  //   next();
+  // });
 
-// BEFORE PUTTING IN PRODUCTION UNCOMMENT THESE LINES ABOUT RATE LIMITER
-//Apply rate limiting to sensitive routes
-app.use('/process-payment', apiLimiter);
-//app.use('/validate-token', apiLimiter);
-app.use('/send-otp', apiLimiter);
-app.use('/verify-otp', apiLimiter);
-app.use('/contact', apiLimiter);
-app.use('/verify-recaptcha', apiLimiter);
+  // 6️⃣ Rate limiter: Apply rate limiting to specific routes (optional but good)
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 15, // Limit each IP to 15 requests per window
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    message: 'Too many requests from this IP, please try again later.',
+  });
+
+  // BEFORE PUTTING IN PRODUCTION UNCOMMENT THESE LINES ABOUT RATE LIMITER
+  //Apply rate limiting to sensitive routes
+  app.use('/process-payment', apiLimiter);
+  //app.use('/validate-token', apiLimiter);
+  app.use('/send-otp', apiLimiter);
+  app.use('/verify-otp', apiLimiter);
+  app.use('/contact', apiLimiter);
+  app.use('/verify-recaptcha', apiLimiter);
 
 // Initialize Square client
 const squareClient = new Client({
@@ -270,7 +260,7 @@ app.post("/verify-otp", validateIdToken, async (req: Request, res: Response) => 
   //console.log('verify-otp endpoint is running');
 
   if (!email || !otp) {
-    return res.status(400).json({ message: "Email and OTP are required" });
+    return res.status(400).send({ message: "Email and OTP are required" });
   }
 
   try {
@@ -282,14 +272,14 @@ app.post("/verify-otp", validateIdToken, async (req: Request, res: Response) => 
       // OTP is valid; delete it from Redis to prevent reuse
       await redis.del(`otp:${email}`);
       //console.log(`OTP verified for ${email}`);
-      res.status(200).json({ message: "OTP verified successfully" });
+      res.status(200).send({ message: "OTP verified successfully" });
     } else {
       console.error(`Invalid OTP for ${email}`);
-      res.status(400).json({ message: "Invalid OTP" });
+      res.status(400).send({ message: "Invalid OTP" });
     }
   } catch (error) {
     console.error("Error verifying OTP:", error);
-    res.status(500).json({ message: "Failed to verify OTP" });
+    res.status(500).send({ message: "Failed to verify OTP" });
   }
 });
 
@@ -535,6 +525,8 @@ app.use((err: any, req: any, res: any, next: any) => {
 });
 
 // Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+app.listen(process.env.PORT, () => {
+  console.log(`Server is running on http://localhost:${process.env.PORT}`);
 });
+
+}
