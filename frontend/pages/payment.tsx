@@ -1,5 +1,4 @@
-import React, { useState, useRef } from 'react';
-import ReCAPTCHA from 'react-google-recaptcha';
+import React, { useState } from 'react';
 import { PaymentForm, CreditCard } from 'react-square-web-payments-sdk';
 import { useSession } from "next-auth/react";
 import DOMPurify from 'dompurify';
@@ -26,135 +25,83 @@ const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 const Payment = () => {
   const { data: session } = useSession();
 
-  if (!session || !session.user) {
-    console.error("Session or session.user is missing");
-    return <p>You must be logged in to make a payment</p>;
-  }
-  
-  const [amount, setAmount] = useState('');
-  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
-  const [customerEmail, setCustomerEmail] = useState('');
-  const [recaptchaError, setRecaptchaError] = useState<string>("");
-  const recaptchaRef = useRef<ReCAPTCHA>(null);
-  const [recaptchaToken, setRecaptchaToken] = useState<string>("");
-  
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    
-  //MAKE SURE THE USER HAS BEEN AUTHENTICATED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  const [amount, setAmount] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [paymentDetails, setPaymentDetails] = useState<any>(null);
+
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL!;
+  const applicationId = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID!;
+  const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID!;
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    if (id === "amount") {
+      const sanitized = value.replace(/[^0-9.]/g, "");
+      setAmount(sanitized);
+    } else if (id === "customerEmail") {
+      setCustomerEmail(DOMPurify.sanitize(value));
+    }
+  };
 
   const handlePayment = async (token: any, verifiedBuyer: any) => {
-    try {
-      if (!session || !session.user) {
-        console.error('Session or session.user is undefined');
-        alert('You must be logged in to make a payment');
-        return;
-      }
-
-      // Ensure the reCAPTCHA token is available
-      if (!recaptchaToken) {
-        alert("Please complete the reCAPTCHA.");
-        return;
-      }
-
-      //console.log("Sending reCAPTCHA token to backend:", recaptchaToken); // Debugging
-
-      // Verify the reCAPTCHA token with the backend
-      const verifyRecaptchaResp = await fetch(`${backendUrl}/verify-recaptcha`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.user.idToken}`,
-        },
-        credentials: "include",
-        body: JSON.stringify({ recaptchaToken }),
-      });
-
-      if (verifyRecaptchaResp.status === 429) {
-        alert("Too many requests! Please try again later.");
-        return;
-      }
-
-      const result = await verifyRecaptchaResp.json();
-      //console.log("reCAPTCHA verification result:", result);
-
-      if (!result.success) {
-        setRecaptchaError(result.message || "reCAPTCHA verification failed.");
-        alert("reCAPTCHA verification failed. Payment has been canceled.");
-        return; // Stop payment process
-      }
-    } catch (err: any) {
-      console.error("Error during reCAPTCHA verification:", err);
-      alert("An error occurred during reCAPTCHA verification. Please try again.");
-      return; // Stop payment process
-    } finally {
-      recaptchaRef.current?.reset(); // Reset reCAPTCHA
-      setRecaptchaToken(""); // Clear token
+    if (!session?.user) {
+      alert("You must be logged in to make a payment.");
+      return;
     }
 
-    // Continue to payment processing (if reCAPTCHA passed)
     try {
-      const sanitizedAmountInCents = parseInt(DOMPurify.sanitize(amount)) * 100;
-      const sanitizedReceiptEmail = DOMPurify.sanitize(customerEmail);
-      const sanitizedEmail = DOMPurify.sanitize(session.user.email || "");
+      const sanitizedAmount = parseFloat(DOMPurify.sanitize(amount));
+      const amountInCents = Math.round(sanitizedAmount * 100);
+      const userEmail = DOMPurify.sanitize(session.user.email || "");
 
-      // Make the payment request
       const response = await fetch(`${backendUrl}/process-payment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.user.idToken}`,
+          Authorization: `Bearer ${session.user.idToken}`,
         },
         credentials: "include",
         body: JSON.stringify({
           googleProviderId: session.user.id,
-          email: sanitizedEmail,
-          receiptEmail: sanitizedReceiptEmail,
+          email: userEmail,
+          receiptEmail: customerEmail,
           nonce: token.token,
-          amount: sanitizedAmountInCents,
+          amount: amountInCents,
         }),
       });
 
       if (response.status === 429) {
-        alert("Too many requests! Please try again later.");
-        return;
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        alert(errorData.error || "An error occurred. Please try again.");
+        alert("Too many requests. Please try again later.");
         return;
       }
 
       const data = await response.json();
-      setPaymentDetails(data); // Save payment details to state
+
+      if (!response.ok) {
+        alert(data.error || "An error occurred. Please try again.");
+        return;
+      }
+
+      setPaymentDetails(data);
       alert("Payment successful!");
     } catch (error) {
-      console.error("Error during payment:", error);
+      console.error("Error processing payment:", error);
       alert("An error occurred. Please try again.");
     }
   };
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
 
-    if (id === "amount") {
-      // Sanitize amount: allow only numbers and a maximum value
-      const sanitizedValue = value.replace(/[^0-9.]/g, "");
-      setAmount(sanitizedValue);
-    } else if (id === "customerEmail") {
-      // Sanitize email input
-      const sanitizedEmail = DOMPurify.sanitize(value);
-      setCustomerEmail(sanitizedEmail);
-    }
-  };
+  if (!session?.user) {
+    return <p>You must be logged in to make a payment.</p>;
+  }
 
   return (
     <div>
       <h1>Payment Page</h1>
-      <h2>Payment submission may take between 30 seconds to 1 minute</h2>
+      <h2>Payment submission may take 30 seconds to 1 minute</h2>
+
       {!paymentDetails ? (
-        <form>
-          <div>
+        <>
+          <form>
             <label htmlFor="amount">Payment Amount (USD):</label>
             <input
               type="number"
@@ -166,79 +113,64 @@ const Payment = () => {
               step="0.01"
               required
             />
-            <ReCAPTCHA 
-              ref={recaptchaRef} 
-              size="compact" 
-              sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "site-key-not-found"} 
-              onChange={(token) => {
-                if (token) {
-                  setRecaptchaToken(token); // Set the token
-                  setRecaptchaError(""); // Clear any previous error
-                  //console.log("Generated reCAPTCHA token:", token);
-                } else {
-                  console.error("reCAPTCHA token is undefined or null"); // Debugging
-                }
-              }} />
-            {recaptchaError && <p style={{ color: "red" }}>{recaptchaError}</p>}
-          </div>
-        </form>
+
+            <label htmlFor="customerEmail">Receipt Email:</label>
+            <input
+              type="email"
+              id="customerEmail"
+              value={customerEmail}
+              onChange={handleInputChange}
+              placeholder="Enter your email"
+              required
+            />
+          </form>
+
+          <PaymentForm
+            applicationId={applicationId}
+            locationId={locationId}
+            cardTokenizeResponseReceived={(token, verifiedBuyer) =>
+              handlePayment(token, verifiedBuyer)
+            }
+            createPaymentRequest={() => ({
+              countryCode: "US",
+              currencyCode: "USD",
+              total: {
+                amount: amount || "1.00",
+                label: "Total",
+              },
+              requestBillingContact: true,
+              billingContact: {
+                email: customerEmail,
+              },
+              verificationDetails: {
+                intent: "CHARGE",
+                amount: amount || "1.00",
+                currencyCode: "USD",
+                billingContact: {
+                  email: customerEmail,
+                },
+              },
+            })}
+          >
+            <CreditCard />
+            <button disabled={!amount || !customerEmail}>Pay ${amount || "0.00"}</button>
+          </PaymentForm>
+        </>
       ) : (
         <div>
           <h2>Payment Successful!</h2>
           <p>Transaction ID: {paymentDetails.payment.id}</p>
           <p>Amount Paid: ${paymentDetails.payment.amountMoney.amount / 100}</p>
           <p>Status: {paymentDetails.payment.status}</p>
-          <a href={paymentDetails.payment.receiptUrl} target="_blank" rel="noopener noreferrer">
+          <a
+            href={paymentDetails.payment.receiptUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             View Receipt
           </a>
         </div>
       )}
-
-        <PaymentForm
-          applicationId={process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID || "missing-application-id"}
-          locationId={process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || "missing-location-id"}
-          cardTokenizeResponseReceived={(token, verifiedBuyer) => {
-            // Call handlePayment when the card tokenization is complete
-            handlePayment(token, verifiedBuyer);
-          }}
-        >
-          <form
-            onSubmit={(e) => {
-              e.preventDefault(); // Prevent the default form submission behavior
-              if (!amount) {
-                alert("Please enter an amount to pay.");
-                return;
-              }
-              if (!customerEmail) {
-                alert("Please enter your email for the receipt.");
-                return;
-              }
-              // Tokenization will trigger handlePayment
-            }}
-          >
-            {/* Email Input */}
-            <input
-              required
-              type="email"
-              id="customerEmail"
-              name="customerEmail"
-              value={customerEmail}
-              onChange={handleInputChange}
-              placeholder="Enter your email for your receipt"
-            />
-
-            {/* Credit Card Input */}
-            <CreditCard />
-
-            {/* Payment Button */}
-            <button
-              type="submit"
-              disabled={!amount} // Disable button if no amount
-            >
-              Pay ${amount || 0}
-            </button>
-          </form>
-        </PaymentForm>
     </div>
   );
 };
