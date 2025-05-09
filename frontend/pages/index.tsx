@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from "./home.module.css";
+import styles from "../styles/home.module.css";
 import StarIcon from "@mui/icons-material/Star";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import TimerIcon from "@mui/icons-material/Timer";
@@ -7,6 +7,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import { List, ListItem, ListItemIcon, ListItemText } from "@mui/material";
 import { Box, Stack, Typography } from "@mui/material";
 import ContactForm from '../components/ContactForm';
+import Head from 'next/head';
 import Image from 'next/image';
 import dentalHygienist from '../images/dentalhygienist.jpg';
 import electricalReadingDevice from '../images/electricalreadingdevice.jpg';
@@ -15,8 +16,6 @@ import meeting from '../images/meeting.jpg';
 import peopleInGym from '../images/peopleingym.jpg';
 import petCare from '../images/petcare.jpg';
 import plumber from '../images/plumberlookingatpipe.jpg';
-import Head from 'next/head';
-
 import { useRouter } from "next/router";
 import { signIn, signOut, useSession } from 'next-auth/react';
 

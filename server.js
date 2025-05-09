@@ -1,7 +1,8 @@
-const express = require("express");
-const next = require("next");
-const dotenv = require("dotenv");
-const path = require("path");
+import express from "express";
+import next from "next";
+import dotenv from "dotenv";
+import path from "path";
+import initBackend from "./backend/dist/index.js";
 
 // Load environment variables
 dotenv.config();
@@ -18,7 +19,7 @@ nextApp.prepare().then(() => {
   const server = express();
 
   // 🧠 Your backend entry point (compiled from backend/index.ts)
-  const initBackend = require("./backend/dist/index.js").default;
+  
   initBackend(server); // Setup all routes, middleware, etc.
 
   // 🛠️ Fallback to Next.js for anything that doesn't match an API route

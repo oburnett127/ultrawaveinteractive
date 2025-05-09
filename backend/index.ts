@@ -36,7 +36,7 @@ export default function initBackend(app: express.Express) {
   app.use((req, res, next) => {
     const allowedMethods = ["GET", "POST", "DELETE", "OPTIONS"];
     if (!allowedMethods.includes(req.method)) {
-      return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+      res.status(405).json({ message: `Method ${req.method} Not Allowed` });
     }
     next();
   });
@@ -56,30 +56,65 @@ export default function initBackend(app: express.Express) {
   });
 
   // CSP
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        useDefaults: true,
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "https://js.squareup.com", "https://accounts.google.com", "https://apis.google.com"],
-          styleSrc: ["'self'", "'unsafe-inline'", "https://js.squareup.com"],
-          frameSrc: ["'self'", "https://*.squarecdn.com", "https://accounts.google.com"],
-          imgSrc: ["'self'", "data:", "https://*.squarecdn.com", "https://accounts.google.com", "https://www.googleapis.com"],
-          connectSrc: [
-            "'self'",
-            "https://connect.squareup.com",
-            "https://*.squareupsandbox.com",
-            "https://oauth2.googleapis.com",
-            "https://accounts.google.com",
-            "https://smtp.gmail.com",
-          ],
-          objectSrc: ["'none'"],
-        },
-        reportOnly: false,
+  const isDev = process.env.NODE_ENV === 'development';
+
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          ...(isDev ? ["'unsafe-eval'"] : []),
+          "'unsafe-inline'",
+          "https://js.squareup.com",
+          "https://sandbox.web.squarecdn.com", // ✅ Add this line
+          "https://www.google.com",
+          "https://www.gstatic.com",
+          "https://cdn.sentry.io",
+        ],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'", // Required for Square's card styles
+          "https://js.squareup.com",
+          "https://sandbox.web.squarecdn.com",
+        ],
+        frameSrc: [
+          "'self'",
+          "https://js.squareup.com",
+          "https://sandbox.web.squarecdn.com",
+          "https://accounts.google.com",
+          "https://www.google.com",
+          "https://www.gstatic.com",
+        ],
+        imgSrc: [
+          "'self'",
+          "data:",
+          "https://*.squarecdn.com",
+          "https://accounts.google.com",
+          "https://www.googleapis.com",
+        ],
+        connectSrc: [
+          "'self'",
+          "http://localhost:3000",
+          "http://127.0.0.1:3000",
+          "https://connect.squareup.com",
+          "https://*.squareupsandbox.com",
+          "https://sandbox.web.squarecdn.com",
+          "https://oauth2.googleapis.com",
+          "https://accounts.google.com",
+          "https://smtp.gmail.com",
+          "https://www.google.com",
+          "https://www.gstatic.com",
+          "https://cdn.sentry.io",
+        ],
+        objectSrc: ["'none'"],
       },
-    })
-  );
+      reportOnly: false,
+    },
+  })
+);
 
   // CSP report endpoint
   app.post("/csp-violation-report", express.json(), (req, res) => {
@@ -193,7 +228,7 @@ async function createTransporter() {
         accessToken: accessToken.token || "no-access-token",
         
       },
-      debug: false, // Enable debug logs
+      debug: true, // Enable debug logs
       logger: false, // Log to console
     });
   } catch (error: any) {
@@ -209,7 +244,7 @@ app.post("/send-otp", validateIdToken, async (req: Request, res: Response) => {
   //console.log('send-otp endpoint is running');
 
   if (!email) {
-    return res.status(400).json({ message: "Email is required" });
+    res.status(400).json({ message: "Email is required" });
   }
 
   // Generate a random 6-digit OTP
@@ -222,7 +257,7 @@ app.post("/send-otp", validateIdToken, async (req: Request, res: Response) => {
     //console.log('after setting otp in redis');
   } catch (error) {
     console.error("Error storing OTP in Redis:", error);
-    return res.status(500).json({ message: "Failed to store OTP" });
+    res.status(500).json({ message: "Failed to store OTP" });
   }
 
   try {
@@ -249,7 +284,7 @@ app.post("/send-otp", validateIdToken, async (req: Request, res: Response) => {
     res.status(200).json({ message: "OTP sent successfully" });
   } catch (error) {
     console.error("Error sending OTP:", error);
-    res.status(500).json({ message: "Failed to send OTP: ", error });
+    res.status(500).json({ message: "Failed to send OTP", error: error || "Unknown error" });
   }
 });
 
@@ -260,7 +295,7 @@ app.post("/verify-otp", validateIdToken, async (req: Request, res: Response) => 
   //console.log('verify-otp endpoint is running');
 
   if (!email || !otp) {
-    return res.status(400).send({ message: "Email and OTP are required" });
+    res.status(400).json({ message: "Email and OTP are required" });
   }
 
   try {
@@ -272,14 +307,14 @@ app.post("/verify-otp", validateIdToken, async (req: Request, res: Response) => 
       // OTP is valid; delete it from Redis to prevent reuse
       await redis.del(`otp:${email}`);
       //console.log(`OTP verified for ${email}`);
-      res.status(200).send({ message: "OTP verified successfully" });
+      res.status(200).json({ message: "OTP verified successfully" });
     } else {
       console.error(`Invalid OTP for ${email}`);
-      res.status(400).send({ message: "Invalid OTP" });
+      res.status(400).json({ message: "Invalid OTP" });
     }
   } catch (error) {
     console.error("Error verifying OTP:", error);
-    res.status(500).send({ message: "Failed to verify OTP" });
+    res.status(500).json({ message: "Failed to verify OTP" });
   }
 });
 
@@ -297,13 +332,13 @@ const validatePaymentRequest = (req: Request, res: Response, next: Function) => 
 
   if (!googleProviderId || !email || !receiptEmail || !nonce || !amount) {
     console.error('Missing required fields in the request body');
-    return res.status(400).json({ error: 'Missing required fields in the request body' });
+    res.status(400).json({ error: 'Missing required fields in the request body' });
   }
 
   // Validate amount
   if (typeof amount !== 'number' || amount <= 0) {
     console.error('Invalid amount');
-    return res.status(400).json({ error: 'Invalid amount. Amount must be a positive number.' });
+    res.status(400).json({ error: 'Invalid amount. Amount must be a positive number.' });
   }
 
   // Attach validated data to the request object
@@ -513,7 +548,7 @@ app.post("/verify-recaptcha", validateIdToken, async (req: any, res: any) => {
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   if (err.code === 'EBADCSRFTOKEN') {
     console.error('Invalid CSRF Token:', err);
-    return res.status(403).json({ error: 'Invalid CSRF token' });
+    res.status(403).json({ error: 'Invalid CSRF token' });
   }
   next(err);
 });
@@ -524,9 +559,9 @@ app.use((err: any, req: any, res: any, next: any) => {
   res.status(500).send('Something went wrong');
 });
 
-// Start the server
-app.listen(process.env.PORT, () => {
-  console.log(`Server is running on http://localhost:${process.env.PORT}`);
-});
+// Start the server - don't want to call listen here
+// app.listen(process.env.PORT, () => {
+//   console.log(`Server is running on http://localhost:${process.env.PORT}`);
+// });
 
 }

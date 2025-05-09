@@ -9,7 +9,7 @@ function generateRandomSecret(length = 32) {
 }
 
 // Batch rotate secrets
-export const rotateSecretsBatch = async (req, res) => {
+export const rotateSecretsBatch = async (req: any, res: any) => {
   const projectId = 'ultrawaveinteractiveauth';
   const secretNames = req.body.secretNames; // Accept an array of secret names
 

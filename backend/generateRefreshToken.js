@@ -1,28 +1,27 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: '../.env' }); // adjust path as needed
+
+
 import { google } from 'googleapis';
 
-const OAuth2 = google.auth.OAuth2;
+console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
 
-const oauth2Client = new OAuth2(
+const oAuth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  'https://developers.google.com/oauthplayground' // CHANGE THIS WHEN SWITCHING TO PRODUCTION!!!
+  "https://developers.google.com/oauthplayground"
 );
 
-// Generate an authorization URL
-const authUrl = oauth2Client.generateAuthUrl({
-  access_type: 'offline',
-  scope: ['https://mail.google.com/'], // Gmail API scope
-});
+const SCOPES = ["https://www.googleapis.com/auth/gmail.send"];
 
-//console.log('Authorize this app by visiting this URL:', authUrl);
+async function getRefreshToken() {
+  const authUrl = oAuth2Client.generateAuthUrl({
+    access_type: "offline",
+    scope: SCOPES,
+    prompt: "consent",
+  });
 
-// After visiting the URL and authorizing, you'll get a code in the URL query
-// Paste that code below
-const code = process.env.GOOGLE_OAUTH_AUTHORIZATION_CODE; // Replace with the code from the URL
+  console.log("Go to this URL to authorize the app:\n", authUrl);
+}
 
-oauth2Client.getToken(code, (err, token) => {
-  if (err) {
-    return console.error('Error retrieving access token', err);
-  }
-  //console.log('Your refresh token is:', token?.refresh_token);
-});
+getRefreshToken();
