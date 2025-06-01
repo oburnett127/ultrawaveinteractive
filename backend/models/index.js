@@ -6,8 +6,7 @@ const sequelize = new Sequelize({
   username: dbConfig.USER,
   password: dbConfig.PASSWORD,
   host: dbConfig.HOST,
-  dialect: 'mysql',
-  logging: console.log,
+  dialect: 'mysql'
 });
 
 export default sequelize;

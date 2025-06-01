@@ -3,6 +3,7 @@ import next from "next";
 import dotenv from "dotenv";
 import path from "path";
 import initBackend from "./backend/dist/index.js";
+import { logger } from './backend/config/logger.js';
 
 // Load environment variables
 dotenv.config();
@@ -30,6 +31,6 @@ nextApp.prepare().then(() => {
   // ✅ Start unified server
   server.listen(port, (err) => {
     if (err) throw err;
-    console.log(`✅ Server ready on http://localhost:${port}`);
+    logger.info(`✅ Server ready on http://localhost:${port}`);
   });
 });

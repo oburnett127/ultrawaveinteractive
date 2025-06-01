@@ -1,23 +1,8 @@
-interface DbConfig {
-  sync(): unknown;
-  HOST: string;
-  USER: string;
-  PASSWORD: string;
-  DB: string;
-  dialect: string;
-  pool: {
-    max: number;
-    min: number;
-    acquire: number;
-    idle: number;
-  };
-}
-
 if (!process.env.DB_USERNAME || !process.env.DB_PASSWORD) {
   throw new Error("Required DB environment variables are not set.");
 }
 
-const dbConfig: DbConfig = {
+const dbConfig = {
   HOST: process.env.DB_HOSTNAME || "database-host-name",
   USER: process.env.DB_USERNAME,
   PASSWORD: process.env.DB_PASSWORD,

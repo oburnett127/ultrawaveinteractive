@@ -1,13 +1,13 @@
-export function AutoSetter(target: any, key: string) {
+export function AutoSetter(target, key) {
   const privateKeyName = `_${key}`;
   
   // Getter
-  const getter = function (this: any) {
+  const getter = function (this) {
     return this[privateKeyName];
   };
 
   // Setter
-  const setter = function (this: any, newValue: any) {
+  const setter = function (this, newValue) {
     if (newValue >= 0) {
       this[privateKeyName] = newValue;
     } else {

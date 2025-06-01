@@ -11,16 +11,10 @@ import Redis from "ioredis";
 import nodemailer from 'nodemailer';
 import { google } from "googleapis";
 import helmet from 'helmet';
-
-type RecaptchaResponse = {
-  success: boolean;
-  challenge_ts?: string;
-  hostname?: string;
-  "error-codes"?: string[];
-};
+import { logger } from './config/logger.ts';
 
 // ⬇️ Exported setup function
-export default function initBackend(app: express.Express) {
+export default function initBackend(app) {
   dotenv.config(); // Load environment variables
 
   // CORS middleware
@@ -118,7 +112,7 @@ app.use(
 
   // CSP report endpoint
   app.post("/csp-violation-report", express.json(), (req, res) => {
-    console.log("CSP Violation Report:", JSON.stringify(req.body, null, 2));
+    //console.log("CSP Violation Report:", JSON.stringify(req.body, null, 2));
     res.status(204).end();
   });
 
@@ -180,7 +174,7 @@ const squareClient = new Client({
 
 //For validating the jwt ID token for a user, not for validating access tokens, access
 //tokens are not jwt tokens and they do not need to be validated by this app.
-async function validateIdToken(req: any, res: any, next: any) {
+async function validateIdToken(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -208,10 +202,10 @@ async function validateIdToken(req: any, res: any, next: any) {
 // Function to create a Nodemailer transporter with OAuth2
 async function createTransporter() {
   try {
-    // console.log("Requesting Access Token with the following credentials:");
-    // console.log("Client ID:", process.env.GOOGLE_CLIENT_ID);
-    // console.log("Client Secret:", process.env.GOOGLE_CLIENT_SECRET ? "Present" : "Missing");
-    // console.log("Refresh Token:", process.env.GOOGLE_REFRESH_TOKEN);
+    //console.log("Requesting Access Token with the following credentials:");
+    //console.log("Client ID:", process.env.GOOGLE_CLIENT_ID);
+    //console.log("Client Secret:", process.env.GOOGLE_CLIENT_SECRET ? "Present" : "Missing");
+    //console.log("Refresh Token:", process.env.GOOGLE_REFRESH_TOKEN);
 
     const accessToken = await oAuth2Client.getAccessToken();
 
@@ -231,14 +225,14 @@ async function createTransporter() {
       debug: true, // Enable debug logs
       logger: false, // Log to console
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in createTransporter:", error.response?.data || error.message);
     throw error;
   }
 }
 
 // Endpoint to send OTP
-app.post("/send-otp", validateIdToken, async (req: Request, res: Response) => {
+app.post("/send-otp", validateIdToken, async (req, res) => {
   const { email } = req.body;
 
   //console.log('send-otp endpoint is running');
@@ -263,11 +257,11 @@ app.post("/send-otp", validateIdToken, async (req: Request, res: Response) => {
   try {
     const transporter = await createTransporter();
 
-    transporter.verify((error: any, success: any) => {
+    transporter.verify((error, success) => {
       if (error) {
         console.error("SMTP verification failed:", error);
       } else {
-        console.log("SMTP verification successful:", success);
+        //console.log("SMTP verification successful:", success);
       }
     });
     
@@ -280,7 +274,7 @@ app.post("/send-otp", validateIdToken, async (req: Request, res: Response) => {
     };
     //console.log('before sendMail');
     await transporter.sendMail(mailOptions);
-    //console.log(`OTP sent to ${email}`);
+    logger.info(`OTP sent to ${email}`);
     res.status(200).json({ message: "OTP sent successfully" });
   } catch (error) {
     console.error("Error sending OTP:", error);
@@ -289,7 +283,7 @@ app.post("/send-otp", validateIdToken, async (req: Request, res: Response) => {
 });
 
 // Endpoint to verify OTP
-app.post("/verify-otp", validateIdToken, async (req: Request, res: Response) => {
+app.post("/verify-otp", validateIdToken, async (req, res) => {
   const { email, otp } = req.body;
 
   //console.log('verify-otp endpoint is running');
@@ -327,7 +321,7 @@ const paymentSchema = z.object({
 });
 
 // Middleware to validate the payment request body
-const validatePaymentRequest = (req: Request, res: Response, next: Function) => {
+const validatePaymentRequest = (req, res, next) => {
   const { googleProviderId, email, receiptEmail, nonce, amount } = req.body;
 
   if (!googleProviderId || !email || !receiptEmail || !nonce || !amount) {
@@ -346,7 +340,7 @@ const validatePaymentRequest = (req: Request, res: Response, next: Function) => 
   next();
 };
 
-app.post('/process-payment', validateIdToken, validatePaymentRequest, async (req: Request, res: Response) => {
+app.post('/process-payment', validateIdToken, validatePaymentRequest, async (req, res) => {
   try {
     const { googleProviderId, email, receiptEmail, nonce, amount } = req.validatedData;
 
@@ -393,7 +387,7 @@ app.post('/process-payment', validateIdToken, validatePaymentRequest, async (req
       success: true,
       payment: sanitizedResponse.payment,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error during payment processing:', error);
 
     // Handle errors from Square API or other unknown errors
@@ -407,7 +401,7 @@ app.post('/process-payment', validateIdToken, validatePaymentRequest, async (req
   }
 });
 
-app.post("/contact", async (req: any, res: any) => {
+app.post("/contact", async (req, res) => {
   try {
     if (req.method !== "POST") {
       return res.status(405).json({ error: "Method not allowed" });
@@ -427,7 +421,7 @@ app.post("/contact", async (req: any, res: any) => {
     }
 
     // Verify reCAPTCHA token
-    const response: RecaptchaResponse = await verifyRecaptchaToken(recaptchaToken);
+    const response = await verifyRecaptchaToken(recaptchaToken);
     if (response.success === false) {
       return res.status(400).json({ error: "Failed reCAPTCHA verification" });
     }
@@ -459,12 +453,7 @@ app.post("/contact", async (req: any, res: any) => {
   }
 });
 
-async function verifyRecaptchaToken(token: string): Promise<{
-  success: boolean;
-  challenge_ts?: string;
-  hostname?: string;
-  "error-codes"?: string[];
-}> {
+async function verifyRecaptchaToken(token) {
   if (!token) {
     return { success: false, "error-codes": ["missing-input-response"] }; // Token is missing
   }
@@ -495,7 +484,7 @@ async function verifyRecaptchaToken(token: string): Promise<{
       return { success: false, "error-codes": ["verification-failed"] };
     }
 
-    const data = (await response.json()) as RecaptchaResponse;
+    const data = (await response.json());
     //console.log("Google's reCAPTCHA verification response:", data); // Debugging
 
     // Handle failure from Google's response
@@ -535,7 +524,7 @@ app.post("/verify-recaptcha", validateIdToken, async (req: any, res: any) => {
         errors: data["error-codes"],
       });
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error verifying reCAPTCHA:", error.message);
     return res.status(500).json({
       success: false,
@@ -545,7 +534,7 @@ app.post("/verify-recaptcha", validateIdToken, async (req: any, res: any) => {
 });
 
 // Handle CSRF errors explicitly
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+app.use((err, req, res, next) => {
   if (err.code === 'EBADCSRFTOKEN') {
     console.error('Invalid CSRF Token:', err);
     res.status(403).json({ error: 'Invalid CSRF token' });
@@ -554,7 +543,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 // Global error handler
-app.use((err: any, req: any, res: any, next: any) => {
+app.use((err, req, res, next) => {
   console.error('Unhandled Error:', err);
   res.status(500).send('Something went wrong');
 });

@@ -1,10 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config({ path: '../.env' }); // adjust path as needed
-
-
 import { google } from 'googleapis';
 
-console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
+//console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
 
 const oAuth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -21,7 +19,7 @@ async function getRefreshToken() {
     prompt: "consent",
   });
 
-  console.log("Go to this URL to authorize the app:\n", authUrl);
+  //console.log("Go to this URL to authorize the app:\n", authUrl);
 }
 
 getRefreshToken();

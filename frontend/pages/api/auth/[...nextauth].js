@@ -3,7 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import { refreshIdToken } from '../../../utility/auth';
 
 // Define the authOptions with explicit typing
-export const authOptions: NextAuthOptions = {
+export const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
@@ -19,16 +19,17 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log("Sign In Callback Triggered", profile);
-      console.log("Google Profile:", profile);
+      //console.log("Sign In Callback Triggered", profile);
+      //console.log("Google Profile:", profile);
       
       return true;
     },
-    async jwt({ token, account, user }: { token: any; account?: any; user?: any }) {
-      console.log('jwt callback running');
+    async jwt({ token, account, user }) {
+      //console.log('jwt callback running');
       
-      console.log('GOOGLE_CLIENT_ID=',process.env.GOOGLE_CLIENT_ID);
-      console.log('GOOGLE_CLIENT_SECRET=',process.env.GOOGLE_CLIENT_SECRET);
+      //console.log('GOOGLE_CLIENT_ID=',process.env.GOOGLE_CLIENT_ID);
+      //console.log('GOOGLE_CLIENT_SECRET=',process.env.GOOGLE_CLIENT_SECRET);
+      //console.log('GOOGLE_REFRESH_TOKEN=',process.env.GOOGLE_REFRESH_TOKEN);
 
       if (account) {
         token.idToken = account.id_token; // Save the ID token
@@ -64,12 +65,13 @@ export const authOptions: NextAuthOptions = {
         refreshToken: refreshedToken.refreshToken,
       };
     },
-    async session({ session, token }: { session: any; token: any; account?: any;}) {
+    async session({ session, token }) {
 
-      console.log('session callback running');
+      //console.log('session callback running');
 
-      console.log('GOOGLE_CLIENT_ID=',process.env.GOOGLE_CLIENT_ID);
-      console.log('GOOGLE_CLIENT_SECRET=',process.env.GOOGLE_CLIENT_SECRET);
+      //console.log('GOOGLE_CLIENT_ID=',process.env.GOOGLE_CLIENT_ID);
+      //console.log('GOOGLE_CLIENT_SECRET=',process.env.GOOGLE_CLIENT_SECRET);
+      //console.log('GOOGLE_REFRESH_TOKEN=',process.env.GOOGLE_REFRESH_TOKEN);
 
       if(token) {
         session.user.id = token.sub; // Use sub from the JWT token

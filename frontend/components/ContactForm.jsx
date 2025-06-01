@@ -2,15 +2,7 @@ import React, { useState, useRef } from "react";
 import ReCAPTCHA from 'react-google-recaptcha';
 import styles from "./ContactForm.module.css"; // Adjust this path as needed
 
-type FormData = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  message: string;
-};
-
-const ContactForm: React.FC = () => {
+const ContactForm = () => {
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -28,20 +20,20 @@ const ContactForm: React.FC = () => {
 
 
   // Helper function to sanitize input
-  const sanitizeInput = (input: string): string => {
+  const sanitizeInput = (input) => {
     const div = document.createElement("div");
     div.innerText = input;
     return div.innerHTML; // Escape any HTML/JS content
   };
 
   // Handle input changes with sanitization
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: sanitizeInput(value) }));
   };
 
   // Validate form fields before submission
-  const isFormValid = (): boolean => {
+  const isFormValid = () => {
     const { firstName, lastName, email, phone, message } = formData;
 
     // Check required fields
@@ -70,14 +62,14 @@ const ContactForm: React.FC = () => {
   };
 
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validate form data before sending
     if (!isFormValid()) return;
 
     // Get the reCAPTCHA token
-    const recaptchaToken: string = recaptchaRef.current?.getValue() || "missing-recaptcha-token";
+    const recaptchaToken = recaptchaRef.current?.getValue() || "missing-recaptcha-token";
     if (!recaptchaToken) {
       setRecaptchaError("Please complete the reCAPTCHA.");
       return;
@@ -112,7 +104,7 @@ const ContactForm: React.FC = () => {
       }
 
       // Reset reCAPTCHA after form submission
-      (window as any).grecaptcha?.reset();
+      (window).grecaptcha?.reset();
     } catch (error) {
       setResponseMessage("An error occurred while sending the message.");
       console.error(error);

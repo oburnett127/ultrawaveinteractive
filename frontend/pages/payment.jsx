@@ -4,22 +4,6 @@ import { useSession } from "next-auth/react";
 import DOMPurify from 'dompurify';
 import { getToken } from 'next-auth/jwt';
 
-// Define the type for payment details
-interface PaymentDetails {
-  payment: {
-    id: string;
-    amountMoney: {
-      amount: number;
-    };
-    status: string;
-    receiptUrl: string;
-  };
-}
-
-interface ValidateTokenResponse {
-  success: boolean;
-}
-
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
 const Payment = () => {
@@ -29,11 +13,11 @@ const Payment = () => {
   const [customerEmail, setCustomerEmail] = useState("");
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
 
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL!;
-  const applicationId = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID!;
-  const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID!;
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const applicationId = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID;
+  const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID;
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e => {
     const { id, value } = e.target;
     if (id === "amount") {
       const sanitized = value.replace(/[^0-9.]/g, "");
@@ -43,7 +27,7 @@ const Payment = () => {
     }
   };
 
-  const handlePayment = async (token: any, verifiedBuyer: any) => {
+  const handlePayment = async (token, verifiedBuyer) => {
     if (!session?.user) {
       alert("You must be logged in to make a payment.");
       return;
@@ -175,7 +159,7 @@ const Payment = () => {
   );
 };
 
-export async function getServerSideProps(context: any) {
+export async function getServerSideProps(context) {
   const token = await getToken({ req: context.req, secret: process.env.NEXTAUTH_SECRET });
 
   if (!token?.otpVerified) {

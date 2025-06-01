@@ -31,7 +31,7 @@ useEffect(() => {
   }
 }, [status, session]);
 
-async function sendOTP(email: string) {
+async function sendOTP(email) {
   try {
     const res = await fetch(`${backendUrl}/send-otp`, {
       method: "POST",
@@ -90,7 +90,7 @@ async function handleVerifyOTP() {
     } else {
       throw new Error("Invalid OTP.");
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error verifying OTP:", err.message);
   }
 }

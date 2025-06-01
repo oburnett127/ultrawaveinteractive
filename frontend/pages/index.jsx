@@ -21,8 +21,8 @@ import { signIn, signOut, useSession } from 'next-auth/react';
 
 function Home() {
 
-  console.log('GOOGLE_CLIENT_ID=',process.env.GOOGLE_CLIENT_ID);
-  console.log('GOOGLE_CLIENT_SECRET=',process.env.GOOGLE_CLIENT_SECRET);
+  //console.log('GOOGLE_CLIENT_ID=',process.env.GOOGLE_CLIENT_ID);
+  //console.log('GOOGLE_CLIENT_SECRET=',process.env.GOOGLE_CLIENT_SECRET);
 
   const router = useRouter();
   const { data: session } = useSession();
@@ -71,9 +71,9 @@ function Home() {
             <button className={styles.button}>Schedule a Free Consultation</button>
           </a>
 
-          <a className={styles.flexCenter} href="tel:+14055198318" aria-label="Call Me at +14055198318">
+          {/* <a className={styles.flexCenter} href="tel:+14055198318" aria-label="Call Me at +14055198318">
             <button className={styles.button}>or call me at 405-519-8318</button>
-          </a>
+          </a> */}
 
           <p>You don't pay me until you are satisfied with the quality of my work!</p>
           <p>Fully customized websites, tailored to the specific and unique needs of your business!</p>
@@ -131,12 +131,12 @@ function Home() {
             <button className={styles.button}>See a sample of my work</button>
           </a>
 
-          <p>Contact me using the below form or call 405-519-8318 to schedule a free consultation!</p>
+          {/* <p>Contact me using the below form or call 405-519-8318 to schedule a free consultation!</p> */}
 
           <hr />
-          <div id="contact-form">
+          {/* <div id="contact-form">
             <ContactForm />
-          </div>
+          </div> */}
 
         </div>
         <div>

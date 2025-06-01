@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export async function refreshIdToken(refreshToken: any) {
+export async function refreshIdToken(refreshToken) {
     try {
       const response = await axios.post("https://oauth2.googleapis.com/token", {
         client_id: process.env.GOOGLE_CLIENT_ID,
@@ -16,7 +16,7 @@ export async function refreshIdToken(refreshToken: any) {
         idTokenExpires: Date.now() + tokens.expires_in * 1000,
         refreshToken: tokens.refresh_token || refreshToken, // Keep using the same refresh token if not updated
       };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error refreshing ID token:", error.response?.data || error.message);
       throw new Error("Failed to refresh ID token");
     }
