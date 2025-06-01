@@ -25,7 +25,7 @@ const Payment = () => {
     } else if (id === "customerEmail") {
       setCustomerEmail(DOMPurify.sanitize(value));
     }
-  };
+  })
 
   const handlePayment = async (token, verifiedBuyer) => {
     if (!session?.user) {

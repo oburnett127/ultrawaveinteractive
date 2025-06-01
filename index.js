@@ -11,7 +11,7 @@ import Redis from "ioredis";
 import nodemailer from 'nodemailer';
 import { google } from "googleapis";
 import helmet from 'helmet';
-import { logger } from './config/logger.ts';
+import { logger } from './config/logger.js';
 
 // ⬇️ Exported setup function
 export default function initBackend(app) {
@@ -111,10 +111,10 @@ app.use(
 );
 
   // CSP report endpoint
-  app.post("/csp-violation-report", express.json(), (req, res) => {
-    //console.log("CSP Violation Report:", JSON.stringify(req.body, null, 2));
-    res.status(204).end();
-  });
+  // app.post("/csp-violation-report", express.json(), (req, res) => {
+  //   //console.log("CSP Violation Report:", JSON.stringify(req.body, null, 2));
+  //   res.status(204).end();
+  // });
 
   // Body parsers
   app.use(bodyParser.json());
@@ -501,7 +501,7 @@ async function verifyRecaptchaToken(token) {
   }
 }
 
-app.post("/verify-recaptcha", validateIdToken, async (req: any, res: any) => {
+app.post("/verify-recaptcha", validateIdToken, async (req, res) => {
   const { recaptchaToken } = req.body; //Recaptcha token generated on the frontend by the recaptcha widget
 
   //console.log("Received reCAPTCHA token:", recaptchaToken); // Debugging
