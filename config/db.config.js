@@ -14,7 +14,7 @@ const dbConfig = {
     acquire: 30000,
     idle: 10000
   },
-  sync: function (): unknown {
+  sync: function () {
     throw new Error("Function not implemented.");
   }
 };

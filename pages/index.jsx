@@ -75,7 +75,7 @@ function Home() {
             <button className={styles.button}>or call me at 405-519-8318</button>
           </a> */}
 
-          <p>You don't pay me until you are satisfied with the quality of my work!</p>
+          <p>You don&apos;t pay me until you are satisfied with the quality of my work!</p>
           <p>Fully customized websites, tailored to the specific and unique needs of your business!</p>
 
           {!session ? (

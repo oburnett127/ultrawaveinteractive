@@ -1,17 +1,21 @@
-import express, { Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import { Client, Environment } from 'square';
-import dotenv from 'dotenv';
-import crypto from 'crypto';
-import fetch from 'node-fetch';
-import rateLimit from 'express-rate-limit';
-import bodyParser from 'body-parser';
-import { z } from 'zod';
-import Redis from "ioredis";
-import nodemailer from 'nodemailer';
-import { google } from "googleapis";
-import helmet from 'helmet';
-import { logger } from './config/logger.js';
+console.log("index.js loading. __filename:", __filename);
+console.log("typeof require:", typeof require);
+
+const express = require('express');
+const app = express();
+const cors = require('cors');
+const { Client, Environment } = require('square');
+const dotenv = require('dotenv');
+const crypto = require('crypto');
+const fetch = require('node-fetch');
+const rateLimit = require('express-rate-limit');
+const bodyParser = require('body-parser');
+const { z } = require('zod');
+const Redis = require("ioredis");
+const nodemailer = require('nodemailer');
+const { google } = require("googleapis");
+const helmet = require('helmet');
+const { logger } = require('./config/logger.js');
 
 // ⬇️ Exported setup function
 export default function initBackend(app) {
@@ -154,7 +158,7 @@ app.use(
     max: 15, // Limit each IP to 15 requests per window
     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-    message: 'Too many requests from this IP, please try again later.',
+    message: 'Too many requests = require(this IP, please try again later.',
   });
 
   // BEFORE PUTTING IN PRODUCTION UNCOMMENT THESE LINES ABOUT RATE LIMITER

@@ -1,10 +1,12 @@
 const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 const path = require('path');
-const { Logform } = require('winston');
+const { fileURLToPath } = require('url');
 
-// Ensure log directory exists
-const logDir = path.join(__dirname, '../../logs');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const logDir = path.join(__dirname, '../logs');
 
 const env = process.env.NODE_ENV || 'development';
 const logLevel = process.env.LOG_LEVEL;
@@ -18,7 +20,7 @@ const fileRotateTransport = new DailyRotateFile({
   level: logLevel,
 });
 
-const logger = winston.createLogger({
+export const logger = winston.createLogger({
   level: logLevel,
   format: winston.format.combine(
     winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
@@ -40,5 +42,3 @@ logger.stream = {
     logger.info(message.trim());
   },
 };
-
-module.exports = { logger };

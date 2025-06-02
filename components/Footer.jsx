@@ -1,5 +1,6 @@
 import React from 'react';
 import './Footer.module.css';
+import Link from 'next/link';
 
 const Footer = () => {
   return (
@@ -7,19 +8,19 @@ const Footer = () => {
       <div className="footer-content">
         <ul className="footer-links">
           <li>
-            <a href="/privacypolicy" className="footer-link">
+            <Link href="/privacypolicy" className="footer-link">
               Privacy Policy
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="/termsofservice" className="footer-link">
+            <Link href="/termsofservice" className="footer-link">
               Terms of Service
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="/cookiepolicy" className="footer-link">
+            <Link href="/cookiepolicy" className="footer-link">
               Cookie Policy
-            </a>
+            </Link>
           </li>
         </ul>
         <p className="footer-text">© {new Date().getFullYear()} Ultrawave Interactive. All rights reserved.</p>

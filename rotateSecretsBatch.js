@@ -1,5 +1,5 @@
-import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
-import crypto from 'crypto';
+const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
+const crypto = require('crypto');
 
 const client = new SecretManagerServiceClient();
 

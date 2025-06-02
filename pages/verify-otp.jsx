@@ -15,85 +15,87 @@ export default function VerifyOTP() {
     if (status === "unauthenticated") {
       router.push("/"); // Redirect to home if not authenticated
     }
-  }, [status]);
+  }, [status, router]);
 
   // Automatically send OTP when the user is authenticated
-useEffect(() => {
-  //console.log("Status:", status, "Session:", session); // Debugging log
+  useEffect(() => {
+    const sendOTP = (email) => {
+      // Your send logic here (e.g., API call)
+    };
 
-  if (session && session.user) {
-    //console.log("Access Token:", session.user.accessToken);
-  }
-
-  if (status === "authenticated" && session?.user?.email && !otpSent) {
-    sendOTP(session.user.email);
-    setOtpSent(true); // Prevent duplicate OTP sending
-  }
-}, [status, session]);
-
-async function sendOTP(email) {
-  try {
-    const res = await fetch(`${backendUrl}/send-otp`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${session?.user.idToken}`,
-      },
-      credentials: "include", // Replaces `withCredentials: true`
-      body: JSON.stringify({ email }),
-    });
-
-    //console.log('from verify-otp after send-otp, session?.idToken: ', session?.user.idToken);
-
-    if (!res.ok) {
-      throw new Error("Failed to send OTP.");
+    if (session && session.user) {
+      //console.log("Access Token:", session.user.accessToken);
     }
 
-    //console.log("OTP sent successfully.");
-  } catch (error) {
-    console.error("Error sending OTP:", error);
-    setError("Failed to send OTP. Please try again.");
-  }
-}
+    if (status === "authenticated" && session?.user?.email && !otpSent) {
+      sendOTP(session.user.email);
+      setOtpSent(true); // Prevent duplicate OTP sending
+    }
+  }, [status, session, otpSent]);
 
-async function handleVerifyOTP() {
-  try {
-    const res = await fetch(`${backendUrl}/verify-otp`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session?.user.idToken}`,
-      },
-      credentials: "include",
-      body: JSON.stringify({ email: session?.user.email, otp }),
-    });
-
-    //console.log('from verify-otp, session?.idToken: ', session?.user.idToken);
-
-    if (res.ok) {
-      // Update token via API route
-      await fetch("/api/auth/update-token", {
+  async function sendOTP(email) {
+    try {
+      const res = await fetch(`${backendUrl}/send-otp`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.user.idToken}`,
+        },
+        credentials: "include", // Replaces `withCredentials: true`
+        body: JSON.stringify({ email }),
       });
 
-        // Refresh session
-      const sessionRes = await fetch("/api/auth/session", {
-        method: "GET",
-        headers: { "Cache-Control": "no-cache" },
-      });
+      //console.log('from verify-otp after send-otp, session?.idToken: ', session?.user.idToken);
 
-      const sessionData = await sessionRes.json();
-      //console.log("Session data after refresh:", sessionData);
+      if (!res.ok) {
+        throw new Error("Failed to send OTP.");
+      }
 
-      router.push("/payment");
-    } else {
-      throw new Error("Invalid OTP.");
+      //console.log("OTP sent successfully.");
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+      setError("Failed to send OTP. Please try again.");
     }
-  } catch (err) {
-    console.error("Error verifying OTP:", err.message);
   }
-}
+
+  async function handleVerifyOTP() {
+    try {
+      const res = await fetch(`${backendUrl}/verify-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.user.idToken}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({ email: session?.user.email, otp }),
+      });
+
+      //console.log('from verify-otp, session?.idToken: ', session?.user.idToken);
+
+      if (res.ok) {
+        // Update token via API route
+        await fetch("/api/auth/update-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+
+          // Refresh session
+        const sessionRes = await fetch("/api/auth/session", {
+          method: "GET",
+          headers: { "Cache-Control": "no-cache" },
+        });
+
+        const sessionData = await sessionRes.json();
+        //console.log("Session data after refresh:", sessionData);
+
+        router.push("/payment");
+      } else {
+        throw new Error("Invalid OTP.");
+      }
+    } catch (err) {
+      console.error("Error verifying OTP:", err.message);
+    }
+  }
 
   return (
     <div>

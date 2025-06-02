@@ -1,9 +1,9 @@
-import express from "express";
-import next from "next";
-import dotenv from "dotenv";
-import path from "path";
-import initBackend from "./backend/dist/index.js";
-import { logger } from './backend/config/logger.js';
+const express = require("express");
+const next = require("next");
+const dotenv = require("dotenv");
+const path = require("path");
+const initBackend = require('./index.cjs');
+const { logger } = require('./config/logger.js');
 
 // Load environment variables
 dotenv.config();
@@ -13,7 +13,7 @@ const dev = process.env.NODE_ENV !== "production";
 const port = process.env.PORT || 3000;
 
 // Init Next.js frontend
-const nextApp = next({ dev, dir: "./frontend" });
+const nextApp = next({ dev });
 const handle = nextApp.getRequestHandler();
 
 nextApp.prepare().then(() => {

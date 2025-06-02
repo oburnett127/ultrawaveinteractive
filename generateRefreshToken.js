@@ -1,6 +1,6 @@
-import dotenv from 'dotenv';
+const dotenv = require ('dotenv');
 dotenv.config({ path: '../.env' }); // adjust path as needed
-import { google } from 'googleapis';
+const { google } = require('googleapis');
 
 //console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
 

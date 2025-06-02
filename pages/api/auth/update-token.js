@@ -1,7 +1,7 @@
 // File: pages/api/auth/update-token.ts
 import { getToken, encode } from "next-auth/jwt";
 
-export default async (req, res) => {
+const updateToken = async (req, res) => {
   // Fetch the current token
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
@@ -27,3 +27,5 @@ export default async (req, res) => {
   // Send the updated token back to the client (optional)
   res.status(200).json({ token: updatedToken });
 };
+
+export default updateToken;

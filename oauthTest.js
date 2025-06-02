@@ -1,5 +1,5 @@
-import { google } from "googleapis";
-import dotenv from "dotenv";
+const { google } = require("googleapis");
+const dotenv = require("dotenv");
 
 dotenv.config();
 
