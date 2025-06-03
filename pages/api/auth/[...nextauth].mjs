@@ -1,8 +1,10 @@
-const NextAuth = require("next-auth");
-const GoogleProvider = require("next-auth/providers/google");
-const{ refreshIdToken } = reqeuire('../../../utility/auth.js');
+// pages/api/auth/[...nextauth].mjs
 
-export const authOptions = {
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import { refreshIdToken } from "../../../utility/auth.js";
+
+const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
@@ -79,7 +81,6 @@ export const authOptions = {
   },
 };
 
-// ✅ This is critical
 export default function authHandler(req, res) {
   return NextAuth(req, res, authOptions);
 }

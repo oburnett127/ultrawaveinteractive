@@ -1,44 +1,43 @@
+// logger.js — fully CommonJS-compliant version
 const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 const path = require('path');
-const { fileURLToPath } = require('url');
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const fs = require('fs');
 
 const logDir = path.join(__dirname, '../logs');
 
+// Make sure the logs directory exists
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, { recursive: true });
+}
+
 const env = process.env.NODE_ENV || 'development';
-const logLevel = process.env.LOG_LEVEL;
+const logLevel = process.env.LOG_LEVEL || 'info';
 
 const fileRotateTransport = new DailyRotateFile({
   filename: `${logDir}/app-%DATE%.log`,
   datePattern: 'YYYY-MM-DD',
   zippedArchive: true,
-  maxSize: '5m',              // 🔁 Rotate when log file exceeds 5 megabytes
-  maxFiles: '14d',            // 🧹 Keep logs for 14 days
+  maxSize: '5m',
+  maxFiles: '14d',
   level: logLevel,
 });
 
-export const logger = winston.createLogger({
+const logger = winston.createLogger({
   level: logLevel,
   format: winston.format.combine(
     winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     winston.format.errors({ stack: true }),
-    winston.format.printf((info) => {
-      const { timestamp, level, message, stack } = info;
+    winston.format.printf(({ timestamp, level, message, stack }) => {
       return `[${timestamp}] ${level.toUpperCase()}: ${stack || message}`;
     })
   ),
-  transports: [
-    new winston.transports.Console(),
-    fileRotateTransport,
-  ],
+  transports: [new winston.transports.Console(), fileRotateTransport],
   exitOnError: false,
 });
 
 logger.stream = {
-  write: (message) => {
-    logger.info(message.trim());
-  },
+  write: (message) => logger.info(message.trim()),
 };
+
+module.exports = { logger };

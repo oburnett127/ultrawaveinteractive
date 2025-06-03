@@ -2,7 +2,7 @@ const express = require("express");
 const next = require("next");
 const dotenv = require("dotenv");
 const path = require("path");
-const initBackend = require('./index.cjs');
+const { initBackend } = require('./index.js');
 const { logger } = require('./config/logger.js');
 
 // Load environment variables
