@@ -177,9 +177,9 @@ function initBackend(app) {
   });
 
 
-    //For validating the jwt ID token for a user, not for validating access tokens, access
-    //tokens are not jwt tokens and they do not need to be validated by this app.
-    async function validateIdToken(req, res, next) {
+  //For validating the jwt ID token for a user, not for validating access tokens, access
+  //tokens are not jwt tokens and they do not need to be validated by this app.
+  async function validateIdToken(req, res, next) {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -190,54 +190,54 @@ function initBackend(app) {
     //console.log("ID Token received for validation:", token);
 
     try {
-      const ticket = await oAuth2Client.verifyIdToken({
-        idToken: token,
-        audience: process.env.GOOGLE_CLIENT_ID, // Replace with your client ID
-      });
+        const ticket = await oAuth2Client.verifyIdToken({
+          idToken: token,
+          audience: process.env.GOOGLE_CLIENT_ID, // Replace with your client ID
+        });
 
-      const payload = ticket.getPayload();
-      req.user = payload; // Attach user info to the request object for downstream use
-      next();
-    } catch (error) {
-      console.error("ID Token validation failed:", error);
-      return res.status(401).json({ error: "Unauthorized: Invalid or expired ID token" });
-    }
+        const payload = ticket.getPayload();
+        req.user = payload; // Attach user info to the request object for downstream use
+        next();
+      } catch (error) {
+        console.error("ID Token validation failed:", error);
+        return res.status(401).json({ error: "Unauthorized: Invalid or expired ID token" });
+      }
     }
 
-    // Function to create a Nodemailer transporter with OAuth2
-    async function createTransporter() {
+  // Function to create a Nodemailer transporter with OAuth2
+  async function createTransporter() {
     try {
-      //console.log("Requesting Access Token with the following credentials:");
-      //console.log("Client ID:", process.env.GOOGLE_CLIENT_ID);
-      //console.log("Client Secret:", process.env.GOOGLE_CLIENT_SECRET ? "Present" : "Missing");
-      //console.log("Refresh Token:", process.env.GOOGLE_REFRESH_TOKEN);
+        //console.log("Requesting Access Token with the following credentials:");
+        //console.log("Client ID:", process.env.GOOGLE_CLIENT_ID);
+        //console.log("Client Secret:", process.env.GOOGLE_CLIENT_SECRET ? "Present" : "Missing");
+        //console.log("Refresh Token:", process.env.GOOGLE_REFRESH_TOKEN);
 
-      const accessToken = await oAuth2Client.getAccessToken();
+        const accessToken = await oAuth2Client.getAccessToken();
 
-      //console.log("Access Token retrieved:", accessToken.token);
+        //console.log("Access Token retrieved:", accessToken.token);
 
-      return nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          type: "OAuth2",
-          user: process.env.EMAIL_USER,
-          clientId: process.env.GOOGLE_CLIENT_ID,
-          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
-          accessToken: accessToken.token || "no-access-token",
-          
-        },
-        debug: true, // Enable debug logs
-        logger: false, // Log to console
-      });
-    } catch (error) {
-      console.error("Error in createTransporter:", error.response?.data || error.message);
-      throw error;
+        return nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+            type: "OAuth2",
+            user: process.env.EMAIL_USER,
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+            accessToken: accessToken.token || "no-access-token",
+            
+          },
+          debug: true, // Enable debug logs
+          logger: false, // Log to console
+        });
+      } catch (error) {
+        console.error("Error in createTransporter:", error.response?.data || error.message);
+        throw error;
+      }
     }
-    }
 
-    // Endpoint to send OTP
-    app.post("/send-otp", validateIdToken, async (req, res) => {
+  // Endpoint to send OTP
+  app.post("/send-otp", validateIdToken, async (req, res) => {
     const { email } = req.body;
 
     //console.log('send-otp endpoint is running');
@@ -278,17 +278,17 @@ function initBackend(app) {
         text: `Your OTP is: ${otp}. It is valid for 10 minutes.`,
       };
       //console.log('before sendMail');
-      await transporter.sendMail(mailOptions);
-      logger.info(`OTP sent to ${email}`);
-      res.status(200).json({ message: "OTP sent successfully" });
+        await transporter.sendMail(mailOptions);
+        logger.info(`OTP sent to ${email}`);
+        res.status(200).json({ message: "OTP sent successfully" });
     } catch (error) {
       console.error("Error sending OTP:", error);
       res.status(500).json({ message: "Failed to send OTP", error: error || "Unknown error" });
     }
-    });
+  });
 
-    // Endpoint to verify OTP
-    app.post("/verify-otp", validateIdToken, async (req, res) => {
+  // Endpoint to verify OTP
+  app.post("/verify-otp", validateIdToken, async (req, res) => {
     const { email, otp } = req.body;
 
     //console.log('verify-otp endpoint is running');
@@ -315,18 +315,18 @@ function initBackend(app) {
       console.error("Error verifying OTP:", error);
       res.status(500).json({ message: "Failed to verify OTP" });
     }
-    });
+  });
 
-    // Zod schema for payment validation
-    const paymentSchema = z.object({
+  // Zod schema for payment validation
+  const paymentSchema = z.object({
     googleProviderId: z.string().min(1, "Google Provider ID is required"), // Must be a non-empty string
     email: z.string().email("Invalid email format"), // Standard email validation
     nonce: z.string().min(1, "Nonce is required"), // Nonce must be present
     amount: z.number().positive("Amount must be greater than 0"), // Positive number validation
-    });
+  });
 
-    // Middleware to validate the payment request body
-    const validatePaymentRequest = (req, res, next) => {
+  // Middleware to validate the payment request body
+  const validatePaymentRequest = (req, res, next) => {
     const { googleProviderId, email, receiptEmail, nonce, amount } = req.body;
 
     if (!googleProviderId || !email || !receiptEmail || !nonce || !amount) {

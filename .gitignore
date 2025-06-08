@@ -106,7 +106,6 @@ Thumbs.db
 *.seed
 
 # npm package lock files
-package-lock.json
 yarn.lock
 
 # Coverage files from testing
