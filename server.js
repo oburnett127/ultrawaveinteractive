@@ -33,4 +33,6 @@ nextApp.prepare().then(() => {
     if (err) throw err;
     logger.info(`✅ Server ready on http://localhost:${port}`);
   });
+
+  console.log(`✅ Server ready on http://localhost:${port}`);
 });
