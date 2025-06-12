@@ -26,5 +26,7 @@ ENV NODE_ENV=production
 ENV PORT=8080
 
 # Start the unified app
-CMD ["node", "-e", "console.log('🎉  Node executed'); setTimeout(()=>{}, 60000)"]
+# Dockerfile – final line
+CMD ["node", "--unhandled-rejections=strict", "--trace-uncaught", "server.js"]
+
 
