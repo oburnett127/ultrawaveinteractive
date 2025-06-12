@@ -13,6 +13,8 @@ RUN npm install
 # Copy the rest of the app's code
 COPY . .
 
+RUN ls -la /app
+
 # Build Next.js for production
 RUN npm run build
 
@@ -24,4 +26,4 @@ ENV NODE_ENV=production
 ENV PORT=8080
 
 # Start the unified app
-CMD ["node", "server.js"]
+CMD ["ls", "-la", "/app"]
