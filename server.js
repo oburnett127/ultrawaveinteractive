@@ -1,3 +1,5 @@
+console.log('server.js entrypoint loaded');
+
 const express = require("express");
 const next = require("next");
 const dotenv = require("dotenv");
