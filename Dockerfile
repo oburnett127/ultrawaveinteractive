@@ -26,4 +26,5 @@ ENV NODE_ENV=production
 ENV PORT=8080
 
 # Start the unified app
-CMD ["ls", "-la", "/app"]
+CMD ["node", "-e", "console.log('🎉  Node executed'); setTimeout(()=>{}, 60000)"]
+
