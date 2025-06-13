@@ -1,66 +1,58 @@
-console.log("🧪 ENV snapshot:", {
-  NODE_ENV: process.env.NODE_ENV,
-  PORT: process.env.PORT,
-  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
-  // Add others you expect
+console.log("📦 server.js loaded");
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🚨 Unhandled Rejection:', reason);
 });
 
+process.on('uncaughtException', (err) => {
+  console.error('🚨 Uncaught Exception:', err);
+});
 
-// console.log("📦 server.js loaded");
+const express = require("express");
+const next = require("next");
+const dotenv = require("dotenv");
+const path = require("path");
 
-// process.on('unhandledRejection', (reason, promise) => {
-//   console.error('🚨 Unhandled Rejection:', reason);
-// });
+console.log("🧪 Loading .env");
+dotenv.config();
 
-// process.on('uncaughtException', (err) => {
-//   console.error('🚨 Uncaught Exception:', err);
-// });
+const { initBackend } = require('./index.js');
+const { logger } = require('./config/logger.js');
 
-// const express = require("express");
-// const next = require("next");
-// const dotenv = require("dotenv");
-// const path = require("path");
+const dev = process.env.NODE_ENV !== "production";
+const port = process.env.PORT || 3000;
 
-// console.log("🧪 Loading .env");
-// dotenv.config();
+console.log("🧪 Preparing Next.js app");
+const nextApp = next({ dev });
+const handle = nextApp.getRequestHandler();
 
-// const { initBackend } = require('./index.js');
-// const { logger } = require('./config/logger.js');
+nextApp.prepare()
+  .then(() => {
+    console.log("✅ Next.js ready");
 
-// const dev = process.env.NODE_ENV !== "production";
-// const port = process.env.PORT || 3000;
+    const server = express();
 
-// console.log("🧪 Preparing Next.js app");
-// const nextApp = next({ dev });
-// const handle = nextApp.getRequestHandler();
+    console.log("🧪 Running initBackend");
+    initBackend(server);
 
-// nextApp.prepare()
-//   .then(() => {
-//     console.log("✅ Next.js ready");
+    server.get("/", (req, res) => {
+      res.send("Hello from Ultrawave!");
+    });
 
-//     const server = express();
+    server.all("*", (req, res) => handle(req, res));
 
-//     console.log("🧪 Running initBackend");
-//     initBackend(server);
+    console.log("🚀 Starting unified server");
 
-//     server.get("/", (req, res) => {
-//       res.send("Hello from Ultrawave!");
-//     });
+    server.listen(port, (err) => {
+      if (err) {
+        console.error("💥 Listen failed:", err);
+        throw err;
+      }
+      console.log(`✅ Server ready on http://localhost:${port}`);
+    });
+  })
+  .catch((err) => {
+    console.error("💥 nextApp.prepare() failed:", err);
+  });
 
-//     server.all("*", (req, res) => handle(req, res));
-
-//     console.log("🚀 Starting unified server");
-
-//     server.listen(port, (err) => {
-//       if (err) {
-//         console.error("💥 Listen failed:", err);
-//         throw err;
-//       }
-//       console.log(`✅ Server ready on http://localhost:${port}`);
-//     });
-//   })
-//   .catch((err) => {
-//     console.error("💥 nextApp.prepare() failed:", err);
-//   });
-
-//   console.log("🧪 Reached bottom of file");
+  console.log("🧪 Reached bottom of file");
