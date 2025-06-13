@@ -1,13 +1,9 @@
-console.log("index.js loading. __filename:", __filename);
-console.log("typeof require:", typeof require);
-
 const express = require('express');
 const app = express();
 const cors = require('cors');
 const { Client, Environment } = require('square');
 const dotenv = require('dotenv');
 const crypto = require('crypto');
-const fetch = require('node-fetch');
 const rateLimit = require('express-rate-limit');
 const bodyParser = require('body-parser');
 const { z } = require('zod');
