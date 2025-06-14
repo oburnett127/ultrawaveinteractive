@@ -9,13 +9,6 @@ import { Box, Stack, Typography } from "@mui/material";
 import ContactForm from '../components/ContactForm';
 import Head from 'next/head';
 import Image from 'next/image';
-import dentalHygienist from '../images/dentalhygienist.jpg';
-import electricalReadingDevice from '../images/electricalreadingdevice.jpg';
-import hvacMenu from '../images/hvacmenu.jpg';
-import meeting from '../images/meeting.jpg';
-import peopleInGym from '../images/peopleingym.jpg';
-import petCare from '../images/petcare.jpg';
-import plumber from '../images/plumberlookingatpipe.jpg';
 import { useRouter } from "next/router";
 import { signIn, signOut, useSession } from 'next-auth/react';
 
@@ -64,7 +57,7 @@ function Home() {
 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
 
-        <Image src={meeting} alt="Business people in a meeting smiling." />
+        <Image src={"/images/meeting.jpg"} width={400} height={300} alt="Business people in a meeting smiling." />
     
         <div className={styles.blockContainer}>
           <a className={styles.flexCenter} href="#contact-form">
@@ -74,7 +67,6 @@ function Home() {
           {/* <a className={styles.flexCenter} href="tel:+14055198318" aria-label="Call Me at +14055198318">
             <button className={styles.button}>or call me at 405-519-8318</button>
           </a> */}
-
           <p>You don&apos;t pay me until you are satisfied with the quality of my work!</p>
           <p>Fully customized websites, tailored to the specific and unique needs of your business!</p>
 
@@ -140,17 +132,17 @@ function Home() {
 
         </div>
         <div>
-          <Image className={styles.image} src={petCare} alt="Dog having fur groomed." />
+          <Image className={styles.image} src={"/images/petcare.jpg"} width={200} height={100} alt="Dog having fur groomed." />
           <p>We would love to work on a website for your pet care business!</p><br />
-          <Image className={styles.image} src={dentalHygienist} alt="Dental hygienist at work." />
+          <Image className={styles.image} src={"/images/dentalhygienist.jpg"} width={200} height={100} alt="Dental hygienist at work." />
           <p>We work with dentists and some medical practices!</p><br />
-          <Image className={styles.image} src={peopleInGym} alt="People in a gym." />
+          <Image className={styles.image} src={"/images/peopleingym.jpg"} width={200} height={100} alt="People in a gym." />
           <p>Your gym or fitness training business could really benefit from our expertise!</p><br />
-          <Image className={styles.image} src={plumber} alt="Plumber looking at a pipe." />
+          <Image className={styles.image} src={"/images/plumberlookingatpipe.jpg"} width={200} height={100} alt="Plumber looking at a pipe." />
           <p>Increasing the revenue of your plumbing business sounds like a good idea to us! Get ready!</p><br />
-          <Image className={styles.image} src={hvacMenu} alt="Technician touches HVAC menu." />
+          <Image className={styles.image} src={"/images/hvacmenu.jpg"} width={200} height={100} alt="Technician touches HVAC menu." />
           <p>Your HVAC business needs the care it deserves!</p><br />
-          <Image className={styles.image} src={electricalReadingDevice} alt="Technician takes electrical reading using a device." />
+          <Image className={styles.image} src={"/images/electricalreadingdevice.jpg"} width={200} height={100} alt="Technician takes electrical reading using a device." />
           <p>We have something special in store for your electrical business!</p>
         </div>
       </div>
