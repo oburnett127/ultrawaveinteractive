@@ -35,80 +35,84 @@ function initBackend(app) {
     next();
   });
 
-  // Helmet security headers
-  app.use(helmet());
-  app.use(helmet.noSniff());
-  app.use(helmet.frameguard({ action: "deny" }));
-  app.use(helmet.xssFilter());
-  app.use(helmet.referrerPolicy({ policy: "no-referrer-when-downgrade" }));
-  app.use(helmet.permittedCrossDomainPolicies());
+const isDev = process.env.NODE_ENV === 'development';
 
-  // Custom headers
-  app.use((req, res, next) => {
-    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
-    next();
-  });
+app.use(
+  helmet({
+    noSniff: true,
+    frameguard: { action: "deny" },
+    xssFilter: true,
+    referrerPolicy: { policy: "no-referrer-when-downgrade" },
+    permittedCrossDomainPolicies: true,
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        defaultSrc: ["'self'"],
 
-  // CSP
-  const isDev = process.env.NODE_ENV === 'development';
+        scriptSrc: [
+          "'self'",
+          ...(isDev ? ["'unsafe-eval'"] : []),
+          "'unsafe-inline'",
+          "https://consent.cookiebot.com",
+          "https://js.squareup.com",
+          "https://sandbox.web.squarecdn.com",
+          "https://www.google.com",
+          "https://www.gstatic.com",
+          "https://cdn.sentry.io",
+        ],
 
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        useDefaults: true,
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: [
-            "'self'",
-            ...(isDev ? ["'unsafe-eval'"] : []),
-            "'unsafe-inline'",
-            "https://js.squareup.com",
-            "https://sandbox.web.squarecdn.com", // ✅ Add this line
-            "https://www.google.com",
-            "https://www.gstatic.com",
-            "https://cdn.sentry.io",
-          ],
-          styleSrc: [
-            "'self'",
-            "'unsafe-inline'", // Required for Square's card styles
-            "https://js.squareup.com",
-            "https://sandbox.web.squarecdn.com",
-          ],
-          frameSrc: [
-            "'self'",
-            "https://js.squareup.com",
-            "https://sandbox.web.squarecdn.com",
-            "https://accounts.google.com",
-            "https://www.google.com",
-            "https://www.gstatic.com",
-          ],
-          imgSrc: [
-            "'self'",
-            "data:",
-            "https://*.squarecdn.com",
-            "https://accounts.google.com",
-            "https://www.googleapis.com",
-          ],
-          connectSrc: [
-            "'self'",
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-            "https://connect.squareup.com",
-            "https://*.squareupsandbox.com",
-            "https://sandbox.web.squarecdn.com",
-            "https://oauth2.googleapis.com",
-            "https://accounts.google.com",
-            "https://smtp.gmail.com",
-            "https://www.google.com",
-            "https://www.gstatic.com",
-            "https://cdn.sentry.io",
-          ],
-          objectSrc: ["'none'"],
-        },
-        reportOnly: false,
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'", // Required by Square and Cookiebot
+          "https://consent.cookiebot.com",
+          "https://js.squareup.com",
+          "https://sandbox.web.squarecdn.com",
+          "https://fonts.googleapis.com",
+        ],
+
+        imgSrc: [
+          "'self'",
+          "data:",
+          "https://*.squarecdn.com",
+          "https://consent.cookiebot.com",
+          "https://accounts.google.com",
+          "https://www.googleapis.com",
+          "https://www.google.com",
+          "https://www.gstatic.com",
+        ],
+
+        frameSrc: [
+          "'self'",
+          "https://js.squareup.com",
+          "https://sandbox.web.squarecdn.com",
+          "https://accounts.google.com",
+          "https://www.google.com",
+          "https://www.gstatic.com",
+          "https://consent.cookiebot.com",
+        ],
+
+        connectSrc: [
+          "'self'",
+          ...(isDev ? ["http://localhost:3000", "http://127.0.0.1:3000"] : []),
+          "https://connect.squareup.com",
+          "https://*.squareupsandbox.com",
+          "https://sandbox.web.squarecdn.com",
+          "https://oauth2.googleapis.com",
+          "https://accounts.google.com",
+          "https://smtp.gmail.com",
+          "https://www.google.com",
+          "https://www.gstatic.com",
+          "https://cdn.sentry.io",
+          "https://consent.cookiebot.com",
+        ],
+
+        objectSrc: ["'none'"],
       },
-    })
-  );
+      reportOnly: false,
+    },
+  })
+);
+
 
   // CSP report endpoint
   // app.post("/csp-violation-report", express.json(), (req, res) => {
