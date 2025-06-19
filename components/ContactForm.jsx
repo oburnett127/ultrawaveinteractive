@@ -6,7 +6,7 @@ const ContactForm = () => {
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
@@ -14,9 +14,9 @@ const ContactForm = () => {
     message: "",
   });
 
-  const [responseMessage, setResponseMessage] = useState<string>("");
-  const [recaptchaError, setRecaptchaError] = useState<string>("");
-  const recaptchaRef = useRef<ReCAPTCHA | null>(null);
+  const [responseMessage, setResponseMessage] = useState("");
+  const [recaptchaError, setRecaptchaError] = useState("");
+  const recaptchaRef = useRef(null);
 
 
   // Helper function to sanitize input

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 
-export default function VerifyOTP() {
+const VerifyOTP = () => {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -12,6 +12,8 @@ export default function VerifyOTP() {
 
   // Ensure user is authenticated before accessing this page
   useEffect(() => {
+    if (status === "loading") return;
+
     if (status === "unauthenticated") {
       router.push("/"); // Redirect to home if not authenticated
     }
@@ -19,13 +21,9 @@ export default function VerifyOTP() {
 
   // Automatically send OTP when the user is authenticated
   useEffect(() => {
-    const sendOTP = (email) => {
-      // Your send logic here (e.g., API call)
-    };
-
-    if (session && session.user) {
-      //console.log("Access Token:", session.user.accessToken);
-    }
+    // if (session && session.user) {
+    //   //console.log("Access Token:", session.user.accessToken);
+    // }
 
     if (status === "authenticated" && session?.user?.email && !otpSent) {
       sendOTP(session.user.email);
@@ -113,3 +111,5 @@ export default function VerifyOTP() {
     </div>
   );
 }
+
+export default VerifyOTP;

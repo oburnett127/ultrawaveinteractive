@@ -41,7 +41,7 @@ function Home() {
             "openingHours": "Su-Sa 08:00-20:00"
           }`;
 
-  function redirectToVerfification() {
+  function redirectToVerification() {
     router.push("/verify-otp"); // Redirects to the /verify-otp route
   }
   
@@ -64,22 +64,22 @@ function Home() {
             <button className={styles.button}>Schedule a Free Consultation</button>
           </a>
 
-          {/* <a className={styles.flexCenter} href="tel:+14055198318" aria-label="Call Me at +14055198318">
+          <a className={styles.flexCenter} href="tel:+14055198318" aria-label="Call Me at +14055198318">
             <button className={styles.button}>or call me at 405-519-8318</button>
-          </a> */}
+          </a>
           <p>You don&apos;t pay me until you are satisfied with the quality of my work!</p>
           <p>Fully customized websites, tailored to the specific and unique needs of your business!</p>
 
           {!session ? (
-            <>
-              <button onClick={() => signIn("google", {callbackUrl: "/verify-otp"})}>Sign in with Google</button>
-            </>
+            <div>
+              <button onClick={() => signIn("google", {callbackUrl: "/verifyotp"})}>Sign in with Google</button>
+            </div>
           ) : (
             <>
               <h1>Welcome, {session.user.name}!</h1>
               <p>Your email: {session.user.email}</p>
               <button onClick={() => signOut()}>Sign out</button><br></br><br></br>
-              <button onClick={() => redirectToVerfification()}>Make a payment</button>
+              <button onClick={() => redirectToVerification()}>Make a payment</button>
             </>
           )}
 
@@ -119,16 +119,16 @@ function Home() {
 
           <p>Let me help to increase the revenue of your business!</p>
 
-          <a className={styles.centerButton} href="https://ultrawavesample.com">
+          {/* <a className={styles.centerButton} href="https://ultrawavesample.com">
             <button className={styles.button}>See a sample of my work</button>
-          </a>
+          </a> */}
 
-          {/* <p>Contact me using the below form or call 405-519-8318 to schedule a free consultation!</p> */}
+          <p>Contact me using the below form or call 405-519-8318 to schedule a free consultation!</p>
 
           <hr />
-          {/* <div id="contact-form">
+          <div id="contact-form">
             <ContactForm />
-          </div> */}
+          </div>
 
         </div>
         <div>
