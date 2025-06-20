@@ -51,14 +51,18 @@ function initBackend(app) {
 
           scriptSrc: [
             "'self'",
-            ...(isDev ? ["'unsafe-eval'"] : []),
             "'unsafe-inline'",
-            "https://consent.cookiebot.com",
-            "https://js.squareup.com",
-            "https://sandbox.web.squarecdn.com",
-            "https://www.google.com",
-            "https://www.gstatic.com",
-            "https://cdn.sentry.io",
+            "'unsafe-eval'",
+            // Square sandbox & prod
+            'https://sandbox.web.squarecdn.com',
+            'https://web.squarecdn.com',       // For prod later
+            'https://js.squareup.com',
+            // Google
+            'https://www.google.com',
+            'https://www.gstatic.com',
+            // Your other services
+            'https://cdn.sentry.io',
+            'https://consent.cookiebot.com',
           ],
 
           styleSrc: [
@@ -83,27 +87,44 @@ function initBackend(app) {
 
           frameSrc: [
             "'self'",
-            "https://js.squareup.com",
-            "https://sandbox.web.squarecdn.com",
-            "https://accounts.google.com",
-            "https://www.google.com",
-            "https://www.gstatic.com",
-            "https://consent.cookiebot.com",
+            // Square sandbox iframe endpoints
+            'https://sandbox.web.squarecdn.com',
+            'https://pci-connect.squareup.com',
+            // Square prod iframe domains (for future)
+            'https://web.squarecdn.com',
+            'https://js.squareup.com',
+            // Google login
+            'https://accounts.google.com',
+            'https://www.google.com',
+            'https://www.gstatic.com',
+            // Cookiebot
+            'https://consent.cookiebot.com',
           ],
 
           connectSrc: [
-            "'self'",
-            ...(isDev ? ["http://localhost:3000", "http://127.0.0.1:3000"] : []),
-            "https://connect.squareup.com",
-            "https://*.squareupsandbox.com",
-            "https://sandbox.web.squarecdn.com",
-            "https://oauth2.googleapis.com",
-            "https://accounts.google.com",
-            "https://smtp.gmail.com",
-            "https://www.google.com",
-            "https://www.gstatic.com",
-            "https://cdn.sentry.io",
-            "https://consent.cookiebot.com",
+             "'self'",
+            'http://localhost:8080',           // or your actual dev port
+            'http://127.0.0.1:8080',
+
+            // Square sandbox
+            'https://sandbox.web.squarecdn.com',
+            'https://*.squareupsandbox.com',
+            'https://pci-connect.squareup.com',
+
+            // Square prod (future)
+            'https://connect.squareup.com',
+            'https://web.squarecdn.com',
+
+            // Google login
+            'https://oauth2.googleapis.com',
+            'https://accounts.google.com',
+            'https://www.google.com',
+            'https://www.gstatic.com',
+
+            // SMTP and error tracking
+            'https://smtp.gmail.com',
+            'https://cdn.sentry.io',
+            'https://consent.cookiebot.com',
           ],
 
           objectSrc: ["'none'"],

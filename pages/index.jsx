@@ -42,7 +42,7 @@ function Home() {
           }`;
 
   function redirectToVerification() {
-    router.push("/verify-otp"); // Redirects to the /verify-otp route
+    router.push("/verifyotp"); // Redirects to the /verify-otp route
   }
   
   return (

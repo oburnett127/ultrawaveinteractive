@@ -11,7 +11,7 @@ const Payment = () => {
 
   const [amount, setAmount] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
-  const [paymentDetails, setPaymentDetails] = useState<any>(null);
+  const [paymentDetails, setPaymentDetails] = useState(null);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const applicationId = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID;
