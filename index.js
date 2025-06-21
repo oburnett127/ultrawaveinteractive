@@ -53,6 +53,7 @@ function initBackend(app) {
             "'self'",
             "'unsafe-inline'",
             "'unsafe-eval'",
+            'https://ultrawaveinteractive.com',
             // Square sandbox & prod
             'https://sandbox.web.squarecdn.com',
             'https://web.squarecdn.com',       // For prod later
@@ -103,6 +104,7 @@ function initBackend(app) {
 
           connectSrc: [
              "'self'",
+            'https://ultrawaveinteractive.com',
             'http://localhost:8080',           // or your actual dev port
             'http://127.0.0.1:8080',
 
