@@ -26,6 +26,8 @@ const VerifyOTP = () => {
     // }
 
     if (status === "authenticated" && session?.user?.email && !otpSent) {
+      console.log("Session:", session);
+      console.log("session.user.idToken:", session?.user?.idToken);
       sendOTP(session.user.email);
       setOtpSent(true); // Prevent duplicate OTP sending
     }
@@ -33,6 +35,7 @@ const VerifyOTP = () => {
 
   async function sendOTP(email) {
     try {
+      console.log(session?.user.idToken);
       const res = await fetch(`${backendUrl}/send-otp`, {
         method: "POST",
         headers: {

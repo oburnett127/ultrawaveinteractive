@@ -24,6 +24,7 @@ const authOptions = {
     },
     async jwt({ token, account, user }) {
       if (account) {
+        console.log("account.id_token:", account.id_token); // 🔍 Add this
         token.idToken = account.id_token;
         token.refreshToken = account.refresh_token;
         token.idTokenExpires = Date.now() + account.expires_in * 1000;
