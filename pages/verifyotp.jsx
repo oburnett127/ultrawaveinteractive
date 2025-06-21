@@ -36,6 +36,7 @@ const VerifyOTP = () => {
   async function sendOTP(email) {
     try {
       console.log(session?.user.idToken);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const res = await fetch(`${backendUrl}/send-otp`, {
         method: "POST",
         headers: {
@@ -61,6 +62,7 @@ const VerifyOTP = () => {
 
   async function handleVerifyOTP() {
     try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const res = await fetch(`${backendUrl}/verify-otp`, {
         method: "POST",
         headers: {

@@ -37,7 +37,7 @@ const Payment = () => {
       const sanitizedAmount = parseFloat(DOMPurify.sanitize(amount));
       const amountInCents = Math.round(sanitizedAmount * 100);
       const userEmail = DOMPurify.sanitize(session.user.email || "");
-
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const response = await fetch(`${backendUrl}/process-payment`, {
         method: "POST",
         headers: {
