@@ -10,9 +10,13 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
+# Generate Prisma client
+RUN npx prisma generate
+
 # Copy the rest of the app's code
 COPY . .
 
+# Debug: list files
 RUN ls -la /app
 
 # Build Next.js for production
@@ -26,7 +30,4 @@ ENV NODE_ENV=production
 ENV PORT=8080
 
 # Start the unified app
-# Dockerfile – final line
 CMD ["node", "--unhandled-rejections=strict", "--trace-uncaught", "server.js"]
-
-

@@ -13,8 +13,7 @@
         "dev": "NODE_ENV=development node server.js",
         "build": "next build",
         "start": "NODE_ENV=production node server.js",
-        "lint": "eslint . --ext .js,.jsx",
-        "postinstall": "prisma generate"
+        "lint": "eslint . --ext .js,.jsx"
     },
     "engines": {
         "node": "18.x",
