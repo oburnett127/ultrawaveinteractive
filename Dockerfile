@@ -4,19 +4,19 @@ FROM node:18
 # Set working directory inside the container
 WORKDIR /app
 
-# Copy dependency files
+# Copy dependency files first
 COPY package*.json ./
 
 # Install dependencies
 RUN npm install
 
-# Generate Prisma client
-RUN npx prisma generate
-
-# Copy the rest of the app's code
+# Copy the rest of the app (including prisma/ directory!)
 COPY . .
 
-# Debug: list files
+# ✅ Generate Prisma client (now schema.prisma will be present)
+RUN npx prisma generate
+
+# Debug: list files (optional)
 RUN ls -la /app
 
 # Build Next.js for production
