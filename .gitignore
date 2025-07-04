@@ -121,3 +121,4 @@ coverage/
 *.rej
 
 backend/dist/
+/generated/prisma

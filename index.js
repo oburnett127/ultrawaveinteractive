@@ -12,6 +12,7 @@ const nodemailer = require('nodemailer');
 const { google } = require("googleapis");
 const helmet = require('helmet');
 const { logger } = require('./config/logger.js');
+const connectRedis = require('./lib/redis.js');
 
 // ⬇️ Exported setup function
 function initBackend(app) {
@@ -265,7 +266,7 @@ function initBackend(app) {
     //console.log('send-otp endpoint is running');
 
     if (!email) {
-      res.status(400).json({ message: "Email is required" });
+      return res.status(400).json({ message: "Email is required" });
     }
 
     // Generate a random 6-digit OTP
@@ -274,11 +275,12 @@ function initBackend(app) {
     // Store OTP in Redis with a TTL (e.g., 10 minutes)
     try {
       //console.log('before setting otp in redis');
+      const redis = await connectRedis();
       await redis.set(`otp:${email}`, otp, "EX", 600); // Key: `otp:<email>`, Expires in 10 minutes
       //console.log('after setting otp in redis');
     } catch (error) {
       console.error("Error storing OTP in Redis:", error);
-      res.status(500).json({ message: "Failed to store OTP" });
+      return res.status(500).json({ message: "Failed to store OTP" });
     }
 
     try {
@@ -302,40 +304,43 @@ function initBackend(app) {
       //console.log('before sendMail');
         await transporter.sendMail(mailOptions);
         logger.info(`OTP sent to ${email}`);
-        res.status(200).json({ message: "OTP sent successfully" });
+        return res.status(200).json({ message: "OTP sent successfully" });
     } catch (error) {
       console.error("Error sending OTP:", error);
-      res.status(500).json({ message: "Failed to send OTP", error: error || "Unknown error" });
+      return res.status(500).json({ message: "Failed to send the OTP", error: error || "Unknown error" });
     }
   });
 
-  // Endpoint to verify OTP
   app.post("/verify-otp", validateIdToken, async (req, res) => {
     const { email, otp } = req.body;
 
-    //console.log('verify-otp endpoint is running');
-
     if (!email || !otp) {
-      res.status(400).json({ message: "Email and OTP are required" });
+      console.error("Missing email or otp", { email, otp });
+      return res.status(400).json({ message: "Email and OTP are required" });
     }
 
     try {
-      // Retrieve OTP from Redis
-      //console.log('before await redis.get()');
+      const redis = await connectRedis();
       const storedOtp = await redis.get(`otp:${email}`);
-      //console.log('after await redis.get()');
-      if (storedOtp === otp) {
-        // OTP is valid; delete it from Redis to prevent reuse
+      console.log("Incoming OTP verification request:", { email, otp });
+      console.log("Expected OTP from store:", storedOtp);
+
+      if (!storedOtp) {
+        console.error(`No OTP in Redis for ${email}`);
+        return res.status(400).json({ message: "Invalid OTP" });
+      }
+
+      if (storedOtp.trim() === otp.trim()) {
         await redis.del(`otp:${email}`);
-        //console.log(`OTP verified for ${email}`);
-        res.status(200).json({ message: "OTP verified successfully" });
+        console.log(`OTP verified for ${email}`);
+        return res.status(200).json({ message: "OTP verified successfully" });
       } else {
-        console.error(`Invalid OTP for ${email}`);
-        res.status(400).json({ message: "Invalid OTP" });
+        console.error(`Stored OTP did not match for ${email}`, { storedOtp, otp });
+        return res.status(400).json({ message: "Invalid OTP" });
       }
     } catch (error) {
       console.error("Error verifying OTP:", error);
-      res.status(500).json({ message: "Failed to verify OTP" });
+      return res.status(500).json({ message: "Failed to verify OTP" });
     }
   });
 

@@ -1,31 +1,38 @@
-// File: pages/api/auth/update-token.ts
-import { getToken, encode } from "next-auth/jwt";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "./[...nextauth].js";
+import { prisma } from "../../../lib/prisma.js"; // adjust if needed
 
-const updateToken = async (req, res) => {
-  // Fetch the current token
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+export default async function handler(req, res) {
+  const session = await getServerSession(req, res, authOptions);
 
-  if (!token) {
+  if (!session?.user?.email) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  // Update the `otpVerified` field
-  token.otpVerified = true;
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
 
-  //console.log('from update-token.ts, token.otpVerified: ', token.otpVerified);
+    if (!user) {
+      await prisma.user.create({
+        data: {
+          email: session.user.email,
+          name: session.user.name || null,
+          image: session.user.image || null,
+          otpVerified: true,
+        },
+      });
+    } else {
+      await prisma.user.update({
+        where: { email: session.user.email },
+        data: { otpVerified: true },
+      });
+    }
 
-  // Re-encode the updated token
-  const updatedToken = await encode({
-    token,
-    secret: process.env.NEXTAUTH_SECRET || "",
-  });
-
-  //console.log("Encoded token in update-token:", updatedToken);
-
-  res.setHeader("Set-Cookie", `next-auth.session-token=${updatedToken}; Path=/; HttpOnly; Secure`);
-  
-  // Send the updated token back to the client (optional)
-  res.status(200).json({ token: updatedToken });
-};
-
-export default updateToken;
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Error creating or updating user:", error);
+    return res.status(500).json({ error: "Failed to update OTP status" });
+  }
+}

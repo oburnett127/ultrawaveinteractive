@@ -43,7 +43,7 @@ const VerifyOTP = () => {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session?.user.idToken}`,
         },
-        credentials: "include", // Replaces `withCredentials: true`
+        credentials: "include",
         body: JSON.stringify({ email }),
       });
 
@@ -62,7 +62,8 @@ const VerifyOTP = () => {
 
   async function handleVerifyOTP() {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      console.log("Verifying OTP with:", { email: session?.user.email, otp });
+
       const res = await fetch(`${backendUrl}/verify-otp`, {
         method: "POST",
         headers: {
@@ -73,23 +74,15 @@ const VerifyOTP = () => {
         body: JSON.stringify({ email: session?.user.email, otp }),
       });
 
-      //console.log('from verify-otp, session?.idToken: ', session?.user.idToken);
-
       if (res.ok) {
-        // Update token via API route
+        // ✅ Set otpVerified in DB
         await fetch("/api/auth/update-token", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          credentials: "include",
         });
 
-          // Refresh session
-        const sessionRes = await fetch("/api/auth/session", {
-          method: "GET",
-          headers: { "Cache-Control": "no-cache" },
-        });
-
-        const sessionData = await sessionRes.json();
-        //console.log("Session data after refresh:", sessionData);
+        // ✅ Refresh session to get updated otpVerified
+        await update();
 
         router.push("/payment");
       } else {
@@ -99,6 +92,7 @@ const VerifyOTP = () => {
       console.error("Error verifying OTP:", err.message);
     }
   }
+
 
   return (
     <div>
