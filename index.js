@@ -85,6 +85,7 @@ function initBackend(app) {
             "https://www.googleapis.com",
             "https://www.google.com",
             "https://www.gstatic.com",
+            "https://authjs.dev",
           ],
 
           frameSrc: [
