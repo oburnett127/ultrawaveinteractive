@@ -16,6 +16,8 @@ COPY . .
 # ✅ Generate Prisma client (now schema.prisma will be present)
 RUN npx prisma generate
 
+RUN npx prisma migrate deploy
+
 # Debug: list files (optional)
 RUN ls -la /app
 
