@@ -34,7 +34,7 @@ nextApp.prepare()
 
     server.set("trust proxy", 1);
 
-    server.all("/api/auth", (req, res) => handle(req, res));
+    server.all("/api/auth/*", (req, res) => handle(req, res)); // ✅ route ALL auth API calls through Next.js
 
     //console.log("🧪 Running initBackend");
     initBackend(server);
