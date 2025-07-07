@@ -29,6 +29,7 @@ const authOptions = {
         token.idToken = account.id_token;
         token.refreshToken = account.refresh_token;
         token.idTokenExpires = Date.now() + account.expires_in * 1000;
+        token.email = user.email;
       }
 
       // Fetch otpVerified from DB if not set
@@ -62,6 +63,7 @@ const authOptions = {
       if (token) {
         session.user.id = token.sub;
         session.user.idToken = token.idToken;
+        session.user.email = token.email;
         session.user.refreshToken = token.refreshToken;
         session.user.otpVerified = token.otpVerified ?? false;
         session.error = token.error;
