@@ -32,6 +32,8 @@ nextApp.prepare()
 
     const server = express();
 
+    server.set("trust proxy", 1);
+
     server.all("/api/auth", (req, res) => handle(req, res));
 
     //console.log("🧪 Running initBackend");

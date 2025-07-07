@@ -61,38 +61,48 @@ const VerifyOTP = () => {
   }
 
   async function handleVerifyOTP() {
+    if (status !== "authenticated") {
+      console.warn("User is not authenticated yet.");
+      return;
+    }
+
     try {
-      console.log("Verifying OTP with:", { email: session?.user.email, otp });
+      console.log("Verifying OTP with:", {
+        email: session?.user?.email,
+        otp,
+      });
 
       const res = await fetch(`${backendUrl}/verify-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.user.idToken}`,
+          Authorization: `Bearer ${session?.user?.idToken}`,
         },
         credentials: "include",
-        body: JSON.stringify({ email: session?.user.email, otp }),
+        body: JSON.stringify({
+          email: session?.user?.email,
+          otp,
+        }),
       });
 
-      if (res.ok) {
-        // ✅ Set otpVerified in DB
-        await fetch("/api/auth/update-token", {
-          method: "POST",
-          credentials: "include",
-        });
+      if (!res.ok) throw new Error("Invalid OTP.");
 
-        // ✅ Refresh session to get updated otpVerified
-        await update();
+      // ✅ Update user.otpVerified in DB
+      const tokenRes = await fetch("/api/auth/update-token", {
+        method: "POST",
+        credentials: "include",
+      });
 
-        router.push("/payment");
-      } else {
-        throw new Error("Invalid OTP.");
-      }
+      if (!tokenRes.ok) throw new Error("Failed to update otpVerified flag.");
+
+      // ✅ Refresh session
+      await update();
+
+      router.push("/payment");
     } catch (err) {
       console.error("Error verifying OTP:", err.message);
     }
   }
-
 
   return (
     <div>
