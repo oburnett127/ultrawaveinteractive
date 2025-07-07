@@ -5,6 +5,8 @@ import { prisma } from "../../../lib/prisma.js"; // adjust if needed
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
 
+  console.log("Session object:", session);
+
   if (!session?.user?.email) {
     return res.status(401).json({ error: "Unauthorized" });
   }
