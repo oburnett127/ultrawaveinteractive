@@ -77,7 +77,7 @@ const VerifyOTP = () => {
       }
 
       // Step 2: Update otpVerified in DB
-      const tokenRes = await fetch("/api/auth/update-token", {
+      const tokenRes = await fetch("/api/update-token", {
         method: "POST",
         credentials: "include",
       });

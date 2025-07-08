@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "./[...nextauth]";
-import { prisma } from "../../../lib/prisma.js"; // adjust if needed
+import { authOptions } from "./auth/[...nextauth].js";
+import { prisma } from "../../lib/prisma.js"; // adjust if needed
 
 export default async function handler(req, res) {
   console.log("Cookies received:", req.headers.cookie);
