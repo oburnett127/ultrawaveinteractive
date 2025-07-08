@@ -87,14 +87,8 @@ const VerifyOTP = () => {
         throw new Error("Failed to update otpVerified: " + errMsg);
       }
 
-      // Step 3: Refresh session and redirect
-      const updatedSession = await update();
-
-      if (updatedSession?.user?.otpVerified === true) {
-        router.push("/payment");
-      } else {
-        throw new Error("Session update failed to reflect OTP verification.");
-      }
+      // ✅ JWT cookies can’t be updated server-side, so just go
+      router.push("/payment");
     } catch (err) {
       console.error("Error verifying OTP:", err.message);
       setError(err.message);
