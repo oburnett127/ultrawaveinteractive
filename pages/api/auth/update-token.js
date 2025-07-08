@@ -7,6 +7,9 @@ export default async function handler(req, res) {
   console.log("Referer:", req.headers.referer);
   console.log("Origin:", req.headers.origin);
 
+  console.log("Headers:", req.headers);
+  console.log("Cookies:", req.cookies);
+
   const session = await getServerSession(req, res, authOptions);
 
   console.log("Session object:", session);

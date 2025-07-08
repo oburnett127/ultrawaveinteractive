@@ -71,7 +71,10 @@ const authOptions = {
       return session;
     },
   },
-  session: { strategy: "jwt" },
+  session: { 
+             strategy: "jwt",
+             trust: true,
+  },
   secret: process.env.NEXTAUTH_SECRET,
   debug: true,
   cookies: {
