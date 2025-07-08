@@ -17,15 +17,11 @@ nextApp.prepare()
 
     server.set("trust proxy", 1);
 
-    // ✅ Let NextAuth handle its own routes *first*
+    // ✅ Let NextAuth handle auth routes first
     server.all("/api/auth/*", (req, res) => handle(req, res));
 
-    // ✅ Prevent backend init from touching NextAuth routes
-    server.use((req, res, next) => {
-      if (req.url.startsWith("/api/auth")) return next();
-      initBackend(server);
-      next();
-    });
+    // ✅ Set up backend routes (but NOT /api/auth/* ones!)
+    initBackend(server);
 
     // All other routes handled by Next.js
     server.all("*", (req, res) => handle(req, res));
