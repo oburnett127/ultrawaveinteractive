@@ -70,13 +70,11 @@ export const authOptions = {
         token.email          = user.email;
       }
 
-      // Ensure otpVerified is always on the token
-      if (user?.otpVerified !== undefined) {
-        token.otpVerified = user.otpVerified;
-      } else if (token.email && token.otpVerified === undefined) {
+      // 🔄 always refresh if it's still false
+      if (token.email && token.otpVerified !== true) {
         const dbUser = await prisma.user.findUnique({
-          where: { email: token.email },
-          select: { otpVerified: true },
+          where:   { email: token.email },
+          select:  { otpVerified: true },
         });
         token.otpVerified = dbUser?.otpVerified ?? false;
       }
