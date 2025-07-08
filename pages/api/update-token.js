@@ -4,6 +4,8 @@ import { authOptions }        from "./auth/[...nextauth]";   // <- correct path
 import { prisma }             from "../../lib/prisma";       // <- adjust if needed
 
 export default async function handler(req, res) {
+  console.log("authOptions keys:", Object.keys(authOptions || {}));
+
   if (req.method !== "GET") return res.status(405).end(); // only GET
 
   const session = await getServerSession(req, res, authOptions);

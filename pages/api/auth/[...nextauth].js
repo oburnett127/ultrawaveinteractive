@@ -1,112 +1,124 @@
-import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "../../../lib/prisma.js"; // adjust path if needed
-import { refreshIdToken } from "../../../utility/auth.js";
+// pages/api/auth/[...nextauth].js
+import NextAuth            from "next-auth";
+import GoogleProvider       from "next-auth/providers/google";
+import { PrismaAdapter }    from "@next-auth/prisma-adapter";
+import { prisma }           from "../../../lib/prisma.js";          // ← adjust if needed
+import { refreshIdToken }   from "../../../utility/auth.js";        // ← adjust if needed
 
-const authOptions = {
+/* ────────────────────────────────────────────────────────── */
+/* 1. CONFIG OBJECT                                           */
+/* ────────────────────────────────────────────────────────── */
+export const authOptions = {
   adapter: PrismaAdapter(prisma),
+
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      clientId:     process.env.GOOGLE_CLIENT_ID     ?? "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
       authorization: {
         params: {
-          scope: "openid email profile",
+          scope:       "openid email profile",
           access_type: "offline",
-          prompt: "consent",
+          prompt:      "consent",
         },
       },
     }),
   ],
-  callbacks: {
-    async signIn({ user, account, profile }) {
-      return true;
+
+  session: {
+    strategy: "jwt",
+    trust:    true,          // needed behind proxy / custom server
+  },
+
+  secret: process.env.NEXTAUTH_SECRET,
+  debug:  true,
+
+  cookies: {
+    sessionToken: {
+      name:   "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        path:     "/",
+        secure:   process.env.NODE_ENV === "production",
+      },
     },
+    csrfToken: {
+      name:   "next-auth.csrf-token",
+      options: {
+        httpOnly: false,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        path:     "/",
+        secure:   process.env.NODE_ENV === "production",
+      },
+    },
+  },
+
+  /* ── CALLBACKS ─────────────────────────────────────────── */
+  callbacks: {
+    // Runs on first sign-in
+    async signIn({ user, account }) {
+      return true; // allow all
+    },
+
+    // JWT callback – adds/refreshes Google tokens + otpVerified flag
     async jwt({ token, account, user }) {
       if (account) {
-        console.log("account.id_token:", account.id_token);
-        token.idToken = account.id_token;
-        token.refreshToken = account.refresh_token;
+        token.idToken        = account.id_token;
+        token.refreshToken   = account.refresh_token;
         token.idTokenExpires = Date.now() + account.expires_in * 1000;
-        token.email = user.email;
+        token.email          = user.email;
       }
 
-      // Fetch otpVerified from DB if not set
+      // Ensure otpVerified is always on the token
       if (user?.otpVerified !== undefined) {
         token.otpVerified = user.otpVerified;
-      } else if (token?.email) {
+      } else if (token.email && token.otpVerified === undefined) {
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email },
+          select: { otpVerified: true },
         });
         token.otpVerified = dbUser?.otpVerified ?? false;
       }
 
-      // Token refresh logic
-      if (Date.now() < token.idTokenExpires) return token;
-
-      try {
-        const refreshedToken = await refreshIdToken(token.refreshToken);
-        return {
-          ...token,
-          idToken: refreshedToken.idToken,
-          idTokenExpires: refreshedToken.idTokenExpires,
-          refreshToken: refreshedToken.refreshToken ?? token.refreshToken,
-        };
-      } catch (err) {
-        console.error("Error refreshing token:", err);
-        token.error = "RefreshAccessTokenError";
-        return token;
+      // Refresh Google ID-token if expired
+      if (token.idTokenExpires && Date.now() > token.idTokenExpires) {
+        try {
+          const refreshed = await refreshIdToken(token.refreshToken);
+          token.idToken        = refreshed.idToken;
+          token.idTokenExpires = refreshed.idTokenExpires;
+          token.refreshToken   = refreshed.refreshToken ?? token.refreshToken;
+        } catch (err) {
+          console.error("⚠️  ID-token refresh failed:", err);
+          token.error = "RefreshTokenError";
+        }
       }
+
+      return token;
     },
+
+    // Makes the token fields available on `session.user`
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub;
-        session.user.idToken = token.idToken;
-        session.user.email = token.email;
+        session.user.id           = token.sub;
+        session.user.idToken      = token.idToken;
+        session.user.email        = token.email;
         session.user.refreshToken = token.refreshToken;
-        session.user.otpVerified = token.otpVerified ?? false;
-        session.error = token.error;
+        session.user.otpVerified  = token.otpVerified ?? false;
+        session.error             = token.error;
       }
       return session;
     },
   },
-  session: { 
-             strategy: "jwt",
-             trust: true,
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-  debug: true,
-  cookies: {
-    sessionToken: {
-      name: "next-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-    csrfToken: {
-      name: "next-auth.csrf-token",
-      options: {
-        httpOnly: true,
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-  },
+
+  /* ── OPTIONAL EVENTS (logging) ─────────────────────────── */
   events: {
-    async createUser(user) {
-      console.log("🟢 User created:", user);
-    },
-    async linkAccount(account) {
-      console.log("🔗 Account linked:", account);
-    },
-  }
+    async createUser(user)    { console.log("🟢 New user:", user.email); },
+    async linkAccount(acc)    { console.log("🔗 Linked:", acc.provider); },
+  },
 };
 
-export default function authHandler(req, res) {
-  return NextAuth(req, res, authOptions);
-}
+/* ────────────────────────────────────────────────────────── */
+/* 2. SINGLE default export                                  */
+/* ────────────────────────────────────────────────────────── */
+export default NextAuth(authOptions);
