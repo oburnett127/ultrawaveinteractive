@@ -75,18 +75,25 @@ export default function VerifyOTP() {
       });
       if (!verify.ok) throw new Error(await verify.text());
 
-      /* 3-B  Flag user as verified in DB */
-      const save = await fetch("/api/update-token", {
-        method: "GET",
-        credentials: "include",
-      });
-      if (!save.ok) throw new Error(await save.text());
+      /* Step 2: mark verified in DB */
+      await fetch("/api/update-token", { method: "GET", credentials: "include" });
 
-      /* 3-C  Refresh JWT cookie so otpVerified === true */
-      await update();                 // triggers JWT callback
+      /* Step 3: force-refresh the JWT cookie */
+      await update();                   // rewrites next-auth.session-token
 
-      /* 3-D  Go to payment */
-      router.replace("/payment");
+      /* Step 4: read the new session; wait until otpVerified === true */
+      let fresh = null;
+      for (let i = 0; i < 3; i++) {     // retry a couple of times
+        fresh = await getSession();
+        if (fresh?.user?.otpVerified) break;
+        await new Promise(r => setTimeout(r, 200)); // 200 ms
+      }
+
+      if (fresh?.user?.otpVerified) {
+        router.replace("/payment");
+      } else {
+        setError("Could not refresh session – please reload the page.");
+      }
     } catch (err) {
       console.error("OTP flow failed:", err);
       setError(err.message ?? "Verification failed");
