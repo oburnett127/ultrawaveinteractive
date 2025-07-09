@@ -160,18 +160,25 @@ const Payment = () => {
 };
 
 export async function getServerSideProps(context) {
-  const token = await getToken({ req: context.req, secret: process.env.NEXTAUTH_SECRET });
+  const token = await getToken({
+    req:    context.req,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
 
-  if (!token?.otpVerified) {
-    return {
-      redirect: {
-        destination: "/",
-        permanent: false,
-      },
-    };
+  if (!token?.email) {
+    return { redirect: { destination: "/", permanent: false } };
   }
 
-  return { props: {} }; // Session now reflects updated otpVerified state
+  const dbUser = await prisma.user.findUnique({
+    where:  { email: token.email },
+    select: { otpVerified: true },
+  });
+
+  if (!dbUser?.otpVerified) {
+    return { redirect: { destination: "/", permanent: false } };
+  }
+
+  return { props: {} };
 }
 
 export default Payment;
