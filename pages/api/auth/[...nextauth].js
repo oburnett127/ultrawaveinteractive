@@ -61,25 +61,32 @@ export const authOptions = {
       return true; // allow all
     },
 
-    // JWT callback – adds/refreshes Google tokens + otpVerified flag
     async jwt({ token, account, user }) {
-      if (account) {
+      if (account && user) {
         token.idToken        = account.id_token;
         token.refreshToken   = account.refresh_token;
         token.idTokenExpires = Date.now() + account.expires_in * 1000;
         token.email          = user.email;
+
+        // 🟡 Save refresh token to DB if new one received
+        if (account.refresh_token) {
+          await prisma.user.update({
+            where: { email: user.email },
+            data: { refreshToken: account.refresh_token },
+          });
+        }
       }
 
-      // 🔄 always refresh if it's still false
+      // 🟡 Always sync otpVerified
       if (token.email && token.otpVerified !== true) {
         const dbUser = await prisma.user.findUnique({
-          where:   { email: token.email },
-          select:  { otpVerified: true },
+          where: { email: token.email },
+          select: { otpVerified: true },
         });
         token.otpVerified = dbUser?.otpVerified ?? false;
       }
 
-      // Refresh Google ID-token if expired
+      // 🔄 Refresh ID token if expired
       if (token.idTokenExpires && Date.now() > token.idTokenExpires) {
         try {
           const refreshed = await refreshIdToken(token.refreshToken);
@@ -87,7 +94,7 @@ export const authOptions = {
           token.idTokenExpires = refreshed.idTokenExpires;
           token.refreshToken   = refreshed.refreshToken ?? token.refreshToken;
         } catch (err) {
-          console.error("⚠️  ID-token refresh failed:", err);
+          console.error("⚠️ Failed to refresh Google token:", err);
           token.error = "RefreshTokenError";
         }
       }
@@ -95,13 +102,12 @@ export const authOptions = {
       return token;
     },
 
-    // Makes the token fields available on `session.user`
     async session({ session, token }) {
       if (token) {
         session.user.id           = token.sub;
         session.user.idToken      = token.idToken;
         session.user.email        = token.email;
-        session.user.refreshToken = token.refreshToken;
+        session.user.refreshToken = token.refreshToken; // careful: don't expose to frontend in production!
         session.user.otpVerified  = token.otpVerified ?? false;
         session.error             = token.error;
       }
