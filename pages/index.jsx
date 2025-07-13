@@ -11,6 +11,7 @@ import Head from 'next/head';
 import Image from 'next/image';
 import { useRouter } from "next/router";
 import { signIn, signOut, useSession } from 'next-auth/react';
+import Link from 'next/link';
 
 function Home() {
 
@@ -70,9 +71,9 @@ function Home() {
           <p>You don&apos;t pay me until you are satisfied with the quality of my work!</p>
           <p>Fully customized websites, tailored to the specific and unique needs of your business!</p>
 
-          <a className={styles.flexCenter} href="/privacypolicy" area-label="Read our privacy policy">
+          <Link className={styles.flexCenter} href="/privacypolicy" area-label="Read our privacy policy">
             <button className={styles.button}>Read our privacy policy</button>
-          </a>
+          </Link>
 
           {!session ? (
             <div>
