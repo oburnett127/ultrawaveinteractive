@@ -70,6 +70,10 @@ function Home() {
           <p>You don&apos;t pay me until you are satisfied with the quality of my work!</p>
           <p>Fully customized websites, tailored to the specific and unique needs of your business!</p>
 
+          <a className={styles.flexCenter} href="/privacypolicy" area-label="Read our privacy policy">
+            <button className={styles.button}>Read our privacy policy</button>
+          </a>
+
           {!session ? (
             <div>
               <button onClick={() => signIn("google", {callbackUrl: "/verifyotp"})}>Sign in with Google</button>
