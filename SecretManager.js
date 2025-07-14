@@ -1,4 +1,4 @@
-const SecretManagerServiceClient = require('@google-cloud/secret-manager');
+import SecretManagerServiceClient from '@google-cloud/secret-manager';
 
 class SecretManager {
   static instance;

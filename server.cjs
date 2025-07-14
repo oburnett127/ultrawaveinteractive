@@ -1,10 +1,10 @@
 const express = require("express");
 const next = require("next");
-const dotenv = require("dotenv");
+const dotenv = require("dotenv")
 
 dotenv.config();
 
-const { initBackend } = require('./index.js');
+const { initBackend } = require('./index.cjs');
 const dev = process.env.NODE_ENV !== "production";
 const port = process.env.PORT || 3000;
 

@@ -1,10 +1,9 @@
-// logger.js — fully CommonJS-compliant version
 const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 const path = require('path');
 const fs = require('fs');
 
-const logDir = path.join(__dirname, '../logs');
+const logDir = path.join(__dirname, '../logs'); // __dirname is available in CommonJS
 
 // Make sure the logs directory exists
 if (!fs.existsSync(logDir)) {
@@ -40,4 +39,4 @@ logger.stream = {
   write: (message) => logger.info(message.trim()),
 };
 
-module.exports = { logger };
+module.exports = logger;

@@ -1,14 +1,14 @@
-// pages/api/auth/[...nextauth].js
-import NextAuth            from "next-auth";
-import GoogleProvider       from "next-auth/providers/google";
-import { PrismaAdapter }    from "@next-auth/prisma-adapter";
-import { prisma }           from "../../../lib/prisma.js";          // ← adjust if needed
-import { refreshIdToken }   from "../../../utility/auth.js";        // ← adjust if needed
+// pages/api/auth/[...nextauth].js   (CommonJS)
+const NextAuth          = require("next-auth").default ?? require("next-auth");
+const { PrismaAdapter } = require("@next-auth/prisma-adapter");
+const prisma            = require("../../../lib/prisma.cjs");            // <- make sure prisma.js uses module.exports
 
-/* ────────────────────────────────────────────────────────── */
-/* 1. CONFIG OBJECT                                           */
-/* ────────────────────────────────────────────────────────── */
-export const authOptions = {
+// --- pull provider, unwrap .default if present ----
+const gpMod         = require("next-auth/providers/google");
+const GoogleProvider = require("next-auth/providers/google").default
+
+// ----------------------------------------------------------------
+const authOptions = {
   adapter: PrismaAdapter(prisma),
 
   providers: [
@@ -25,14 +25,9 @@ export const authOptions = {
     }),
   ],
 
-  session: {
-    strategy: "jwt",
-    trust:    true,          // needed behind proxy / custom server
-  },
-
-  secret: process.env.NEXTAUTH_SECRET,
-  debug:  true,
-
+  session:  { strategy: "jwt", trust: true },
+  secret:   process.env.NEXTAUTH_SECRET,
+  debug:    true,
   cookies: {
     sessionToken: {
       name:   "next-auth.session-token",
@@ -122,7 +117,7 @@ export const authOptions = {
   },
 };
 
-/* ────────────────────────────────────────────────────────── */
-/* 2. SINGLE default export                                  */
-/* ────────────────────────────────────────────────────────── */
-export default NextAuth(authOptions);
+const handler = NextAuth(authOptions);
+
+module.exports = handler;       // CommonJS export
+module.exports.default = handler; // <-- ALSO provide .default for Next.js loader

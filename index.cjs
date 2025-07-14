@@ -1,19 +1,19 @@
 const express = require('express');
 const app = express();
-const cors = require('cors');
-const { Client, Environment } = require('square');
-const dotenv = require('dotenv');
-const crypto = require('crypto');
-const rateLimit = require('express-rate-limit');
-const bodyParser = require('body-parser');
-const { z } = require('zod');
-const Redis = require("ioredis");
-const nodemailer = require('nodemailer');
-const { google } = require("googleapis");
-const helmet = require('helmet');
-const { logger } = require('./config/logger.js');
-const connectRedis = require('./lib/redis.js');
-const { prisma } = require("./lib/prisma.js"); 
+const  cors = require('cors');
+const  { Client, Environment } = require('square');
+const  dotenv = require('dotenv');
+const  crypto = require('crypto');
+const  rateLimit = require('express-rate-limit');
+const  bodyParser = require('body-parser');
+const  { z } = require('zod');
+const  Redis = require("ioredis");
+const  nodemailer = require('nodemailer');
+const  { google } = require("googleapis");
+const  helmet = require('helmet');
+const  { logger } = require('./config/logger.cjs');
+const  connectRedis = require('./lib/redis.js');
+const  { prisma } = require("./lib/prisma.cjs"); 
 
 // ⬇️ Exported setup function
 async function initBackend(app) {
@@ -174,7 +174,7 @@ async function initBackend(app) {
     max: 15, // Limit each IP to 15 requests per window
     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-    message: 'Too many requests = require(this IP, please try again later.',
+    message: 'Too many requests from this IP, please try again later.',
   });
 
   // BEFORE PUTTING IN PRODUCTION UNCOMMENT THESE LINES ABOUT RATE LIMITER

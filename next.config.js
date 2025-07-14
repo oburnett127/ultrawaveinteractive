@@ -1,8 +1,8 @@
-/** @type {import('next').NextConfig} */
 // next.config.js
+/** @type {import('next').NextConfig} */
 module.exports = {
   images: {
-    unoptimized: true
+    unoptimized: true,
   },
   reactStrictMode: true,
   env: {

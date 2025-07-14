@@ -10,9 +10,9 @@
         "*.scss"
     ],
     "scripts": {
-        "dev": "NODE_ENV=development node server.js",
+        "dev": "node server.cjs",
         "build": "next build",
-        "start": "NODE_ENV=production node server.js",
+        "start": "node server.cjs",
         "lint": "eslint . --ext .js,.jsx"
     },
     "engines": {
