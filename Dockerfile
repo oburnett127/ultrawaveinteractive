@@ -22,6 +22,6 @@ EXPOSE 8080
 ENV NODE_ENV=production
 ENV PORT=8080
 
-CMD ["sh", "-c", "DATABASE_URL=\"mysql://$USERNAME:$PASSWORD@$HOST:$DB_PORT/$DATABASE?sslaccept=strict\" && echo DATABASE_URL=$DATABASE_URL && npx prisma generate && npx prisma migrate deploy && node server.js"]
+CMD ["sh", "-c", "DATABASE_URL=\"mysql://$USERNAME:$PASSWORD@$HOST:$DB_PORT/$DATABASE?sslaccept=strict\" && echo DATABASE_URL=$DATABASE_URL && npx prisma generate && npx prisma migrate deploy && node server.cjs"]
 
 
