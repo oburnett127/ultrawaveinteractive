@@ -1,7 +1,7 @@
 // pages/api/update-token.js
 import { getServerSession }   from "next-auth/next";
 import { authOptions }        from "./auth/[...nextauth]";   // <- correct path
-import { prisma }             from "../../lib/prisma";       // <- adjust if needed
+import { prisma }             from "../../lib/prisma.cjs";       // <- adjust if needed
 
 export default async function handler(req, res) {
   console.log("authOptions keys:", Object.keys(authOptions || {}));

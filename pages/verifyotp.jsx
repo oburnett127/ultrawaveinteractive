@@ -31,7 +31,7 @@ export default function VerifyOTP() {
     ) {
       sendOTP(session.user.email);
     }
-  }, [status, session, otpSent]);
+  }, [status, session, otpSent, sendOTP]);
 
   async function sendOTP(email) {
     try {
