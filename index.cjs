@@ -13,7 +13,7 @@ const  { google } = require("googleapis");
 const  helmet = require('helmet');
 const  { logger } = require('./config/logger.cjs');
 const  connectRedis = require('./lib/redis.js');
-const  { prisma } = require("./lib/prisma.cjs"); 
+const prisma = require("./lib/prisma.cjs"); 
 
 // ⬇️ Exported setup function
 async function initBackend(app) {
