@@ -15,6 +15,8 @@ import Link from 'next/link';
 
 function Home() {
 
+  console.log('Loaded reCAPTCHA site key:', process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY);
+
   //console.log('GOOGLE_CLIENT_ID=',process.env.GOOGLE_CLIENT_ID);
   //console.log('GOOGLE_CLIENT_SECRET=',process.env.GOOGLE_CLIENT_SECRET);
 
