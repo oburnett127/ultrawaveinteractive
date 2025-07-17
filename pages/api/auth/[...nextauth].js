@@ -52,7 +52,7 @@ const authOptions = {
   /* ── CALLBACKS ─────────────────────────────────────────── */
   callbacks: {
     // Runs on first sign-in
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
        if (account.provider === 'google') {
         console.log('🔍 Google SignIn profile:', {
           email: profile.email,
