@@ -21,7 +21,6 @@ function MyApp({ Component, pageProps }) {
 
         <header>
           <h1><Link href="/">Ultrawave Interactive Web Design</Link></h1>
-          <h2>A new web development business opening soon</h2>
         </header>
 
         <Component {...pageProps} />

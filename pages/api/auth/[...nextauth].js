@@ -53,6 +53,13 @@ const authOptions = {
   callbacks: {
     // Runs on first sign-in
     async signIn({ user, account }) {
+       if (account.provider === 'google') {
+        console.log('🔍 Google SignIn profile:', {
+          email: profile.email,
+          sub: profile.sub,
+          name: profile.name,
+        });
+      }
       return true; // allow all
     },
 
