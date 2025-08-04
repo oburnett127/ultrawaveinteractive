@@ -1,135 +1,61 @@
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useState } from "react";
 import { useRouter } from "next/router";
-import { getSession } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 
 export default function VerifyOTP() {
-  const [otp, setOtp]               = useState("");
-  const [error, setError]           = useState("");
-  const [otpSent, setOtpSent]       = useState(false);
-  const [isSubmitting, setSubmitting] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState("");
+  const router = useRouter();
 
-  const router              = useRouter();
-  const backendUrl          = process.env.NEXT_PUBLIC_BACKEND_URL;
-  const { data: session, status, update } = useSession();
-
-  /* ────────────────────────────────────────────────
-     1. Redirect if still unauthenticated
-  ───────────────────────────────────────────────── */
-  useEffect(() => {
-    if (status === "unauthenticated") router.replace("/");
-  }, [status, router]);
-
-  /* ────────────────────────────────────────────────
-     2. Auto-send OTP once the user is logged in
-  ───────────────────────────────────────────────── */
-  useEffect(() => {
-    if (
-      status === "authenticated" &&
-      session?.user?.email &&
-      !otpSent
-    ) {
-      sendOTP(session.user.email);
-    }
-  }, [status, session, otpSent, sendOTP]);
-
-  async function sendOTP(email) {
-    try {
-      await fetch(`${backendUrl}/send-otp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.user?.idToken}`,
-        },
-        credentials: "include",
-        body: JSON.stringify({ email }),
-      });
-      setOtpSent(true);
-    } catch (err) {
-      console.error("Error sending OTP:", err);
-      setError("Failed to send OTP. Please try again.");
-    }
-  }
-
-  /* ────────────────────────────────────────────────
-     3. Handle Verify button
-  ───────────────────────────────────────────────── */
-  async function handleVerifyOTP() {
-    if (status !== "authenticated" || isSubmitting) return;
-
-    setSubmitting(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setError("");
 
     try {
-      /* 3-A  Verify OTP */
-      const verify = await fetch(`${backendUrl}/verify-otp`, {
+      const email = localStorage.getItem("otpEmail");
+
+      const res = await fetch("/verify-otp", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.user.idToken}`,
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          email: session.user.email,
-          otp,
-        }),
+        body: JSON.stringify({ email, otp }), // ✅ now includes email
       });
-      if (!verify.ok) throw new Error(await verify.text());
 
-      /* Step 2: mark verified in DB */
-      await fetch("/api/update-token", { method: "GET", credentials: "include" });
+      const data = await res.json();
 
-      /* Step 3: force-refresh the JWT cookie */
-      await update();                   // rewrites next-auth.session-token
-
-      /* Step 4: read the new session; wait until otpVerified === true */
-      let fresh = null;
-      for (let i = 0; i < 3; i++) {     // retry a couple of times
-        fresh = await getSession();
-        if (fresh?.user?.otpVerified) break;
-        await new Promise(r => setTimeout(r, 200)); // 200 ms
+      if (!res.ok) {
+        throw new Error(data.error || "OTP verification failed");
       }
 
-      if (fresh?.user?.otpVerified) {
+      // 🔄 Manually refresh session
+      const session = await getSession(); // 👈 this triggers refetching the session
+
+      if (session?.user?.email) {
         router.replace("/payment");
       } else {
-        setError("Could not refresh session – please reload the page.");
+        throw new Error("Could not refresh session – please reload the page.");
       }
     } catch (err) {
-      console.error("OTP flow failed:", err);
-      setError(err.message ?? "Verification failed");
-    } finally {
-      setSubmitting(false);
+      console.error("OTP verification failed:", err);
+      setError(err.message || "Failed to verify OTP");
     }
-  }
+  };
 
-  /* ────────────────────────────────────────────────
-     4. Render
-  ───────────────────────────────────────────────── */
   return (
-    <div>
-      <h2>Verify OTP</h2>
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      {!otpSent && <p>Sending One-Time Password to your email…</p>}
-      {otpSent  && <p>Check your inbox for the One-Time Password.</p>}
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleVerifyOTP();
-        }}
-      >
-        <input
-          type="text"
-          placeholder="Enter OTP"
-          value={otp}
-          onChange={(e) => setOtp(e.target.value)}
-          required
-        />
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Verifying…" : "Verify OTP"}
-        </button>
+    <div style={{ maxWidth: 400, margin: "0 auto" }}>
+      <h1>Verify OTP</h1>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>OTP:</label>
+          <input
+            type="text"
+            required
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+          />
+        </div>
+        {error && <p style={{ color: "red" }}>{error}</p>}
+        <button type="submit">Verify</button>
       </form>
     </div>
   );

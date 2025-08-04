@@ -15,10 +15,7 @@ import Link from 'next/link';
 
 function Home() {
 
-  console.log('Loaded reCAPTCHA site key:', process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY);
-
-  //console.log('GOOGLE_CLIENT_ID=',process.env.GOOGLE_CLIENT_ID);
-  //console.log('GOOGLE_CLIENT_SECRET=',process.env.GOOGLE_CLIENT_SECRET);
+  //console.log('Loaded reCAPTCHA site key:', process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY);
 
   const router = useRouter();
   const { data: session } = useSession();
@@ -43,10 +40,6 @@ function Home() {
             "url": "https://ultrawaveinteractive.com",
             "openingHours": "Su-Sa 08:00-20:00"
           }`;
-
-  function redirectToVerification() {
-    router.push("/verifyotp"); // Redirects to the /verify-otp route
-  }
   
   return (
     <>
@@ -77,16 +70,19 @@ function Home() {
             <button className={styles.button}>Read our privacy policy</button>
           </Link>
 
-          {!session ? (
-            <div>
-              <button onClick={() => signIn("google", {callbackUrl: "/verifyotp"})}>Sign in with Google</button>
-            </div>
+          {session ? (
+            <>
+              <p>Hello, {session.user.email}</p>
+              <button onClick={() => signOut()}>Sign Out</button>
+            </>
           ) : (
             <>
-              <h1>Welcome, {session.user.name}!</h1>
-              <p>Your email: {session.user.email}</p>
-              <button onClick={() => signOut()}>Sign out</button><br></br><br></br>
-              <button onClick={() => redirectToVerification()}>Make a payment</button>
+              <Link href="/signin">
+                <button>Sign In</button>
+              </Link><br /><br />
+              <Link href="/register">
+                <button>Create Account</button>
+              </Link>
             </>
           )}
 

@@ -13,7 +13,7 @@ const  { google } = require("googleapis");
 const  helmet = require('helmet');
 const  { logger } = require('./config/logger.cjs');
 const  connectRedis = require('./lib/redis.js');
-const prisma = require("./lib/prisma.cjs"); 
+const prisma = require("./lib/prisma.cjs");
 
 // ⬇️ Exported setup function
 async function initBackend(app) {
@@ -192,63 +192,7 @@ async function initBackend(app) {
     environment: Environment.Sandbox, // Use Environment.Production for live
   });
 
-
-  //For validating the jwt ID token for a user, not for validating access tokens, access
-  //tokens are not jwt tokens and they do not need to be validated by this app.
-  async function validateIdToken(req, res, next) {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Unauthorized: No token provided" });
-    }
-
-    const token = authHeader.split(" ")[1];
-
-    // ✅ Define OAuth2 client here (local to this middleware)
-    const oAuth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET
-    );
-
-    try {
-      const ticket = await oAuth2Client.verifyIdToken({
-        idToken: token,
-        audience: process.env.GOOGLE_CLIENT_ID,
-      });
-
-      const payload = ticket.getPayload();
-      req.user = payload; // Attach user info for downstream
-      next();
-    } catch (error) {
-      console.error("❌ ID Token validation failed:", error.message);
-      return res.status(401).json({ error: "Unauthorized: Invalid or expired ID token" });
-    }
-  }
-
-  // Function to create a Nodemailer transporter with OAuth2
-  async function createTransporter(oAuth2Client) {
-    const accessTokenResponse = await oAuth2Client.getAccessToken();
-
-    if (!accessTokenResponse?.token) {
-      throw new Error("Failed to obtain access token");
-    }
-
-    return nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        type: "OAuth2",
-        user: process.env.EMAIL_USER,
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        refreshToken: oAuth2Client.credentials.refresh_token,
-        accessToken: accessTokenResponse.token,
-      },
-      debug: true,
-      logger: false,
-    });
-  }
-
-  app.post("/send-otp", validateIdToken, async (req, res) => {
+  app.post("/send-otp", async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
@@ -257,87 +201,47 @@ async function initBackend(app) {
     }
 
     try {
-      // 1️⃣ Get user refresh token from DB
-      const dbUser = await prisma.user.findUnique({
-        where: { email },
-        select: { refreshToken: true },
-      });
-
-      if (!dbUser?.refreshToken) {
-        console.error(`❌ No refresh token found for user ${email}`);
-        return res.status(500).json({ error: "No refresh token found for user" });
+      // 1️⃣ Check if user exists
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (!user) {
+        console.error(`❌ No user found for email ${email}`);
+        return res.status(404).json({ error: "User not found" });
       }
 
-      // 2️⃣ Setup Google OAuth2 client
-      const oAuth2Client = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET,
-        process.env.GOOGLE_REDIRECT_URI
-      );
-
-      oAuth2Client.setCredentials({
-        refresh_token: dbUser.refreshToken,
-      });
-
-      // 3️⃣ Generate a random 6-digit OTP
+      // 2️⃣ Generate a 6-digit OTP
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-      // 4️⃣ Store OTP in Redis (10 min TTL)
-      try {
-        const redis = await connectRedis();
-        await redis.set(`otp:${email}`, otp, "EX", 600);
-        console.log(`✅ OTP stored in Redis for ${email}`);
-      } catch (redisErr) {
-        console.error("❌ Error storing OTP in Redis:", redisErr);
-        return res.status(500).json({ error: "Failed to store OTP" });
-      }
+      // 3️⃣ Store OTP in Redis (10 minute TTL)
+      const redis = await connectRedis();
+      await redis.set(`otp:${email}`, otp, "EX", 600);
+      console.log(`✅ OTP stored in Redis for ${email}`);
 
-      // 5️⃣ Create email transporter with access token
-      let transporter;
-      try {
-        const accessTokenResponse = await oAuth2Client.getAccessToken();
-        if (!accessTokenResponse.token) {
-          throw new Error("Failed to get access token from Google");
-        }
+      // 4️⃣ Create basic SMTP transporter (no OAuth2)
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
 
-        transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: {
-            type: "OAuth2",
-            user: process.env.EMAIL_USER,
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            refreshToken: dbUser.refreshToken,
-            accessToken: accessTokenResponse.token,
-          },
-        });
-      } catch (transporterErr) {
-        console.error("❌ Error creating transporter:", transporterErr);
-        return res.status(500).json({ error: "Failed to create email transporter" });
-      }
+      // 5️⃣ Send email
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Your One-Time Password (OTP)",
+        text: `Your OTP is: ${otp}. It is valid for 10 minutes.`,
+      });
 
-      // 6️⃣ Send email
-      try {
-        await transporter.sendMail({
-          from: process.env.EMAIL_USER,
-          to: email,
-          subject: "Your One-Time Password (OTP)",
-          text: `Your OTP is: ${otp}. It is valid for 10 minutes.`,
-        });
-
-        console.log(`✅ OTP email sent to ${email}`);
-        return res.status(200).json({ message: "OTP sent successfully" });
-      } catch (sendMailErr) {
-        console.error("❌ Error sending OTP email:", sendMailErr);
-        return res.status(500).json({ error: "Failed to send OTP email" });
-      }
+      console.log(`✅ OTP email sent to ${email}`);
+      return res.status(200).json({ message: "OTP sent successfully" });
     } catch (err) {
       console.error("❌ General send-otp error:", err);
-      return res.status(500).json({ error: "Internal server error" });
+      return res.status(500).json({ error: "Failed to send OTP" });
     }
   });
 
-  app.post("/verify-otp", validateIdToken, async (req, res) => {
+  app.post("/verify-otp", async (req, res) => {
     const { email, otp } = req.body;
 
     if (!email || !otp) {
@@ -358,7 +262,14 @@ async function initBackend(app) {
 
       if (storedOtp.trim() === otp.trim()) {
         await redis.del(`otp:${email}`);
-        console.log(`OTP verified for ${email}`);
+
+        // ✅ DB UPDATE HERE
+        await prisma.user.update({
+          where: { email },
+          data: { otpVerified: true },
+        });
+
+        console.log(`OTP verified and user updated: ${email}`);
         return res.status(200).json({ message: "OTP verified successfully" });
       } else {
         console.error(`Stored OTP did not match for ${email}`, { storedOtp, otp });
@@ -398,7 +309,7 @@ async function initBackend(app) {
     next();
     };
 
-    app.post('/process-payment', validateIdToken, validatePaymentRequest, async (req, res) => {
+    app.post('/process-payment', validatePaymentRequest, async (req, res) => {
     try {
       const { googleProviderId, email, receiptEmail, nonce, amount } = req.validatedData;
 
@@ -559,7 +470,7 @@ async function initBackend(app) {
     }
   }
 
-  app.post("/verify-recaptcha", validateIdToken, async (req, res) => {
+  app.post("/verify-recaptcha", async (req, res) => {
     const { recaptchaToken } = req.body; //Recaptcha token generated on the frontend by the recaptcha widget
 
     //console.log("Received reCAPTCHA token:", recaptchaToken); // Debugging
