@@ -14,6 +14,8 @@ const  helmet = require('helmet');
 const  { logger } = require('./config/logger.cjs');
 const  connectRedis = require('./lib/redis.js');
 const prisma = require("./lib/prisma.cjs");
+const { sendContactEmail } = require("./lib/mailer.cjs");
+const sanitizeHtml = require("sanitize-html");
 
 // ⬇️ Exported setup function
 async function initBackend(app) {
@@ -372,53 +374,42 @@ async function initBackend(app) {
 
   app.post("/contact", async (req, res) => {
     try {
-      if (req.method !== "POST") {
-        return res.status(405).json({ error: "Method not allowed" });
+      const { email, name, phone, message, recaptchaToken } = req.body || {};
+
+      if (!email || !message) {
+        return res.status(400).json({ error: "Email and message are required." });
       }
 
-      // Destructure and sanitize input data
-      const { formData, recaptchaToken } = req.body;
+      const fromEmail = String(email).trim();
+      const fromName = name ? String(name).trim() : "";
+      const fromPhone = phone ? String(phone).trim() : "";
 
-      if (!formData || !formData.firstName || !formData.lastName || !formData.email || !formData.message) {
-        return res.status(400).json({ error: "Missing required fields." });
+      // Sanitize the message
+      const safeMessage = sanitizeHtml(message, {
+        allowedTags: ["b", "i", "em", "strong", "p", "br", "ul", "ol", "li"],
+        allowedAttributes: {}, // no attributes allowed
+      });
+
+      // Verify reCAPTCHA
+      if (!recaptchaToken) {
+        return res.status(400).json({ error: "Missing reCAPTCHA token" });
       }
-
-      // Validate email
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        return res.status(400).json({ error: "Invalid email address." });
-      }
-
-      // Verify reCAPTCHA token
       const response = await verifyRecaptchaToken(recaptchaToken);
-      if (response.success === false) {
+      if (!response.success) {
         return res.status(400).json({ error: "Failed reCAPTCHA verification" });
       }
 
-      const transporter = await createTransporter();
+      await sendContactEmail({
+        fromEmail,
+        name: fromName,
+        phone: fromPhone,
+        message: safeMessage,
+      });
 
-      // Email details
-      const mailOptions = {
-        from: formData.email, // The user's email address
-        to: process.env.EMAIL_USER, // Replace with your email address
-        subject: "ALERT a customer has sent you a message!!!",
-        text: `
-          First Name: ${formData.firstName}
-          Last Name: ${formData.lastName}
-          Email: ${formData.email}
-          Phone: ${formData.phone || "N/A"}
-          Message: ${formData.message}
-        `,
-      };
-
-      // Send email
-      await transporter.sendMail(mailOptions);
-
-      // Respond to the client
-      res.status(200).json({ message: "Message sent successfully!" });
-    } catch (error) {
-      console.error("Error sending email:", error);
-      res.status(500).json({ error: "Failed to send message. Please try again." });
+      return res.status(200).json({ ok: true });
+    } catch (err) {
+      console.error("Error sending contact email:", err);
+      return res.status(500).json({ error: "Failed to send email." });
     }
   });
 

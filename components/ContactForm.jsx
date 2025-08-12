@@ -1,59 +1,48 @@
 import React, { useState, useRef } from "react";
-import ReCAPTCHA from 'react-google-recaptcha';
-import styles from "./ContactForm.module.css"; // Adjust this path as needed
+import ReCAPTCHA from "react-google-recaptcha";
+import styles from "./ContactForm.module.css"; // adjust if needed
 
 const ContactForm = () => {
-
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  // Prefer relative path when frontend and backend are unified.
+  // If you truly need a full URL, set NEXT_PUBLIC_BACKEND_URL and we’ll use it.
+  const backendUrl =
+    process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
 
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
     phone: "",
     message: "",
   });
 
-  const [responseMessage, setResponseMessage] = useState("");
+  const [status, setStatus] = useState({ sending: false, msg: "", err: "" });
   const [recaptchaError, setRecaptchaError] = useState("");
   const recaptchaRef = useRef(null);
 
-
-  // Helper function to sanitize input
-  const sanitizeInput = (input) => {
-    const div = document.createElement("div");
-    div.innerText = input;
-    return div.innerHTML; // Escape any HTML/JS content
-  };
-
-  // Handle input changes with sanitization
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: sanitizeInput(value) }));
+    const { name, value } = e.target; // <-- use "name"
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (status.msg || status.err) setStatus({ sending: false, msg: "", err: "" });
   };
 
-  // Validate form fields before submission
   const isFormValid = () => {
-    const { firstName, lastName, email, phone, message } = formData;
+    const { name, email, phone, message } = formData;
 
-    // Check required fields
-    if (!firstName || !lastName || !email || !message) {
-      setResponseMessage("Please fill in all required fields.");
+    if (!name || !email || !message) {
+      setStatus({ sending: false, msg: "", err: "Please fill in all required fields." });
       return false;
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setResponseMessage("Please enter a valid email address.");
+      setStatus({ sending: false, msg: "", err: "Please enter a valid email address." });
       return false;
     }
 
-    // Validate phone number (if provided)
     if (phone) {
-      const phoneRegex = /^[0-9+\-()\s]*$/; // Allow digits, spaces, +, -, and ()
+      const phoneRegex = /^[0-9+\-()\s]*$/;
       if (!phoneRegex.test(phone)) {
-        setResponseMessage("Please enter a valid phone number.");
+        setStatus({ sending: false, msg: "", err: "Please enter a valid phone number." });
         return false;
       }
     }
@@ -61,77 +50,71 @@ const ContactForm = () => {
     return true;
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (status.sending) return;
 
-    // Validate form data before sending
     if (!isFormValid()) return;
 
-    // Get the reCAPTCHA token
-    const recaptchaToken = recaptchaRef.current?.getValue() || "missing-recaptcha-token";
+    const recaptchaToken = recaptchaRef.current?.getValue();
     if (!recaptchaToken) {
       setRecaptchaError("Please complete the reCAPTCHA.");
       return;
     }
+    setRecaptchaError("");
+    setStatus({ sending: true, msg: "", err: "" });
 
     try {
-      const response = await fetch(`${backendUrl}/contact`, {
+      const res = await fetch(`${backendUrl}/contact`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ formData, recaptchaToken }),
+        headers: { "Content-Type": "application/json" },
+        // Send everything the backend may need, including the captcha token
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          message: formData.message,
+          recaptchaToken,
+        }),
       });
 
-      if (response.status === 429) {
-        setResponseMessage("Too many requests! Please try again later.");
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 429) {
+        setStatus({ sending: false, msg: "", err: "Too many requests. Try again later." });
+        recaptchaRef.current?.reset();
         return;
       }
 
-      const result = await response.text();
-      setResponseMessage(result);
-
-      // Optionally clear the form on success
-      if (result === "Message sent successfully!") {
-        setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          phone: "",
-          message: "",
-        });
+      if (!res.ok) {
+        const errText = data?.error || `HTTP ${res.status}`;
+        setStatus({ sending: false, msg: "", err: errText });
+        recaptchaRef.current?.reset();
+        return;
       }
 
-      // Reset reCAPTCHA after form submission
-      (window).grecaptcha?.reset();
+      setStatus({ sending: false, msg: "Message sent successfully!", err: "" });
+      setFormData({ name: "", email: "", phone: "", message: "" });
+      recaptchaRef.current?.reset();
     } catch (error) {
-      setResponseMessage("An error occurred while sending the message.");
       console.error(error);
+      setStatus({ sending: false, msg: "", err: "An error occurred while sending the message." });
+      recaptchaRef.current?.reset();
     }
   };
 
   return (
     <div className={styles.formContainer}>
-      <form className={styles.contactForm} onSubmit={handleSubmit}>
+      <form className={styles.contactForm} onSubmit={handleSubmit} noValidate>
         <input
           type="text"
-          id="firstName"
-          name="firstName"
-          placeholder="First Name"
-          value={formData.firstName}
+          id="name"
+          name="name"
+          placeholder="Name"
+          value={formData.name}
           onChange={handleChange}
           required
-        />
-
-        <input
-          type="text"
-          id="lastName"
-          name="lastName"
-          placeholder="Last Name"
-          value={formData.lastName}
-          onChange={handleChange}
-          required
+          autoComplete="name"
         />
 
         <input
@@ -142,6 +125,7 @@ const ContactForm = () => {
           value={formData.email}
           onChange={handleChange}
           required
+          autoComplete="email"
         />
 
         <input
@@ -151,6 +135,7 @@ const ContactForm = () => {
           placeholder="Phone (Optional)"
           value={formData.phone}
           onChange={handleChange}
+          autoComplete="tel"
         />
 
         <textarea
@@ -160,24 +145,25 @@ const ContactForm = () => {
           value={formData.message}
           onChange={handleChange}
           required
+          rows={6}
         />
 
-        {/* Render the reCAPTCHA widget */}
         <ReCAPTCHA
           ref={recaptchaRef}
-          sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "no-recaptcha-site-key"}
-          size="compact" // Display the checkbox reCAPTCHA
+          sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
+          size="compact"
         />
         {recaptchaError && <p className={styles.error}>{recaptchaError}</p>}
 
-        <button className={styles.button} type="submit">
-          Submit
+        <button className={styles.button} type="submit" disabled={status.sending}>
+          {status.sending ? "Sending..." : "Submit"}
         </button>
       </form>
 
-      {responseMessage && (
-        <div className={styles.responseMessage}>
-          <p>{responseMessage}</p>
+      {(status.msg || status.err) && (
+        <div className={styles.responseMessage} aria-live="polite">
+          {status.msg && <p>{status.msg}</p>}
+          {status.err && <p className={styles.error}>{status.err}</p>}
         </div>
       )}
     </div>
