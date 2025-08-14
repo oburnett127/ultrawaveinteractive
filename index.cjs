@@ -14,7 +14,7 @@ const  helmet = require('helmet');
 const  { logger } = require('./config/logger.cjs');
 const  connectRedis = require('./lib/redis.js');
 const prisma = require("./lib/prisma.cjs");
-const { sendContactEmail } = require("./lib/mailer.cjs");
+const { sendContactEmail } = require("./lib/mailer.js");
 const sanitizeHtml = require("sanitize-html");
 
 // ⬇️ Exported setup function
@@ -194,94 +194,94 @@ async function initBackend(app) {
     environment: Environment.Sandbox, // Use Environment.Production for live
   });
 
-  app.post("/send-otp", async (req, res) => {
-    const { email } = req.body;
+  // app.post("/send-otp", async (req, res) => {
+  //   const { email } = req.body;
 
-    if (!email) {
-      console.error("❌ Missing email in request body");
-      return res.status(400).json({ error: "Missing email" });
-    }
+  //   if (!email) {
+  //     console.error("❌ Missing email in request body");
+  //     return res.status(400).json({ error: "Missing email" });
+  //   }
 
-    try {
-      // 1️⃣ Check if user exists
-      const user = await prisma.user.findUnique({ where: { email } });
-      if (!user) {
-        console.error(`❌ No user found for email ${email}`);
-        return res.status(404).json({ error: "User not found" });
-      }
+  //   try {
+  //     // 1️⃣ Check if user exists
+  //     const user = await prisma.user.findUnique({ where: { email } });
+  //     if (!user) {
+  //       console.error(`❌ No user found for email ${email}`);
+  //       return res.status(404).json({ error: "User not found" });
+  //     }
 
-      // 2️⃣ Generate a 6-digit OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  //     // 2️⃣ Generate a 6-digit OTP
+  //     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-      // 3️⃣ Store OTP in Redis (10 minute TTL)
-      const redis = await connectRedis();
-      await redis.set(`otp:${email}`, otp, "EX", 600);
-      console.log(`✅ OTP stored in Redis for ${email}`);
+  //     // 3️⃣ Store OTP in Redis (10 minute TTL)
+  //     const redis = await connectRedis();
+  //     await redis.set(`otp:${email}`, otp, "EX", 600);
+  //     console.log(`✅ OTP stored in Redis for ${email}`);
 
-      // 4️⃣ Create basic SMTP transporter (no OAuth2)
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-      });
+  //     // 4️⃣ Create basic SMTP transporter (no OAuth2)
+  //     const transporter = nodemailer.createTransport({
+  //       service: "gmail",
+  //       auth: {
+  //         user: process.env.EMAIL_USER,
+  //         pass: process.env.EMAIL_PASS,
+  //       },
+  //     });
 
-      // 5️⃣ Send email
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "Your One-Time Password (OTP)",
-        text: `Your OTP is: ${otp}. It is valid for 10 minutes.`,
-      });
+  //     // 5️⃣ Send email
+  //     await transporter.sendMail({
+  //       from: process.env.EMAIL_USER,
+  //       to: email,
+  //       subject: "Your One-Time Password (OTP)",
+  //       text: `Your OTP is: ${otp}. It is valid for 10 minutes.`,
+  //     });
 
-      console.log(`✅ OTP email sent to ${email}`);
-      return res.status(200).json({ message: "OTP sent successfully" });
-    } catch (err) {
-      console.error("❌ General send-otp error:", err);
-      return res.status(500).json({ error: "Failed to send OTP" });
-    }
-  });
+  //     console.log(`✅ OTP email sent to ${email}`);
+  //     return res.status(200).json({ message: "OTP sent successfully" });
+  //   } catch (err) {
+  //     console.error("❌ General send-otp error:", err);
+  //     return res.status(500).json({ error: "Failed to send OTP" });
+  //   }
+  // });
 
-  app.post("/verify-otp", async (req, res) => {
-    const { email, otp } = req.body;
+  // app.post("/verify-otp", async (req, res) => {
+  //   const { email, otp } = req.body;
 
-    if (!email || !otp) {
-      console.error("Missing email or otp", { email, otp });
-      return res.status(400).json({ message: "Email and OTP are required" });
-    }
+  //   if (!email || !otp) {
+  //     console.error("Missing email or otp", { email, otp });
+  //     return res.status(400).json({ message: "Email and OTP are required" });
+  //   }
 
-    try {
-      const redis = await connectRedis();
-      const storedOtp = await redis.get(`otp:${email}`);
-      console.log("Incoming OTP verification request:", { email, otp });
-      console.log("Expected OTP from store:", storedOtp);
+  //   try {
+  //     const redis = await connectRedis();
+  //     const storedOtp = await redis.get(`otp:${email}`);
+  //     console.log("Incoming OTP verification request:", { email, otp });
+  //     console.log("Expected OTP from store:", storedOtp);
 
-      if (!storedOtp) {
-        console.error(`No OTP in Redis for ${email}`);
-        return res.status(400).json({ message: "Invalid OTP" });
-      }
+  //     if (!storedOtp) {
+  //       console.error(`No OTP in Redis for ${email}`);
+  //       return res.status(400).json({ message: "Invalid OTP" });
+  //     }
 
-      if (storedOtp.trim() === otp.trim()) {
-        await redis.del(`otp:${email}`);
+  //     if (storedOtp.trim() === otp.trim()) {
+  //       await redis.del(`otp:${email}`);
 
-        // ✅ DB UPDATE HERE
-        await prisma.user.update({
-          where: { email },
-          data: { otpVerified: true },
-        });
+  //       // ✅ DB UPDATE HERE
+  //       await prisma.user.update({
+  //         where: { email },
+  //         data: { otpVerified: true },
+  //       });
 
-        console.log(`OTP verified and user updated: ${email}`);
-        return res.status(200).json({ message: "OTP verified successfully" });
-      } else {
-        console.error(`Stored OTP did not match for ${email}`, { storedOtp, otp });
-        return res.status(400).json({ message: "Invalid OTP" });
-      }
-    } catch (error) {
-      console.error("Error verifying OTP:", error);
-      return res.status(500).json({ message: "Failed to verify OTP" });
-    }
-  });
+  //       console.log(`OTP verified and user updated: ${email}`);
+  //       return res.status(200).json({ message: "OTP verified successfully" });
+  //     } else {
+  //       console.error(`Stored OTP did not match for ${email}`, { storedOtp, otp });
+  //       return res.status(400).json({ message: "Invalid OTP" });
+  //     }
+  //   } catch (error) {
+  //     console.error("Error verifying OTP:", error);
+  //     return res.status(500).json({ message: "Failed to verify OTP" });
+  //   }
+  // });
 
   // Zod schema for payment validation
   const paymentSchema = z.object({
