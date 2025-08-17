@@ -4,7 +4,7 @@ import { authOptions }        from "./auth/[...nextauth]";   // <- correct path
 import { prisma }             from "../../lib/prisma.cjs";       // <- adjust if needed
 
 export default async function handler(req, res) {
-  console.log("authOptions keys:", Object.keys(authOptions || {}));
+  //console.log("authOptions keys:", Object.keys(authOptions || {}));
 
   if (req.method !== "GET") return res.status(405).end(); // only GET
 
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     });
     return res.status(200).json({ success: true });
   } catch (e) {
-    console.error("update-token failed:", e);
+    //console.error("update-token failed:", e);
     return res.status(500).json({ error: "DB update failed" });
   }
 }

@@ -6,7 +6,6 @@ import DOMPurify from "dompurify";
 import { getToken } from "next-auth/jwt";
 import prisma from "../lib/prisma.cjs";
 
-
 const Payment = () => {
   const { data: session } = useSession();
 
@@ -141,21 +140,34 @@ const Payment = () => {
 
 /* ---------------- server-side guard ------------------------------------ */
 export async function getServerSideProps(context) {
-  const token = await getToken({
-    req: context.req,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+  const token = await getToken({ req: context.req, secret: process.env.NEXTAUTH_SECRET });
 
   if (!token?.email) {
+    //console.log('if !token?.email');
     return { redirect: { destination: "/", permanent: false } };
   }
 
+  // normalize email to match verify API
+  const email = String(token.email).trim().toLowerCase();
+
+  // (optional but helpful while debugging)
+  if (process.env.NODE_ENV !== "production") {
+    const safeDb = (process.env.DATABASE_URL || "").replace(/:\/\/.*@/, "://***:***@");
+    // console.log("[payment gssp] DB:", safeDb);
+    // console.log("[payment gssp] email:", email);
+  }
+
   const dbUser = await prisma.user.findUnique({
-    where:  { email: token.email },
-    select: { otpVerified: true },
+    where:  { email },
+    select: { id: true, email: true, otpVerified: true },
   });
 
+  if (process.env.NODE_ENV !== "production") {
+    //console.log("[payment gssp] dbUser:", dbUser);
+  }
+
   if (!dbUser?.otpVerified) {
+    //console.log('redirecting to verifyotp');
     return { redirect: { destination: "/verifyotp", permanent: false } };
   }
 

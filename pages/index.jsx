@@ -77,7 +77,7 @@ function Home() {
             </>
           ) : (
             <>
-              <Link href="/signin">
+              <Link href="/auth/signin">
                 <button>Sign In</button>
               </Link><br /><br />
               <Link href="/register">

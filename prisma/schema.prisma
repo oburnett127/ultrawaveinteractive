@@ -18,3 +18,14 @@ model User {
   hashedPassword String   // required for credentials auth
   otpVerified    Boolean  @default(false)
 }
+
+model OtpToken {
+  id        String   @id @default(cuid())
+  email     String   
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email, expiresAt])
+}
+

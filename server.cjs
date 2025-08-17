@@ -28,7 +28,7 @@ nextApp.prepare()
 
     server.listen(port, (err) => {
       if (err) throw err;
-      console.log(`✅ Server ready on http://localhost:${port}`);
+      //console.log(`✅ Server ready on http://localhost:${port}`);
     });
   })
   .catch((err) => {

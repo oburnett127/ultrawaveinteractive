@@ -12,7 +12,7 @@ const  nodemailer = require('nodemailer');
 const  { google } = require("googleapis");
 const  helmet = require('helmet');
 const  { logger } = require('./config/logger.cjs');
-const  connectRedis = require('./lib/redis.js');
+const  connectRedis = require('./lib/redis.cjs');
 const prisma = require("./lib/prisma.cjs");
 const { sendContactEmail } = require("./lib/mailer.js");
 const sanitizeHtml = require("sanitize-html");
@@ -44,8 +44,8 @@ async function initBackend(app) {
   app.use(
     helmet({
       noSniff: true,
-      frameguard: { action: "deny" },
-      xssFilter: true,
+      frameguard: { action: "deny" }, // Your page can't be framed by other sites (reCAPTCHA iframe still works)
+      xssFilter: true,                 // Note: deprecated in Helmet 6/7 but harmless if you keep it
       referrerPolicy: { policy: "no-referrer-when-downgrade" },
       permittedCrossDomainPolicies: true,
       contentSecurityPolicy: {
@@ -53,88 +53,89 @@ async function initBackend(app) {
         directives: {
           defaultSrc: ["'self'"],
 
+          // Scripts used by your app, Square, and reCAPTCHA
           scriptSrc: [
             "'self'",
             "'unsafe-inline'",
-            "'unsafe-eval'",
-            'https://ultrawaveinteractive.com',
+            "'unsafe-eval'",                  // often needed in Next.js dev; consider removing in prod if possible
+            "https://ultrawaveinteractive.com",
+
             // Square sandbox & prod
-            'https://sandbox.web.squarecdn.com',
-            'https://web.squarecdn.com',       // For prod later
-            'https://js.squareup.com',
-            // Google
-            'https://www.google.com',
-            'https://www.gstatic.com',
-            // Your other services
-            'https://cdn.sentry.io',
-            'https://consent.cookiebot.com',
+            "https://sandbox.web.squarecdn.com",
+            "https://web.squarecdn.com",
+            "https://js.squareup.com",
+
+            // reCAPTCHA
+            "https://www.google.com",
+            "https://www.gstatic.com",
           ],
 
+          // Styles (Square + Google Fonts)
           styleSrc: [
             "'self'",
-            "'unsafe-inline'", // Required by Square and Cookiebot
-            "https://consent.cookiebot.com",
+            "'unsafe-inline'",                // reCAPTCHA/Square often need this
             "https://js.squareup.com",
             "https://sandbox.web.squarecdn.com",
             "https://fonts.googleapis.com",
           ],
 
+          // Images (app, Square, reCAPTCHA)
           imgSrc: [
             "'self'",
             "data:",
             "https://*.squarecdn.com",
-            "https://consent.cookiebot.com",
-            "https://accounts.google.com",
-            "https://www.googleapis.com",
+
+            // reCAPTCHA
             "https://www.google.com",
             "https://www.gstatic.com",
-            "https://authjs.dev",
           ],
 
+          // Fonts (needed for Google Fonts)
+          fontSrc: [
+            "'self'",
+            "https://fonts.gstatic.com",
+          ],
+
+          // iframes (Square + reCAPTCHA challenge iframes)
           frameSrc: [
             "'self'",
-            // Square sandbox iframe endpoints
-            'https://sandbox.web.squarecdn.com',
-            'https://pci-connect.squareup.com',
-            // Square prod iframe domains (for future)
-            'https://web.squarecdn.com',
-            'https://js.squareup.com',
-            // Google login
-            'https://accounts.google.com',
-            'https://www.google.com',
-            'https://www.gstatic.com',
-            // Cookiebot
-            'https://consent.cookiebot.com',
+
+            // Square sandbox/prod iframe endpoints
+            "https://sandbox.web.squarecdn.com",
+            "https://pci-connect.squareup.com",
+            "https://web.squarecdn.com",
+            "https://js.squareup.com",
+
+            // reCAPTCHA iframes
+            "https://www.google.com",
+            "https://recaptcha.google.com",
           ],
 
+          // XHR/WebSocket/fetch endpoints (your app, Square, Sentry, minimal Google for reCAPTCHA)
           connectSrc: [
-             "'self'",
-            'https://ultrawaveinteractive.com',
-            'http://localhost:8080',           // or your actual dev port
-            'http://127.0.0.1:8080',
+            "'self'",
+            "https://ultrawaveinteractive.com",
+            "http://localhost:8080",
+            "http://127.0.0.1:8080",
 
-            // Square sandbox
-            'https://sandbox.web.squarecdn.com',
-            'https://*.squareupsandbox.com',
-            'https://pci-connect.squareup.com',
+            // Square sandbox/prod
+            "https://sandbox.web.squarecdn.com",
+            "https://*.squareupsandbox.com",
+            "https://pci-connect.squareup.com",
+            "https://connect.squareup.com",
+            "https://web.squarecdn.com",
 
-            // Square prod (future)
-            'https://connect.squareup.com',
-            'https://web.squarecdn.com',
+            // reCAPTCHA (usually not required for v2, but safe to allow)
+            "https://www.google.com",
+            "https://www.gstatic.com",
 
-            // Google login
-            'https://oauth2.googleapis.com',
-            'https://accounts.google.com',
-            'https://www.google.com',
-            'https://www.gstatic.com',
-
-            // SMTP and error tracking
-            'https://smtp.gmail.com',
-            'https://cdn.sentry.io',
-            'https://consent.cookiebot.com',
+            // Error tracking
+            "https://cdn.sentry.io",
           ],
 
           objectSrc: ["'none'"],
+          // Optional hardening: only allow your site to frame itself (already covered by helmet.frameguard)
+          // frameAncestors: ["'none'"],
         },
         reportOnly: false,
       },
