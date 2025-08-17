@@ -1,30 +1,42 @@
+# Use Node 18 LTS
 FROM node:18
 
 WORKDIR /app
 
-# Copy dependency files
+# ---- 1) Install deps (cached) ----
 COPY package*.json ./
+# Prefer npm ci when lockfile exists; fallback to npm install if needed
+RUN npm ci --omit=optional || npm install
 
-# Accept build-time environment variables from Northflank
-ARG DATABASE_URL
-ARG NEXT_PUBLIC_RECAPTCHA_SITE_KEY
-ARG RECAPTCHA_SECRET_KEY
+# ---- 2) Generate Prisma client BEFORE the Next.js build ----
+# Copy only prisma schema first for better caching
+COPY prisma ./prisma
+RUN npx prisma generate
 
-ENV DATABASE_URL=$DATABASE_URL
-ENV NEXT_PUBLIC_RECAPTCHA_SITE_KEY=$NEXT_PUBLIC_RECAPTCHA_SITE_KEY
-ENV RECAPTCHA_SECRET_KEY=$RECAPTCHA_SECRET_KEY
-
-# Install dependencies
-RUN npm install
-
-# Copy the rest of the app
+# ---- 3) Copy the rest of the app and build ----
 COPY . .
 
-# Build Next.js for production (with env vars available)
+# Expose public build-time env (non-secret). Northflank can pass this as a Build arg.
+ARG NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+ENV NEXT_PUBLIC_RECAPTCHA_SITE_KEY=$NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+
+# Build Next.js for production (Prisma client already generated)
 RUN npm run build
 
-EXPOSE 8080
+# ---- 4) Runtime config ----
 ENV NODE_ENV=production
 ENV PORT=8080
+EXPOSE 8080
 
-CMD ["sh", "-c", "DATABASE_URL=\"mysql://$USERNAME:$PASSWORD@$HOST:$DB_PORT/$DATABASE?sslaccept=strict\" && echo DATABASE_URL=$DATABASE_URL && npx prisma generate && npx prisma migrate deploy && node server.cjs"]
+# At runtime we expect DATABASE_URL and RECAPTCHA_SECRET_KEY to come from Northflank
+# If DATABASE_URL is not provided, we compose it from parts (USERNAME, PASSWORD, HOST, DB_PORT, DATABASE).
+# We also re-run prisma generate defensively (safe + quick), then apply migrations, then start.
+CMD ["sh", "-c", "\
+  if [ -z \"$DATABASE_URL\" ]; then \
+    export DATABASE_URL=\"mysql://$USERNAME:$PASSWORD@$HOST:$DB_PORT/$DATABASE?sslaccept=strict\"; \
+  fi; \
+  echo \"DATABASE_URL=$DATABASE_URL\"; \
+  npx prisma generate && \
+  npx prisma migrate deploy && \
+  node server.cjs \
+"]
