@@ -1,80 +1,70 @@
-// pages/api/auth/register.js
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import prisma from "../../../lib/prisma.cjs";
+import { hash } from "bcryptjs";
 
-const prisma = new PrismaClient();
-
-async function verifyRecaptcha(token) {
+// Server-side verification of v2 checkbox token
+async function verifyRecaptchaToken(token) {
   const secret = process.env.RECAPTCHA_SECRET_KEY;
   if (!secret) {
-    return { ok: false, reason: 'Missing RECAPTCHA_SECRET_KEY' };
+    throw new Error("Server misconfiguration: RECAPTCHA_SECRET_KEY not set");
   }
 
-  const params = new URLSearchParams({
-    secret,
-    response: token || '',
+  const params = new URLSearchParams();
+  params.append("secret", secret);
+  params.append("response", token);
+
+  const resp = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString()
   });
 
-  const res = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params,
-  });
-
-  const data = await res.json();
-  // For v2, success is boolean. (No "score" like v3.)
-  return { ok: !!data.success, data };
+  const data = await resp.json();
+  // For v2 checkbox, data.success is the key signal. You can also check data.hostname.
+  return Boolean(data && data.success);
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
+  if (req.method !== "POST") return res.status(405).end();
 
-  const { emailText, password, name, recaptchaToken } = req.body || {};
-
-  // Basic validation
-  if (!emailText || !password || !name) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  // 1) Verify reCAPTCHA
   try {
-    const rc = await verifyRecaptcha(recaptchaToken);
-    if (!rc.ok) {
-      return res.status(400).json({ error: 'Invalid reCAPTCHA' });
+    const { emailText, password, name, recaptchaToken } = req.body || {};
+
+    if (!emailText || !password) {
+      return res.status(400).json({ error: "Email and password are required." });
     }
-  } catch (e) {
-    console.error('reCAPTCHA verification error:', e);
-    return res.status(502).json({ error: 'reCAPTCHA verification failed' });
-  }
 
-  try {
-    // 2) Ensure user doesn’t already exist
-    const existing = await prisma.user.findUnique({
-      where: { email: emailText },
-      select: { id: true },
-    });
+    if (!recaptchaToken) {
+      return res.status(400).json({ error: "Missing reCAPTCHA token." });
+    }
+
+    const ok = await verifyRecaptchaToken(recaptchaToken);
+    if (!ok) {
+      return res.status(400).json({ error: "Failed reCAPTCHA verification." });
+    }
+
+    // Create user (example)
+    const email = String(emailText).trim().toLowerCase();
+
+    const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      return res.status(409).json({ error: 'Email already in use' });
+      return res.status(409).json({ error: "Email is already registered." });
     }
 
-    // 3) Hash password and create user
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await hash(String(password), 10);
 
     const user = await prisma.user.create({
       data: {
-        email: emailText,
-        name: name,
+        email,
+        name: name ? String(name).trim() : null,
         hashedPassword,
-        // otpVerified remains default false (per your schema)
+        otpVerified: false
       },
-      select: { id: true, email: true },
+      select: { id: true, email: true }
     });
 
     return res.status(201).json({ ok: true, user });
   } catch (err) {
-    console.error('Registration DB error:', err);
-    return res.status(500).json({ error: 'Server error creating user' });
+    console.error("Register error:", err);
+    return res.status(500).json({ error: "Server error" });
   }
 }
