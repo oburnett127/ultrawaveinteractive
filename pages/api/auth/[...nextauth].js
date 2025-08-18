@@ -2,7 +2,7 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
-const prisma = require("../../../lib/prisma.cjs");
+import prisma from "../../../lib/prisma.cjs";
 
 export default NextAuth({
   session: { strategy: "jwt" },
