@@ -33,9 +33,9 @@ EXPOSE 8080
 # We also re-run prisma generate defensively (safe + quick), then apply migrations, then start.
 CMD ["sh", "-c", "\
   if [ -z \"$DATABASE_URL\" ]; then \
-    export DATABASE_URL=\"mysql://$USERNAME:$PASSWORD@$HOST:$DB_PORT/$DATABASE?sslaccept=strict\"; \
+    echo 'ERROR: DATABASE_URL is not set' >&2; exit 1; \
   fi; \
-  echo \"DATABASE_URL=$DATABASE_URL\"; \
+  echo \"Using DATABASE_URL (masked): $(echo \"$DATABASE_URL\" | sed -E 's#//([^:]+):([^@]+)@#//\\1:****@#')\"; \
   npx prisma generate && \
   npx prisma migrate deploy && \
   node server.cjs \
