@@ -1,7 +1,7 @@
 // pages/api/otp/send.js
 import crypto from "crypto";
-import { getRedis } from "../../../lib/redis.cjs";
-import { sendOtpEmail } from "../../../lib/mail.cjs";
+import getRedis from "../../../lib/redis.cjs";
+import sendOtpEmail from "../../../lib/mail.cjs";
 
 function json(res, status, body) {
   res.status(status).setHeader("Content-Type", "application/json");

@@ -14,7 +14,7 @@ const  helmet = require('helmet');
 const  { logger } = require('./config/logger.cjs');
 const  connectRedis = require('./lib/redis.cjs');
 const prisma = require("./lib/prisma.cjs");
-const { sendContactEmail } = require("./lib/mailer.js");
+const { sendContactEmail } = require("./lib/mailer.cjs");
 const sanitizeHtml = require("sanitize-html");
 
 // ⬇️ Exported setup function
