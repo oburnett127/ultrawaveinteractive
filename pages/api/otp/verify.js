@@ -1,6 +1,6 @@
 // pages/api/otp/verify.js
 const prisma = require("../../../lib/prisma.cjs");
-const { getRedis } = require("../../../lib/redis.cjs");
+const getRedis = require("../../../lib/redis.cjs");
 
 function json(res, status, body) {
   res.status(status).setHeader("Content-Type", "application/json");

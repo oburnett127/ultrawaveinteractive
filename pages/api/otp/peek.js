@@ -1,5 +1,5 @@
 // pages/api/otp/peek.js
-const { getRedis } = require("../../../lib/redis.cjs");
+const getRedis = require("../../../lib/redis.cjs");
 
 function json(res, status, body) {
   res.status(status).setHeader("Content-Type", "application/json");

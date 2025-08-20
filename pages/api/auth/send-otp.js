@@ -3,7 +3,7 @@ import { authOptions } from "./[...nextauth]";
 import canResendOtp from "../../../lib/otp.cjs";
 import generateOtp  from "../../../lib/otp.cjs";
 import saveOtpForEmail from "../../../lib/otp.cjs";
-import  sendOtpEmail from "../../../lib/mailer.cjs";
+import sendOtpEmail from "../../../lib/mailer.cjs";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
