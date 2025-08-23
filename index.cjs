@@ -41,106 +41,104 @@ async function initBackend(app) {
 
   const isDev = process.env.NODE_ENV === 'development';
 
-  app.use(
-    helmet({
-      noSniff: true,
-      frameguard: { action: "deny" }, // Your page can't be framed by other sites (reCAPTCHA iframe still works)
-      xssFilter: true,                 // Note: deprecated in Helmet 6/7 but harmless if you keep it
-      referrerPolicy: { policy: "no-referrer-when-downgrade" },
-      permittedCrossDomainPolicies: true,
-      contentSecurityPolicy: {
-        useDefaults: true,
-        directives: {
-          defaultSrc: ["'self'"],
+  app.use((req, res, next) => {
+    // 16 bytes is fine; base64 makes it CSP-friendly
+    res.locals.cspNonce = crypto.randomBytes(16).toString("base64");
+    next();
+  });
 
-          // Scripts used by your app, Square, and reCAPTCHA
-          scriptSrc: [
-            "'self'",
-            "'unsafe-inline'",
-            "'unsafe-eval'",                  // often needed in Next.js dev; consider removing in prod if possible
-            "https://ultrawaveinteractive.com",
+app.use((req, res, next) => {
+  const dev = process.env.NODE_ENV !== "production";
+  const nonce = res.locals.cspNonce;
 
-            // Square sandbox & prod
-            "https://sandbox.web.squarecdn.com",
-            "https://web.squarecdn.com",
-            "https://js.squareup.com",
+  const directives = {
+    defaultSrc: ["'self'"],
 
-            // reCAPTCHA
-            "https://www.google.com",
-            "https://www.gstatic.com",
-          ],
+    scriptSrc: [
+      "'self'",
+      dev ? "'unsafe-eval'" : `'nonce-${nonce}'`,
+      // keep your script hosts:
+      "https://web.squarecdn.com",
+      "https://js.squareup.com",
+      "https://www.google.com",
+      "https://www.gstatic.com",
+      "https://static.cloudflareinsights.com",
+      "https://challenges.cloudflare.com",
+      "https://sandbox.web.squarecdn.com",
+      // Next dev server (adjust if different)
+      dev ? "http://localhost:3000" : undefined,
+    ].filter(Boolean),
 
-          // Styles (Square + Google Fonts)
-          styleSrc: [
-            "'self'",
-            "'unsafe-inline'",                // reCAPTCHA/Square often need this
-            "https://js.squareup.com",
-            "https://sandbox.web.squarecdn.com",
-            "https://fonts.googleapis.com",
-          ],
+    styleSrc: [
+      "'self'",
+      dev ? "'unsafe-inline'" : `'nonce-${nonce}'`,
+      "https://fonts.googleapis.com",
+      "https://web.squarecdn.com",
+      "https://sandbox.web.squarecdn.com",
+      "https://www.gstatic.com",
+      // Next dev server can inline styles too
+      dev ? "http://localhost:3000" : undefined,
+    ].filter(Boolean),
 
-          // Images (app, Square, reCAPTCHA)
-          imgSrc: [
-            "'self'",
-            "data:",
-            "https://*.squarecdn.com",
+    imgSrc: [
+      "'self'",
+      "data:",
+      "blob:",
+      "https://*.squarecdn.com",
+      "https://web.squarecdn.com",
+      "https://www.google.com",
+      "https://www.gstatic.com",
+      "https://static.cloudflareinsights.com",
+      dev ? "http://localhost:3000" : undefined,
+    ].filter(Boolean),
 
-            // reCAPTCHA
-            "https://www.google.com",
-            "https://www.gstatic.com",
-          ],
+    fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
 
-          // Fonts (needed for Google Fonts)
-          fontSrc: [
-            "'self'",
-            "https://fonts.gstatic.com",
-          ],
+    frameSrc: [
+      "'self'",
+      "https://web.squarecdn.com",
+      "https://pci-connect.squareup.com",
+      "https://js.squareup.com",
+      "https://sandbox.web.squarecdn.com",
+      "https://www.google.com",
+      "https://recaptcha.google.com",
+      "https://challenges.cloudflare.com",
+    ],
 
-          // iframes (Square + reCAPTCHA challenge iframes)
-          frameSrc: [
-            "'self'",
+    connectSrc: [
+      "'self'",
+      "https://ultrawaveinteractive.com",
+      "https://connect.squareup.com",
+      "https://pci-connect.squareup.com",
+      "https://web.squarecdn.com",
+      "https://sandbox.web.squarecdn.com",
+      "https://*.squareupsandbox.com",
+      "https://www.google.com",
+      "https://www.gstatic.com",
+      "https://static.cloudflareinsights.com",
+      // Next dev HMR/websocket endpoints
+      dev ? "http://localhost:3000" : undefined,
+      dev ? "ws://localhost:3000" : undefined,
+    ].filter(Boolean),
 
-            // Square sandbox/prod iframe endpoints
-            "https://sandbox.web.squarecdn.com",
-            "https://pci-connect.squareup.com",
-            "https://web.squarecdn.com",
-            "https://js.squareup.com",
+    workerSrc: ["'self'", "blob:"],
+    mediaSrc: ["'self'", "data:", "blob:"],
+    manifestSrc: ["'self'"],
+    formAction: ["'self'"],
+    objectSrc: ["'none'"],
+    frameAncestors: ["'none'"],
+    upgradeInsecureRequests: [],
+    baseUri: ["'self'"],
+  };
 
-            // reCAPTCHA iframes
-            "https://www.google.com",
-            "https://recaptcha.google.com",
-          ],
-
-          // XHR/WebSocket/fetch endpoints (your app, Square, Sentry, minimal Google for reCAPTCHA)
-          connectSrc: [
-            "'self'",
-            "https://ultrawaveinteractive.com",
-            "http://localhost:8080",
-            "http://127.0.0.1:8080",
-
-            // Square sandbox/prod
-            "https://sandbox.web.squarecdn.com",
-            "https://*.squareupsandbox.com",
-            "https://pci-connect.squareup.com",
-            "https://connect.squareup.com",
-            "https://web.squarecdn.com",
-
-            // reCAPTCHA (usually not required for v2, but safe to allow)
-            "https://www.google.com",
-            "https://www.gstatic.com",
-
-            // Error tracking
-            "https://cdn.sentry.io",
-          ],
-
-          objectSrc: ["'none'"],
-          // Optional hardening: only allow your site to frame itself (already covered by helmet.frameguard)
-          // frameAncestors: ["'none'"],
-        },
-        reportOnly: false,
-      },
-    })
-  );
+  helmet({
+    noSniff: true,
+    frameguard: { action: "deny" },
+    referrerPolicy: { policy: "no-referrer-when-downgrade" },
+    permittedCrossDomainPolicies: true,
+    contentSecurityPolicy: { useDefaults: true, directives },
+  })(req, res, next);
+});
 
   // CSP report endpoint
   // app.post("/csp-violation-report", express.json(), (req, res) => {

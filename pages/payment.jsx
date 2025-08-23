@@ -1,177 +1,156 @@
-/* pages/payment.jsx ------------------------------------------------------- */
-import React, { useState } from "react";
-import { PaymentForm, CreditCard } from "react-square-web-payments-sdk";
-import { useSession } from "next-auth/react";
-import DOMPurify from "dompurify";
-import { getToken } from "next-auth/jwt";
-import prisma from "../lib/prisma.cjs";
+import { useEffect, useState } from "react";
+import Script from "next/script";
 
-const Payment = () => {
-  const { data: session } = useSession();
+export default function PaymentPage() {
+  const [squareReady, setSquareReady] = useState(false);
+  const [payments, setPayments] = useState(null);
+  const [card, setCard] = useState(null);
+  const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+  const [amountStr, setAmountStr] = useState(""); // customer-entered, e.g. "50", "50.00"
 
-  const [amount, setAmount] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
-  const [paymentDetails, setPaymentDetails] = useState(null);
+  const appId = process.env.NEXT_PUBLIC_SQUARE_APP_ID;
+  const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID;
 
-  const backendUrl    = process.env.NEXT_PUBLIC_BACKEND_URL;
-  const applicationId = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID;
-  const locationId    = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID;
-
-  /* ------------- form helpers ------------------------------------------ */
-  const handleInputChange = (e) => {
-    const { id, value } = e.target;
-    if (id === "amount") {
-      setAmount(value.replace(/[^0-9.]/g, ""));
-    } else if (id === "customerEmail") {
-      setCustomerEmail(DOMPurify.sanitize(value));
+  async function initSquare() {
+    setError("");
+    if (!window.Square) {
+      setError("Square SDK not loaded.");
+      return;
     }
-  };
-
-  /* ------------- send Square nonce to backend -------------------------- */
-  const handlePayment = async (token) => {
-    if (!session?.user?.email) {
-      alert("You must be logged in to make a payment."); return;
+    if (!appId || !locationId) {
+      console.error("Square init missing IDs", { appId, locationId });
+      setError("Payment config missing. Contact support.");
+      return;
     }
 
     try {
-      const amountInCents = Math.round(parseFloat(amount) * 100);
+      const p = await window.Square.payments(appId, locationId);
+      setPayments(p);
 
-      const res = await fetch(`${backendUrl}/process-payment`, {
-        method:  "POST",
+      const c = await p.card();
+      await c.attach("#card-container");
+      setCard(c);
+    } catch (e) {
+      console.error("Square init error:", e);
+      setError(e?.message || "Failed to initialize payment form.");
+    }
+  }
+
+  // Simple client-side validation for UX (server will validate too)
+  function validateAmountStr(str) {
+    if (!str) return { ok: false, msg: "Enter an amount." };
+    const cleaned = String(str).trim();
+    if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) {
+      return { ok: false, msg: "Enter a valid dollar amount (e.g. 10 or 10.99)." };
+    }
+    const value = parseFloat(cleaned);
+    if (!(value > 0)) return { ok: false, msg: "Amount must be greater than 0." };
+    if (value > 10000) return { ok: false, msg: "Maximum allowed is $10,000.00." };
+    return { ok: true };
+  }
+
+  async function handlePay(e) {
+    e.preventDefault();
+    setStatus("");
+    setError("");
+
+    // 1) Basic client validation
+    const v = validateAmountStr(amountStr);
+    if (!v.ok) {
+      setError(v.msg);
+      return;
+    }
+
+    if (!card) {
+      setError("Card form not ready.");
+      return;
+    }
+
+    // 2) Tokenize the card
+    const result = await card.tokenize();
+    if (result.status !== "OK") {
+      console.error("Tokenize failed:", result);
+      setError(
+        (result.errors && result.errors[0]?.message) ||
+          "Card tokenization failed."
+      );
+      return;
+    }
+
+    // 3) Send to your server to create the payment (server computes cents)
+    try {
+      const res = await fetch("/api/square/pay", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          email:        session.user.email,
-          receiptEmail: customerEmail,
-          nonce:        token.token,
-          amount:       amountInCents,
+          sourceId: result.token,
+          amount: String(amountStr).trim(), // send as a string like "12.34"
+          currency: "USD",
+          idempotencyKey: crypto.randomUUID(),
         }),
       });
 
       const data = await res.json();
-      if (!res.ok) { alert(data.error || "Payment failed"); return; }
-
-      setPaymentDetails(data);
-      alert("Payment successful!");
+      if (!res.ok) {
+        console.error("Charge error:", data);
+        setError(data?.error || "Payment failed.");
+        return;
+      }
+      setStatus(`Payment successful! Payment ID: ${data.payment?.id}`);
+      // Optionally clear the form / reset the widget:
+      // window.grecaptcha?.reset();
+      // card && window.Square && card.destroy && card.destroy();
     } catch (err) {
-      console.error("Payment error:", err);
-      alert("An error occurred. Please try again.");
+      console.error("Charge fetch error:", err);
+      setError("Network error during payment.");
     }
-  };
-
-  /* ------------- render ------------------------------------------------- */
-  if (!session?.user?.email) return <p>You must be logged in.</p>;
+  }
 
   return (
-    <div>
-      <h1>Payment Page</h1>
-      <h2>Payment submission may take 30 – 60 seconds</h2>
+    <>
+      <Script
+        src="https://web.squarecdn.com/v1/square.js"
+        strategy="afterInteractive"
+        onLoad={() => setSquareReady(true)}
+      />
 
-      {!paymentDetails ? (
-        <>
-          <form>
-            <label>Payment Amount (USD):</label>
-            <input
-              id="amount"
-              type="number"
-              min="1"
-              step="0.01"
-              value={amount}
-              onChange={handleInputChange}
-              placeholder="Enter amount"
-              required
-            />
+      <div style={{ maxWidth: 460, margin: "2rem auto" }}>
+        <h1>Make a Payment</h1>
 
-            <label>Receipt Email:</label>
-            <input
-              id="customerEmail"
-              type="email"
-              value={customerEmail}
-              onChange={handleInputChange}
-              placeholder="Enter your email"
-              required
-            />
-          </form>
+        {/* Debug panel while configuring; remove later */}
+        <pre style={{ background: "#f7f7f7", padding: 8 }}>
+          appId: {String(appId)}{"\n"}locationId: {String(locationId)}{"\n"}
+          SDK loaded: {String(!!window?.Square)}
+        </pre>
 
-          <PaymentForm
-            applicationId={applicationId}
-            locationId={locationId}
-            cardTokenizeResponseReceived={handlePayment}
-            createPaymentRequest={() => ({
-              countryCode:  "US",
-              currencyCode: "USD",
-              total: { label: "Total", amount: amount || "1.00" },
-              requestBillingContact: true,
-              billingContact: { email: customerEmail },
-              verificationDetails: {
-                intent:  "CHARGE",
-                amount:  amount || "1.00",
-                currencyCode: "USD",
-                billingContact: { email: customerEmail },
-              },
-            })}
-          >
-            <CreditCard />
-            <button disabled={!amount || !customerEmail}>
-              Pay ${amount || "0.00"}
-            </button>
-          </PaymentForm>
-        </>
-      ) : (
-        <div>
-          <h2>Payment Successful!</h2>
-          <p>Transaction ID: {paymentDetails.payment.id}</p>
-          <p>
-            Amount Paid: ${paymentDetails.payment.amountMoney.amount / 100}
-          </p>
-          <p>Status: {paymentDetails.payment.status}</p>
-          <a
-            href={paymentDetails.payment.receiptUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View Receipt
-          </a>
-        </div>
-      )}
-    </div>
+        {squareReady && !payments && (
+          <button onClick={initSquare}>Initialize Payment Form</button>
+        )}
+
+        <form onSubmit={handlePay} style={{ marginTop: 12 }}>
+          <label htmlFor="amount">Amount (USD)</label>
+          <input
+            id="amount"
+            type="text"
+            inputMode="decimal"
+            value={amountStr}
+            onChange={(e) => setAmountStr(e.target.value)}
+            style={{ display: "block", width: "100%", marginBottom: 12, padding: 8 }}
+            autoComplete="off"
+          />
+
+          <div id="card-container" style={{ margin: "16px 0" }} />
+
+          <button type="submit" disabled={!card}>
+            Pay
+          </button>
+
+          {error ? <p style={{ color: "red" }}>{error}</p> : null}
+          {status ? <p style={{ color: "green" }}>{status}</p> : null}
+        </form>
+      </div>
+    </>
   );
-};
-
-/* ---------------- server-side guard ------------------------------------ */
-export async function getServerSideProps(context) {
-  const token = await getToken({ req: context.req, secret: process.env.NEXTAUTH_SECRET });
-
-  if (!token?.email) {
-    //console.log('if !token?.email');
-    return { redirect: { destination: "/", permanent: false } };
-  }
-
-  // normalize email to match verify API
-  const email = String(token.email).trim().toLowerCase();
-
-  // (optional but helpful while debugging)
-  if (process.env.NODE_ENV !== "production") {
-    const safeDb = (process.env.DATABASE_URL || "").replace(/:\/\/.*@/, "://***:***@");
-    // console.log("[payment gssp] DB:", safeDb);
-    // console.log("[payment gssp] email:", email);
-  }
-
-  const dbUser = await prisma.user.findUnique({
-    where:  { email },
-    select: { id: true, email: true, otpVerified: true },
-  });
-
-  if (process.env.NODE_ENV !== "production") {
-    //console.log("[payment gssp] dbUser:", dbUser);
-  }
-
-  if (!dbUser?.otpVerified) {
-    //console.log('redirecting to verifyotp');
-    return { redirect: { destination: "/verifyotp", permanent: false } };
-  }
-
-  return { props: {} };
 }
-
-export default Payment;
