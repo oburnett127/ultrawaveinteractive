@@ -57,7 +57,6 @@ app.use((req, res, next) => {
     scriptSrc: [
       "'self'",
       dev ? "'unsafe-eval'" : `'nonce-${nonce}'`,
-      // keep your script hosts:
       "https://web.squarecdn.com",
       "https://js.squareup.com",
       "https://www.google.com",
@@ -65,20 +64,27 @@ app.use((req, res, next) => {
       "https://static.cloudflareinsights.com",
       "https://challenges.cloudflare.com",
       "https://sandbox.web.squarecdn.com",
-      // Next dev server (adjust if different)
-      dev ? "http://localhost:3000" : undefined,
-    ].filter(Boolean),
+    ],
 
+    // Strict for attributes & CSSOM
     styleSrc: [
       "'self'",
-      dev ? "'unsafe-inline'" : `'nonce-${nonce}'`,
+      `'nonce-${nonce}'`,
       "https://fonts.googleapis.com",
       "https://web.squarecdn.com",
       "https://sandbox.web.squarecdn.com",
       "https://www.gstatic.com",
-      // Next dev server can inline styles too
-      dev ? "http://localhost:3000" : undefined,
-    ].filter(Boolean),
+    ],
+
+    // Allow inline <style> elements (needed for Next/Square/reCAPTCHA injected styles)
+    styleSrcElem: [
+      "'self'",
+      "'unsafe-inline'",
+      "https://fonts.googleapis.com",
+      "https://web.squarecdn.com",
+      "https://sandbox.web.squarecdn.com",
+      "https://www.gstatic.com",
+    ],
 
     imgSrc: [
       "'self'",
@@ -89,11 +95,8 @@ app.use((req, res, next) => {
       "https://www.google.com",
       "https://www.gstatic.com",
       "https://static.cloudflareinsights.com",
-      dev ? "http://localhost:3000" : undefined,
-    ].filter(Boolean),
-
+    ],
     fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
-
     frameSrc: [
       "'self'",
       "https://web.squarecdn.com",
@@ -104,7 +107,6 @@ app.use((req, res, next) => {
       "https://recaptcha.google.com",
       "https://challenges.cloudflare.com",
     ],
-
     connectSrc: [
       "'self'",
       "https://ultrawaveinteractive.com",
@@ -116,11 +118,7 @@ app.use((req, res, next) => {
       "https://www.google.com",
       "https://www.gstatic.com",
       "https://static.cloudflareinsights.com",
-      // Next dev HMR/websocket endpoints
-      dev ? "http://localhost:3000" : undefined,
-      dev ? "ws://localhost:3000" : undefined,
-    ].filter(Boolean),
-
+    ],
     workerSrc: ["'self'", "blob:"],
     mediaSrc: ["'self'", "data:", "blob:"],
     manifestSrc: ["'self'"],
