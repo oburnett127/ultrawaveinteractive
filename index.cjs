@@ -47,27 +47,39 @@ async function initBackend(app) {
     next();
   });
 
+import helmet from "helmet";
+import crypto from "crypto";
+
+// 1) Per-request nonce
 app.use((req, res, next) => {
-  const dev = process.env.NODE_ENV !== "production";
+  res.locals.cspNonce = crypto.randomBytes(16).toString("base64");
+  next();
+});
+
+// 2) Single Helmet middleware (v8)
+app.use((req, res, next) => {
+  const isDev = process.env.NODE_ENV !== "production";
   const nonce = res.locals.cspNonce;
 
   const directives = {
-    defaultSrc: ["'self'"],
+    "default-src": ["'self'"],
 
-    scriptSrc: [
+    // Scripts (Next runtime + your inline scripts via nonce; add unsafe-eval only in dev)
+    "script-src": [
       "'self'",
-      dev ? "'unsafe-eval'" : `'nonce-${nonce}'`,
+      `'nonce-${nonce}'`,
+      ...(isDev ? ["'unsafe-eval'"] : []),
       "https://web.squarecdn.com",
       "https://js.squareup.com",
       "https://www.google.com",
       "https://www.gstatic.com",
       "https://static.cloudflareinsights.com",
       "https://challenges.cloudflare.com",
-      "https://sandbox.web.squarecdn.com",
+      "https://sandbox.web.squarecdn.com", // remove in prod-only
     ],
 
-    // strict for attributes / CSSOM
-    styleSrc: [
+    // Keep strict for attributes/CSSOM; nonce covers any <style nonce="..."> you render
+    "style-src": [
       "'self'",
       `'nonce-${nonce}'`,
       "https://fonts.googleapis.com",
@@ -76,8 +88,8 @@ app.use((req, res, next) => {
       "https://www.gstatic.com",
     ],
 
-    // allow inline <style> tags injected by Next/Square/recaptcha
-    styleSrcElem: [
+    // Allow inline <style> **elements** injected by Next/Square/recaptcha
+    "style-src-elem": [
       "'self'",
       "'unsafe-inline'",
       "https://fonts.googleapis.com",
@@ -86,7 +98,7 @@ app.use((req, res, next) => {
       "https://www.gstatic.com",
     ],
 
-    imgSrc: [
+    "img-src": [
       "'self'",
       "data:",
       "blob:",
@@ -96,8 +108,11 @@ app.use((req, res, next) => {
       "https://www.gstatic.com",
       "https://static.cloudflareinsights.com",
     ],
-    fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
-    frameSrc: [
+
+    "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
+
+    // Square card fields & reCAPTCHA live in iframes
+    "frame-src": [
       "'self'",
       "https://web.squarecdn.com",
       "https://pci-connect.squareup.com",
@@ -107,7 +122,9 @@ app.use((req, res, next) => {
       "https://recaptcha.google.com",
       "https://challenges.cloudflare.com",
     ],
-    connectSrc: [
+
+    // Where fetch/XHR/WebSockets can connect
+    "connect-src": [
       "'self'",
       "https://ultrawaveinteractive.com",
       "https://connect.squareup.com",
@@ -118,23 +135,27 @@ app.use((req, res, next) => {
       "https://www.google.com",
       "https://www.gstatic.com",
       "https://static.cloudflareinsights.com",
+      ...(isDev ? ["http://localhost:3000", "ws://localhost:3000"] : []),
     ],
-    workerSrc: ["'self'", "blob:"],
-    mediaSrc: ["'self'", "data:", "blob:"],
-    manifestSrc: ["'self'"],
-    formAction: ["'self'"],
-    objectSrc: ["'none'"],
-    frameAncestors: ["'none'"],
-    upgradeInsecureRequests: [],
-    baseUri: ["'self'"],
+
+    "worker-src": ["'self'", "blob:"],
+    "media-src": ["'self'", "data:", "blob:"],
+    "manifest-src": ["'self'"],
+    "form-action": ["'self'"],
+    "object-src": ["'none'"],
+    "frame-ancestors": ["'none'"],
+    "upgrade-insecure-requests": [],
+    "base-uri": ["'self'"],
+    // Optional hardening:
+    "script-src-attr": ["'none'"],
   };
 
   helmet({
-    noSniff: true,
-    frameguard: { action: "deny" },
+    contentSecurityPolicy: { useDefaults: false, directives },
     referrerPolicy: { policy: "no-referrer-when-downgrade" },
+    frameguard: { action: "deny" },
+    noSniff: true,
     permittedCrossDomainPolicies: true,
-    contentSecurityPolicy: { useDefaults: true, directives },
   })(req, res, next);
 });
 
