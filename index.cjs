@@ -66,7 +66,7 @@ app.use((req, res, next) => {
       "https://sandbox.web.squarecdn.com",
     ],
 
-    // Strict for attributes & CSSOM
+    // strict for attributes / CSSOM
     styleSrc: [
       "'self'",
       `'nonce-${nonce}'`,
@@ -76,7 +76,7 @@ app.use((req, res, next) => {
       "https://www.gstatic.com",
     ],
 
-    // Allow inline <style> elements (needed for Next/Square/reCAPTCHA injected styles)
+    // allow inline <style> tags injected by Next/Square/recaptcha
     styleSrcElem: [
       "'self'",
       "'unsafe-inline'",
@@ -136,6 +136,12 @@ app.use((req, res, next) => {
     permittedCrossDomainPolicies: true,
     contentSecurityPolicy: { useDefaults: true, directives },
   })(req, res, next);
+});
+
+app.use((req, res, next) => {
+  const set = res.getHeader("Content-Security-Policy");
+  if (set) console.log("CSP =>", set);
+  next();
 });
 
   // CSP report endpoint
