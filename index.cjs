@@ -10,160 +10,160 @@ const  { z } = require('zod');
 const  Redis = require("ioredis");
 const  nodemailer = require('nodemailer');
 const  { google } = require("googleapis");
-const  helmet = require('helmet');
 const  { logger } = require('./config/logger.cjs');
 const  connectRedis = require('./lib/redis.cjs');
 const prisma = require("./lib/prisma.cjs");
 const { sendContactEmail } = require("./lib/mailer.cjs");
 const sanitizeHtml = require("sanitize-html");
 
-// ⬇️ Exported setup function
 async function initBackend(app) {
-  dotenv.config(); // Load environment variables
+  dotenv.config();
 
-  // CORS middleware
+  // --- CORS ---
   const corsOptions = {
-    origin: "http://localhost:3000", // Adjust as needed
+    origin: [
+      "http://localhost:3000",
+      "https://ultrawaveinteractive.com",
+    ],
     methods: ["GET", "POST", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   };
   app.use(cors(corsOptions));
 
-  // Restrict HTTP methods
+  // --- Restrict HTTP methods ---
   app.use((req, res, next) => {
     const allowedMethods = ["GET", "POST", "DELETE", "OPTIONS"];
     if (!allowedMethods.includes(req.method)) {
-      res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+      return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
     }
     next();
   });
 
-  const isDev = process.env.NODE_ENV === 'development';
+  const isDev = process.env.NODE_ENV !== "production";
 
+  // --- Per-request CSP nonce ---
   app.use((req, res, next) => {
-    // 16 bytes is fine; base64 makes it CSP-friendly
     res.locals.cspNonce = crypto.randomBytes(16).toString("base64");
     next();
   });
 
-import helmet from "helmet";
-import crypto from "crypto";
+  // --- Helmet v8 (ESM-only): dynamic import in CJS ---
+  const helmet = (await import("helmet")).default;
 
-// 1) Per-request nonce
-app.use((req, res, next) => {
-  res.locals.cspNonce = crypto.randomBytes(16).toString("base64");
-  next();
-});
+  // --- Single Helmet middleware (MUST run before routes/Next handler) ---
+  app.use((req, res, next) => {
+    const nonce = res.locals.cspNonce;
 
-// 2) Single Helmet middleware (v8)
-app.use((req, res, next) => {
-  const isDev = process.env.NODE_ENV !== "production";
-  const nonce = res.locals.cspNonce;
+    const directives = {
+      "default-src": ["'self'"],
 
-  const directives = {
-    "default-src": ["'self'"],
+      // Scripts: Next runtime + your inline scripts via nonce.
+      // Add 'unsafe-eval' only in dev for HMR.
+      "script-src": [
+        "'self'",
+        `'nonce-${nonce}'`,
+        ...(isDev ? ["'unsafe-eval'"] : []),
+        "https://web.squarecdn.com",
+        "https://js.squareup.com",
+        "https://www.google.com",
+        "https://www.gstatic.com",
+        "https://static.cloudflareinsights.com",
+        "https://challenges.cloudflare.com",
+        "https://sandbox.web.squarecdn.com", // remove once fully prod
+      ],
 
-    // Scripts (Next runtime + your inline scripts via nonce; add unsafe-eval only in dev)
-    "script-src": [
-      "'self'",
-      `'nonce-${nonce}'`,
-      ...(isDev ? ["'unsafe-eval'"] : []),
-      "https://web.squarecdn.com",
-      "https://js.squareup.com",
-      "https://www.google.com",
-      "https://www.gstatic.com",
-      "https://static.cloudflareinsights.com",
-      "https://challenges.cloudflare.com",
-      "https://sandbox.web.squarecdn.com", // remove in prod-only
-    ],
+      // Strict for attributes/CSSOM; your own <style nonce="..."> will pass
+      "style-src": [
+        "'self'",
+        `'nonce-${nonce}'`,
+        "https://fonts.googleapis.com",
+        "https://web.squarecdn.com",
+        "https://sandbox.web.squarecdn.com",
+        "https://www.gstatic.com",
+      ],
 
-    // Keep strict for attributes/CSSOM; nonce covers any <style nonce="..."> you render
-    "style-src": [
-      "'self'",
-      `'nonce-${nonce}'`,
-      "https://fonts.googleapis.com",
-      "https://web.squarecdn.com",
-      "https://sandbox.web.squarecdn.com",
-      "https://www.gstatic.com",
-    ],
+      // Allow inline <style> **elements** injected by Next/Square/reCAPTCHA
+      "style-src-elem": [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com",
+        "https://web.squarecdn.com",
+        "https://sandbox.web.squarecdn.com",
+        "https://www.gstatic.com",
+      ],
 
-    // Allow inline <style> **elements** injected by Next/Square/recaptcha
-    "style-src-elem": [
-      "'self'",
-      "'unsafe-inline'",
-      "https://fonts.googleapis.com",
-      "https://web.squarecdn.com",
-      "https://sandbox.web.squarecdn.com",
-      "https://www.gstatic.com",
-    ],
+      "img-src": [
+        "'self'",
+        "data:",
+        "blob:",
+        "https://*.squarecdn.com",
+        "https://web.squarecdn.com",
+        "https://www.google.com",
+        "https://www.gstatic.com",
+        "https://static.cloudflareinsights.com",
+      ],
 
-    "img-src": [
-      "'self'",
-      "data:",
-      "blob:",
-      "https://*.squarecdn.com",
-      "https://web.squarecdn.com",
-      "https://www.google.com",
-      "https://www.gstatic.com",
-      "https://static.cloudflareinsights.com",
-    ],
+      "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
 
-    "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
+      // Square card iframes + reCAPTCHA
+      "frame-src": [
+        "'self'",
+        "https://web.squarecdn.com",
+        "https://pci-connect.squareup.com",
+        "https://js.squareup.com",
+        "https://sandbox.web.squarecdn.com",
+        "https://www.google.com",
+        "https://recaptcha.google.com",
+        "https://challenges.cloudflare.com",
+      ],
 
-    // Square card fields & reCAPTCHA live in iframes
-    "frame-src": [
-      "'self'",
-      "https://web.squarecdn.com",
-      "https://pci-connect.squareup.com",
-      "https://js.squareup.com",
-      "https://sandbox.web.squarecdn.com",
-      "https://www.google.com",
-      "https://recaptcha.google.com",
-      "https://challenges.cloudflare.com",
-    ],
+      // Fetch/XHR/WebSocket
+      "connect-src": [
+        "'self'",
+        "https://ultrawaveinteractive.com",
+        "https://connect.squareup.com",
+        "https://pci-connect.squareup.com",
+        "https://web.squarecdn.com",
+        "https://sandbox.web.squarecdn.com",
+        "https://*.squareupsandbox.com",
+        "https://www.google.com",
+        "https://www.gstatic.com",
+        "https://static.cloudflareinsights.com",
+        ...(isDev ? ["http://localhost:3000", "ws://localhost:3000"] : []),
+      ],
 
-    // Where fetch/XHR/WebSockets can connect
-    "connect-src": [
-      "'self'",
-      "https://ultrawaveinteractive.com",
-      "https://connect.squareup.com",
-      "https://pci-connect.squareup.com",
-      "https://web.squarecdn.com",
-      "https://sandbox.web.squarecdn.com",
-      "https://*.squareupsandbox.com",
-      "https://www.google.com",
-      "https://www.gstatic.com",
-      "https://static.cloudflareinsights.com",
-      ...(isDev ? ["http://localhost:3000", "ws://localhost:3000"] : []),
-    ],
+      "worker-src": ["'self'", "blob:"],
+      "media-src": ["'self'", "data:", "blob:"],
+      "manifest-src": ["'self'"],
+      "form-action": ["'self'"],
+      "object-src": ["'none'"],
+      "frame-ancestors": ["'none'"],
+      "upgrade-insecure-requests": [],
+      "base-uri": ["'self'"],
+      // Optional hardening:
+      "script-src-attr": ["'none'"],
+    };
 
-    "worker-src": ["'self'", "blob:"],
-    "media-src": ["'self'", "data:", "blob:"],
-    "manifest-src": ["'self'"],
-    "form-action": ["'self'"],
-    "object-src": ["'none'"],
-    "frame-ancestors": ["'none'"],
-    "upgrade-insecure-requests": [],
-    "base-uri": ["'self'"],
-    // Optional hardening:
-    "script-src-attr": ["'none'"],
-  };
+    return helmet({
+      contentSecurityPolicy: { useDefaults: false, directives },
+      referrerPolicy: { policy: "no-referrer-when-downgrade" },
+      frameguard: { action: "deny" },
+      noSniff: true,
+      permittedCrossDomainPolicies: true,
+    })(req, res, next);
+  });
 
-  helmet({
-    contentSecurityPolicy: { useDefaults: false, directives },
-    referrerPolicy: { policy: "no-referrer-when-downgrade" },
-    frameguard: { action: "deny" },
-    noSniff: true,
-    permittedCrossDomainPolicies: true,
-  })(req, res, next);
-});
+  // --- Debug: print the exact CSP header being sent (remove later) ---
+  app.use((req, res, next) => {
+    const csp = res.getHeader("Content-Security-Policy");
+    if (csp) logger?.info ? logger.info(`CSP => ${csp}`) : console.log("CSP =>", csp);
+    next();
+  });
 
-app.use((req, res, next) => {
-  const set = res.getHeader("Content-Security-Policy");
-  if (set) console.log("CSP =>", set);
-  next();
-});
+  // continue with your routes / Next request handler / start server...
+  return app;
+}
 
   // CSP report endpoint
   // app.post("/csp-violation-report", express.json(), (req, res) => {
@@ -531,6 +531,5 @@ app.use((req, res, next) => {
     console.error('Unhandled Error:', err);
     res.status(500).send('Something went wrong');
   });
-}
 
 module.exports = { initBackend };
