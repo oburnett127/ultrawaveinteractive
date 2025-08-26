@@ -55,39 +55,39 @@ async function initBackend(app) {
   app.use((req, res, next) => {
     const nonce = res.locals.cspNonce;
 
-    const directives = {
+const directives = {
   "default-src": ["'self'"],
 
-  // TEMP: allow inline scripts so Next can hydrate even if nonce isn't flowing
+  // No 'unsafe-inline' here anymore:
   "script-src": [
     "'self'",
     `'nonce-${nonce}'`,
-    "'unsafe-inline'",             // <-- must be in quotes
-    ...(isDev ? ["'unsafe-eval'"] : []),
+    ...(isDev ? ["'unsafe-eval'"] : []), // keep only for dev HMR
     "https://web.squarecdn.com",
     "https://js.squareup.com",
     "https://www.google.com",
     "https://www.gstatic.com",
     "https://static.cloudflareinsights.com",
     "https://challenges.cloudflare.com",
-    "https://sandbox.web.squarecdn.com",
+    // remove sandbox when fully live:
+    // "https://sandbox.web.squarecdn.com",
   ],
 
-  // keep style-src strict (nonce), but allow inline <style> elements
+  // Keep this strict (nonce). This covers any inline <style nonce="..."> you author.
   "style-src": [
     "'self'",
     `'nonce-${nonce}'`,
     "https://fonts.googleapis.com",
     "https://web.squarecdn.com",
-    "https://sandbox.web.squarecdn.com",
     "https://www.gstatic.com",
   ],
+
+  // Leave this to allow SDK/Next/reCAPTCHA injected <style> tags
   "style-src-elem": [
     "'self'",
     "'unsafe-inline'",
     "https://fonts.googleapis.com",
     "https://web.squarecdn.com",
-    "https://sandbox.web.squarecdn.com",
     "https://www.gstatic.com",
   ],
 
@@ -96,24 +96,23 @@ async function initBackend(app) {
     "https://web.squarecdn.com",
     "https://pci-connect.squareup.com",
     "https://js.squareup.com",
-    "https://sandbox.web.squarecdn.com",
     "https://www.google.com",
     "https://recaptcha.google.com",
     "https://challenges.cloudflare.com",
   ],
+
   "connect-src": [
     "'self'",
     "https://ultrawaveinteractive.com",
     "https://connect.squareup.com",
     "https://pci-connect.squareup.com",
     "https://web.squarecdn.com",
-    "https://sandbox.web.squarecdn.com",
-    "https://*.squareupsandbox.com",
     "https://www.google.com",
     "https://www.gstatic.com",
     "https://static.cloudflareinsights.com",
     ...(isDev ? ["http://localhost:3000", "ws://localhost:3000"] : []),
   ],
+
   "img-src": [
     "'self'",
     "data:",
@@ -124,6 +123,7 @@ async function initBackend(app) {
     "https://www.gstatic.com",
     "https://static.cloudflareinsights.com",
   ],
+
   "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
   "worker-src": ["'self'", "blob:"],
   "media-src": ["'self'", "data:", "blob:"],
