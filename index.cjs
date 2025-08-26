@@ -56,94 +56,85 @@ async function initBackend(app) {
     const nonce = res.locals.cspNonce;
 
     const directives = {
-      "default-src": ["'self'"],
+  "default-src": ["'self'"],
 
-      // Scripts: Next runtime + your inline scripts via nonce.
-      // Add 'unsafe-eval' only in dev for HMR.
-      "script-src": [
-        "'self'",
-        `'nonce-${nonce}'`,
-        ...(isDev ? ["'unsafe-eval'"] : []),
-        "https://web.squarecdn.com",
-        "https://js.squareup.com",
-        "https://www.google.com",
-        "https://www.gstatic.com",
-        "https://static.cloudflareinsights.com",
-        "https://challenges.cloudflare.com",
-        "https://sandbox.web.squarecdn.com", // remove once fully prod
-      ],
+  // TEMP: allow inline scripts so Next can hydrate even if nonce isn't flowing
+  "script-src": [
+    "'self'",
+    `'nonce-${nonce}'`,
+    "'unsafe-inline'",             // <-- must be in quotes
+    ...(isDev ? ["'unsafe-eval'"] : []),
+    "https://web.squarecdn.com",
+    "https://js.squareup.com",
+    "https://www.google.com",
+    "https://www.gstatic.com",
+    "https://static.cloudflareinsights.com",
+    "https://challenges.cloudflare.com",
+    "https://sandbox.web.squarecdn.com",
+  ],
 
-      // Strict for attributes/CSSOM; your own <style nonce="..."> will pass
-      "style-src": [
-        "'self'",
-        `'nonce-${nonce}'`,
-        "https://fonts.googleapis.com",
-        "https://web.squarecdn.com",
-        "https://sandbox.web.squarecdn.com",
-        "https://www.gstatic.com",
-      ],
+  // keep style-src strict (nonce), but allow inline <style> elements
+  "style-src": [
+    "'self'",
+    `'nonce-${nonce}'`,
+    "https://fonts.googleapis.com",
+    "https://web.squarecdn.com",
+    "https://sandbox.web.squarecdn.com",
+    "https://www.gstatic.com",
+  ],
+  "style-src-elem": [
+    "'self'",
+    "'unsafe-inline'",
+    "https://fonts.googleapis.com",
+    "https://web.squarecdn.com",
+    "https://sandbox.web.squarecdn.com",
+    "https://www.gstatic.com",
+  ],
 
-      // Allow inline <style> **elements** injected by Next/Square/reCAPTCHA
-      "style-src-elem": [
-        "'self'",
-        "'unsafe-inline'",
-        "https://fonts.googleapis.com",
-        "https://web.squarecdn.com",
-        "https://sandbox.web.squarecdn.com",
-        "https://www.gstatic.com",
-      ],
-
-      "img-src": [
-        "'self'",
-        "data:",
-        "blob:",
-        "https://*.squarecdn.com",
-        "https://web.squarecdn.com",
-        "https://www.google.com",
-        "https://www.gstatic.com",
-        "https://static.cloudflareinsights.com",
-      ],
-
-      "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
-
-      // Square card iframes + reCAPTCHA
-      "frame-src": [
-        "'self'",
-        "https://web.squarecdn.com",
-        "https://pci-connect.squareup.com",
-        "https://js.squareup.com",
-        "https://sandbox.web.squarecdn.com",
-        "https://www.google.com",
-        "https://recaptcha.google.com",
-        "https://challenges.cloudflare.com",
-      ],
-
-      // Fetch/XHR/WebSocket
-      "connect-src": [
-        "'self'",
-        "https://ultrawaveinteractive.com",
-        "https://connect.squareup.com",
-        "https://pci-connect.squareup.com",
-        "https://web.squarecdn.com",
-        "https://sandbox.web.squarecdn.com",
-        "https://*.squareupsandbox.com",
-        "https://www.google.com",
-        "https://www.gstatic.com",
-        "https://static.cloudflareinsights.com",
-        ...(isDev ? ["http://localhost:3000", "ws://localhost:3000"] : []),
-      ],
-
-      "worker-src": ["'self'", "blob:"],
-      "media-src": ["'self'", "data:", "blob:"],
-      "manifest-src": ["'self'"],
-      "form-action": ["'self'"],
-      "object-src": ["'none'"],
-      "frame-ancestors": ["'none'"],
-      "upgrade-insecure-requests": [],
-      "base-uri": ["'self'"],
-      // Optional hardening:
-      "script-src-attr": ["'none'"],
-    };
+  "frame-src": [
+    "'self'",
+    "https://web.squarecdn.com",
+    "https://pci-connect.squareup.com",
+    "https://js.squareup.com",
+    "https://sandbox.web.squarecdn.com",
+    "https://www.google.com",
+    "https://recaptcha.google.com",
+    "https://challenges.cloudflare.com",
+  ],
+  "connect-src": [
+    "'self'",
+    "https://ultrawaveinteractive.com",
+    "https://connect.squareup.com",
+    "https://pci-connect.squareup.com",
+    "https://web.squarecdn.com",
+    "https://sandbox.web.squarecdn.com",
+    "https://*.squareupsandbox.com",
+    "https://www.google.com",
+    "https://www.gstatic.com",
+    "https://static.cloudflareinsights.com",
+    ...(isDev ? ["http://localhost:3000", "ws://localhost:3000"] : []),
+  ],
+  "img-src": [
+    "'self'",
+    "data:",
+    "blob:",
+    "https://*.squarecdn.com",
+    "https://web.squarecdn.com",
+    "https://www.google.com",
+    "https://www.gstatic.com",
+    "https://static.cloudflareinsights.com",
+  ],
+  "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
+  "worker-src": ["'self'", "blob:"],
+  "media-src": ["'self'", "data:", "blob:"],
+  "manifest-src": ["'self'"],
+  "form-action": ["'self'"],
+  "object-src": ["'none'"],
+  "frame-ancestors": ["'none'"],
+  "upgrade-insecure-requests": [],
+  "base-uri": ["'self'"],
+  "script-src-attr": ["'none'"],
+};
 
     return helmet({
       contentSecurityPolicy: { useDefaults: false, directives },
