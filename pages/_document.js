@@ -7,23 +7,23 @@ export default class MyDocument extends Document {
     const nonce = ctx?.res?.locals?.cspNonce || "";
     return { ...initial, nonce };
   }
-
   render() {
     const { nonce } = this.props;
-
     return (
       <Html>
         <Head>
-          {/* If you keep any inline <style> blocks YOU control, give them the nonce */}
-          {/* <style nonce={nonce}>{`.some { display: none; }`}</style> */}
+          {/* PROBE: will set a global if inline scripts run under your CSP */}
+          <script nonce={nonce} dangerouslySetInnerHTML={{
+            __html: `window.__CSP_PROBE__="ran";`
+          }} />
+          {/* Load Square SDK regardless of hydration (see Step 2) */}
+          <script nonce={nonce} src="https://web.squarecdn.com/v1/square.js" defer />
         </Head>
         <body>
           <Main />
-          {/* 🔑 This enables hydration under a nonce-based CSP */}
           <NextScript nonce={nonce} />
         </body>
       </Html>
     );
   }
 }
-
