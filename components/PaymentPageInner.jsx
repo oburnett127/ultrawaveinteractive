@@ -1,40 +1,65 @@
 // components/PaymentPageInner.jsx
-import { useEffect, useState, useRef } from "react";
-import Script from "next/script";
+import { useEffect, useRef, useState } from "react";
 
 export default function PaymentPageInner() {
-  const [sdkLoaded, setSdkLoaded] = useState(false);
-  const [payments, setPayments] = useState(null);
-  const [card, setCard] = useState(null);
+  const containerRef = useRef(null);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [amountStr, setAmountStr] = useState("");
-  const containerRef = useRef(null);
+  const [card, setCard] = useState(null);
 
   const appId = process.env.NEXT_PUBLIC_SQUARE_APP_ID;
   const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID;
 
-  // Auto-init when SDK is loaded and container exists
+  // Hydration probe status (optional to show on page)
   useEffect(() => {
-    if (!sdkLoaded) return;
-    if (!containerRef.current) return;
-    if (!appId || !locationId) {
-      setError("Square app/location IDs are undefined (check build-time env).");
-      return;
+    if (!window.__CSP_PROBE__) {
+      console.warn("CSP probe not seen. Inline scripts may be blocked.");
     }
-    if (typeof window === "undefined" || !window.Square) {
-      setError("Square SDK not available on window.");
-      return;
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function waitFor(cond, tries = 40, step = 125) {
+      for (let i = 0; i < tries; i++) {
+        if (cancelled) return false;
+        if (cond()) return true;
+        await new Promise(r => setTimeout(r, step));
+      }
+      return false;
     }
+
     (async () => {
+      setError("");
+      setStatus("Preparing…");
+
+      if (!appId || !locationId) {
+        setError("Square app/location IDs are undefined (check build-time env).");
+        setStatus("");
+        return;
+      }
+
+      const okSdk = await waitFor(() => typeof window !== "undefined" && !!window.Square);
+      if (!okSdk) {
+        setError("Square SDK not loaded. Check CSP and script tag in _document.");
+        setStatus("");
+        return;
+      }
+
+      const okNode = await waitFor(() => !!containerRef.current);
+      if (!okNode) {
+        setError("Card container not found in DOM.");
+        setStatus("");
+        return;
+      }
+
       try {
-        setError("");
         setStatus("Initializing payments…");
-        const p = await window.Square.payments(appId, locationId);
-        setPayments(p);
-        const c = await p.card();
-        await c.attach(containerRef.current); // use element, not selector
-        setCard(c);
+        const payments = await window.Square.payments(appId, locationId);
+        const cardComp = await payments.card();
+        await cardComp.attach(containerRef.current);
+        if (cancelled) return;
+        setCard(cardComp);
         setStatus("Card ready.");
       } catch (e) {
         console.error("Square init error:", e);
@@ -42,7 +67,9 @@ export default function PaymentPageInner() {
         setStatus("");
       }
     })();
-  }, [sdkLoaded, appId, locationId]);
+
+    return () => { cancelled = true; };
+  }, [appId, locationId]);
 
   function uid() {
     if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
@@ -51,17 +78,16 @@ export default function PaymentPageInner() {
 
   async function handlePay(e) {
     e.preventDefault();
-    setError("");
-    setStatus("");
+    setError(""); setStatus("");
 
     if (!card) {
       setError("Card form not ready.");
       return;
     }
-    const res = await card.tokenize();
-    if (res.status !== "OK") {
-      console.error("Tokenize failed:", res);
-      setError(res?.errors?.[0]?.message || "Card tokenization failed.");
+    const t = await card.tokenize();
+    if (t.status !== "OK") {
+      console.error("Tokenize failed:", t);
+      setError(t?.errors?.[0]?.message || "Card tokenization failed.");
       return;
     }
     try {
@@ -70,7 +96,7 @@ export default function PaymentPageInner() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          sourceId: res.token,
+          sourceId: t.token,
           amount: String(amountStr || "").trim(),
           currency: "USD",
           idempotencyKey: uid(),
@@ -90,47 +116,37 @@ export default function PaymentPageInner() {
   }
 
   return (
-    <>
-      <Script
-        src="https://web.squarecdn.com/v1/square.js"
-        strategy="afterInteractive"
-        onLoad={() => setSdkLoaded(true)}
-        onError={() => setError("Failed to load Square SDK script.")}
-      />
+    <div style={{ maxWidth: 460, margin: "2rem auto" }}>
+      <h1>Make a Payment</h1>
 
-      <div style={{ maxWidth: 460, margin: "2rem auto" }}>
-        <h1>Make a Payment</h1>
-
-        {/* Debug panel: shows env + SDK presence */}
-        <pre style={{ background: "#f7f7f7", padding: 8, whiteSpace: "pre-wrap" }}>
-          appId: {String(appId)}
+      {/* lightweight debug */}
+      <pre style={{ background: "#f7f7f7", padding: 8 }}>
+        appId: {String(appId)}
 {"\n"}locationId: {String(locationId)}
-{"\n"}SDK loaded: {String(typeof window !== "undefined" && !!window?.Square)}
-{"\n"}container present: {String(!!containerRef.current)}
-        </pre>
+{"\n"}CSP probe: {String(!!window.__CSP_PROBE__)}
+{"\n"}Square on window: {String(!!(typeof window!=='undefined' && window.Square))}
+      </pre>
 
-        <form onSubmit={handlePay} style={{ marginTop: 12 }}>
-          <label htmlFor="amount">Amount (USD)</label>
-          <input
-            id="amount"
-            type="text"
-            inputMode="decimal"
-            placeholder="e.g. 50 or 50.00"
-            value={amountStr}
-            onChange={(e) => setAmountStr(e.target.value)}
-            style={{ display: "block", width: "100%", marginBottom: 12, padding: 8 }}
-            autoComplete="off"
-          />
+      <form onSubmit={handlePay} style={{ marginTop: 12 }}>
+        <label htmlFor="amount">Amount (USD)</label>
+        <input
+          id="amount"
+          type="text"
+          inputMode="decimal"
+          placeholder="e.g. 50 or 50.00"
+          value={amountStr}
+          onChange={(e) => setAmountStr(e.target.value)}
+          style={{ display: "block", width: "100%", marginBottom: 12, padding: 8 }}
+          autoComplete="off"
+        />
 
-        {/* Square will inject an iframe here */}
+        {/* Square injects an iframe here */}
         <div ref={containerRef} id="card-container" style={{ margin: "16px 0" }} />
 
-          <button type="submit" disabled={!card}>Pay</button>
-
-          {error ? <p style={{ color: "red" }}>{error}</p> : null}
-          {status ? <p style={{ color: "green" }}>{status}</p> : null}
-        </form>
-      </div>
-    </>
+        <button type="submit" disabled={!card}>Pay</button>
+        {status ? <p style={{ color: "green" }}>{status}</p> : null}
+        {error ? <p style={{ color: "red" }}>{error}</p> : null}
+      </form>
+    </div>
   );
 }
