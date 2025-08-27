@@ -119,14 +119,6 @@ export default function PaymentPageInner() {
     <div style={{ maxWidth: 460, margin: "2rem auto" }}>
       <h1>Make a Payment</h1>
 
-      {/* lightweight debug */}
-      <pre style={{ background: "#f7f7f7", padding: 8 }}>
-        appId: {String(appId)}
-{"\n"}locationId: {String(locationId)}
-{"\n"}CSP probe: {String(!!window.__CSP_PROBE__)}
-{"\n"}Square on window: {String(!!(typeof window!=='undefined' && window.Square))}
-      </pre>
-
       <form onSubmit={handlePay} style={{ marginTop: 12 }}>
         <label htmlFor="amount">Amount (USD)</label>
         <input

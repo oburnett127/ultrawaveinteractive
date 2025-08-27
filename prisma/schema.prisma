@@ -29,3 +29,18 @@ model OtpToken {
   @@index([email, expiresAt])
 }
 
+model Payment {
+  id               String   @id @default(cuid())
+  userId           String?           // links to your User table (optional)
+  amount           Int               // amount in cents
+  currency         String   @default("USD")
+  squarePaymentId  String   @unique  // returned by Square (e.g. "GQX2..."), unique
+  idempotencyKey   String   @unique  // what we used for the charge, prevents dupes
+  status           String            // e.g. "COMPLETED", "APPROVED", "CANCELED", etc.
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // If you want the relation:
+  // user             User?    @relation(fields: [userId], references: [id])
+}
+
