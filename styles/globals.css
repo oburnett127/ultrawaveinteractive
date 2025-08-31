@@ -12,6 +12,8 @@ body {
   color: white; /* Default text color */
   background-color: black; /* Default background */
   box-sizing: border-box;
+  min-height: 100vh;
+  background: url('/images/futuristictech.jpg') center center / cover no-repeat;
 }
 
 /* HTML Styles */
