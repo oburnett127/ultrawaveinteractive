@@ -15,6 +15,19 @@ nextApp.prepare()
   .then(() => {
     const server = express();
 
+    const ONE_YEAR = 31536000;
+    server.use(
+      "/images",
+      express.static("public/images", {
+        setHeaders: (res, path) => {
+          res.setHeader(
+            "Cache-Control",
+            `public, max-age=${ONE_YEAR}, immutable`
+          );
+        },
+      })
+    );
+
     server.set("trust proxy", 1);
 
     // ✅ Let NextAuth handle auth routes first
