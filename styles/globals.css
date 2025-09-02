@@ -183,6 +183,7 @@ img {
   inset: 0;
   z-index: -1;        /* Sit behind all content */
   pointer-events: none; /* Avoid intercepting clicks */
+  background-color: #000; /* fallback while image loads */
 }
 
 .bgFixed picture,
@@ -201,4 +202,19 @@ img {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.35));
+}
+
+.businessGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+.card {
+  text-align: center;
+}
+
+.card p {
+  margin-top: 0.5rem;
 }

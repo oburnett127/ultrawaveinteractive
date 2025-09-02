@@ -1,4 +1,3 @@
-import React from 'react';
 import styles from "../styles/home.module.css";
 import StarIcon from "@mui/icons-material/Star";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
@@ -12,6 +11,12 @@ import Image from 'next/image';
 import { useRouter } from "next/router";
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
+import petcare from "../public/images/petcare.jpg";
+import dentalhygienist from "../public/images/dentalhygienist.jpg";
+import peopleingym from "../public/images/peopleingym.jpg";
+import plumberlookingatpipe from "../public/images/plumberlookingatpipe.jpg";
+import hvacmenu from "../public/images/hvacmenu.jpg";
+import electricalreadingdevice from "../public/images/electricalreadingdevice.jpg";
 
 function Home() {
 
@@ -167,19 +172,78 @@ function Home() {
           </div>
 
         </div>
-        <div>
-          <Image className={styles.image} src={"/images/petcare.jpg"} width={200} height={100} alt="Dog having fur groomed." />
-          <p>We would love to work on a website for your pet care business!</p><br />
-          <Image className={styles.image} src={"/images/dentalhygienist.jpg"} width={200} height={100} alt="Dental hygienist at work." />
-          <p>We work with dentists and some medical practices!</p><br />
-          <Image className={styles.image} src={"/images/peopleingym.jpg"} width={200} height={100} alt="People in a gym." />
-          <p>Your gym or fitness training business could really benefit from our expertise!</p><br />
-          <Image className={styles.image} src={"/images/plumberlookingatpipe.jpg"} width={200} height={100} alt="Plumber looking at a pipe." />
-          <p>Increasing the revenue of your plumbing business sounds like a good idea to us! Get ready!</p><br />
-          <Image className={styles.image} src={"/images/hvacmenu.jpg"} width={200} height={100} alt="Technician touches HVAC menu." />
-          <p>Your HVAC business needs the care it deserves!</p><br />
-          <Image className={styles.image} src={"/images/electricalreadingdevice.jpg"} width={200} height={100} alt="Technician takes electrical reading using a device." />
-          <p>We have something special in store for your electrical business!</p>
+        <div className={styles.businessGrid}>
+          <div className={styles.card}>
+            <Image
+              className={styles.image}
+              src={petcare}
+              width={200}
+              height={100}
+              alt="Dog having fur groomed."
+              placeholder="blur"
+            />
+            <p>We would love to work on a website for your pet care business!</p>
+          </div>
+
+          <div className={styles.card}>
+            <Image
+              className={styles.image}
+              src={dentalhygienist}
+              width={200}
+              height={100}
+              alt="Dental hygienist at work."
+              placeholder="blur"
+            />
+            <p>We work with dentists and some medical practices!</p>
+          </div>
+
+          <div className={styles.card}>
+            <Image
+              className={styles.image}
+              src={peopleingym}
+              width={200}
+              height={100}
+              alt="People in a gym."
+              placeholder="blur"
+            />
+            <p>Your gym or fitness training business could really benefit from our expertise!</p>
+          </div>
+
+          <div className={styles.card}>
+            <Image
+              className={styles.image}
+              src={plumberlookingatpipe}
+              width={200}
+              height={100}
+              alt="Plumber looking at a pipe."
+              placeholder="blur"
+            />
+            <p>Increasing the revenue of your plumbing business sounds like a good idea to us! Get ready!</p>
+          </div>
+
+          <div className={styles.card}>
+            <Image
+              className={styles.image}
+              src={hvacmenu}
+              width={200}
+              height={100}
+              alt="Technician touches HVAC menu."
+              placeholder="blur"
+            />
+            <p>Your HVAC business needs the care it deserves!</p>
+          </div>
+
+          <div className={styles.card}>
+            <Image
+              className={styles.image}
+              src={electricalreadingdevice}
+              width={200}
+              height={100}
+              alt="Technician takes electrical reading using a device."
+              placeholder="blur"
+            />
+            <p>We have something special in store for your electrical business!</p>
+          </div>
         </div>
     </>
   );
