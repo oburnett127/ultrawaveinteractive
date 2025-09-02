@@ -3,6 +3,7 @@ import Footer from '../components/Footer';
 import { SessionProvider } from "next-auth/react";
 import Link from 'next/link';
 import Script from 'next/script'; // ✅ Add this line
+import GlobalBackground from "../components/GlobalBackground";
 
 function MyApp({ Component, pageProps }) {
   return (
@@ -18,11 +19,11 @@ function MyApp({ Component, pageProps }) {
           strategy="beforeInteractive"
         />
 
-
         <header>
           <h1><Link href="/">Ultrawave Interactive Web Design</Link></h1>
         </header>
 
+        <GlobalBackground />
         <Component {...pageProps} />
       </SessionProvider>
       <Footer />

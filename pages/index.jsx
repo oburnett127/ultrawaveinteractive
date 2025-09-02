@@ -10,7 +10,7 @@ import ContactForm from '../components/ContactForm';
 import Head from 'next/head';
 import Image from 'next/image';
 import { useRouter } from "next/router";
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 
 function Home() {
@@ -45,28 +45,57 @@ function Home() {
     <>
       <Head>
         <title>Ultrawave Interactive Web Design | Home</title>
-        <meta name="description" content="Ultrawave Interactive provides custom web design and technology solutions tailored to meet your unique business needs. Based in the USA, we offer affordable and quality services nationwide." />
+        <meta
+          name="description"
+          content="Ultrawave Interactive provides custom web design and technology solutions tailored to meet your unique business needs. Based in the USA, we offer affordable and quality services nationwide."
+        />
       </Head>
-      
+
+      {/* Your normal content continues below */}
       <div className={styles.content}>
         <p>I make websites and technology solutions for less!</p>
 
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLd }}
+        />
 
-        <Image src={"/images/meeting.jpg"} width={400} height={300} alt="Business people in a meeting smiling." />
-    
+        <Image
+          src={"/images/meeting.jpg"}
+          width={400}
+          height={300}
+          alt="Business people in a meeting smiling."
+        />
+
         <div className={styles.blockContainer}>
           <a className={styles.flexCenter} href="#contact-form">
             <button className={styles.button}>Schedule a Free Consultation</button>
           </a>
 
-          <a className={styles.flexCenter} href="tel:+14055198318" aria-label="Call Me at +14055198318">
-            <button className={styles.button}>or call me at 405-519-8318</button>
+          <a
+            className={styles.flexCenter}
+            href="tel:+14055198318"
+            aria-label="Call Me at +14055198318"
+          >
+            <button className={styles.button}>
+              or call me at 405-519-8318
+            </button>
           </a>
-          <p>You don&apos;t pay me until you are satisfied with the quality of my work!</p>
-          <p>Fully customized websites, tailored to the specific and unique needs of your business!</p>
 
-          <Link className={styles.flexCenter} href="/privacypolicy" area-label="Read our privacy policy">
+          <p>
+            You don&apos;t pay me until you are satisfied with the quality of my
+            work!
+          </p>
+          <p>
+            Fully customized websites, tailored to the specific and unique needs
+            of your business!
+          </p>
+
+          <Link
+            className={styles.flexCenter}
+            href="/privacypolicy"
+            aria-label="Read our privacy policy"
+          >
             <button className={styles.button}>Read our privacy policy</button>
           </Link>
 
@@ -79,13 +108,17 @@ function Home() {
             <>
               <Link href="/auth/signin">
                 <button>Sign In</button>
-              </Link><br /><br />
+              </Link>
+              <br />
+              <br />
               <Link href="/register">
                 <button>Create Account</button>
               </Link>
             </>
           )}
-
+        </div>
+      </div>
+      <div>
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="20vh">
             <Stack direction="row" spacing={6}>
               <Box display="flex" flexDirection="column" alignItems="center">
@@ -148,7 +181,6 @@ function Home() {
           <Image className={styles.image} src={"/images/electricalreadingdevice.jpg"} width={200} height={100} alt="Technician takes electrical reading using a device." />
           <p>We have something special in store for your electrical business!</p>
         </div>
-      </div>
     </>
   );
 }
