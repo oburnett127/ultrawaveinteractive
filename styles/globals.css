@@ -1,30 +1,25 @@
 /* ---------- Base / Reset ---------- */
 *,
 *::before,
-*::after {
-  box-sizing: border-box;
-}
+*::after { box-sizing: border-box; }
 
 html {
-  /* Base font size; scale down on smaller screens */
   font-size: 16px;
   scroll-behavior: smooth;
+  /* Prevent iOS rubber-band background flashes under fixed bg */
+  background: transparent;
 }
 
-@media (max-width: 768px) {
-  html { font-size: 15px; }
-}
-@media (max-width: 480px) {
-  html { font-size: 14px; }
-}
+@media (max-width: 768px) { html { font-size: 15px; } }
+@media (max-width: 480px) { html { font-size: 14px; } }
 
 /* ---------- Body ---------- */
 html, body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background: transparent;  /* no black fallback */
-  color: #fff;            /* site-wide white text (adjust per section if needed) */
+  background: transparent;     /* no gray/black default; bg image handles it */
+  color: #fff;
 }
 
 body {
@@ -33,7 +28,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
-  font-size: 1.2rem; /* body copy size */
+  font-size: 1.2rem;
 }
 
 /* ---------- Typography ---------- */
@@ -41,7 +36,7 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0 0 1rem;
   line-height: 1.25;
   font-weight: 700;
-  text-wrap: balance;
+  text-wrap: balance;          /* safe fallback if unsupported */
 }
 
 h1 { font-size: clamp(2rem, 5vw, 2.5rem); text-align: center; margin-top: 1rem; }
@@ -50,9 +45,9 @@ h3 { font-size: clamp(1.25rem, 3vw, 1.75rem); }
 
 p {
   margin: 0 0 1.5rem;
-  font-size: 1.125rem;  /* ~18px */
+  font-size: 1.125rem;         /* ~18px */
   line-height: 1.8;
-  text-align: center;   /* keep centered; change to left if you prefer */
+  text-align: center;
 }
 
 @media (max-width: 480px) {
@@ -71,14 +66,8 @@ code {
 }
 
 /* ---------- Links ---------- */
-a {
-  color: #1e90ff;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-  color: #00bfff;
-}
+a { color: #1e90ff; text-decoration: none; }
+a:hover { text-decoration: underline; color: #00bfff; }
 
 /* ---------- Buttons ---------- */
 button {
@@ -93,9 +82,7 @@ button {
 }
 button:hover   { background-color: #0056b3; transform: scale(1.05); }
 button:active  { transform: scale(0.98); }
-@media (max-width: 768px) {
-  button { font-size: 0.95rem; padding: 8px 16px; }
-}
+@media (max-width: 768px) { button { font-size: 0.95rem; padding: 8px 16px; } }
 
 /* ---------- Forms ---------- */
 input, textarea {
@@ -108,20 +95,11 @@ input, textarea {
   width: 100%;
   margin-bottom: 1rem;
 }
-input:focus, textarea:focus {
-  border-color: #007bff;
-  outline: none;
-}
+input:focus, textarea:focus { border-color: #007bff; outline: none; }
 
 /* ---------- Layout helpers ---------- */
-.container {
-  padding: 20px;
-  margin: 0 auto;
-  max-width: 1200px;
-}
-@media (max-width: 768px) {
-  .container { padding: 15px; }
-}
+.container { padding: 20px; margin: 0 auto; max-width: 1200px; }
+@media (max-width: 768px) { .container { padding: 15px; } }
 
 .flexCenter {
   display: flex;
@@ -131,14 +109,43 @@ input:focus, textarea:focus {
   gap: 1rem;
 }
 
-/* ---------- Global image defaults (safe) ---------- */
-/* Don’t force widths here that could fight the hero image sizing */
+/* ---------- Global image defaults ---------- */
+/* Avoid overriding one dimension only; keep aspect ratio intact */
 img {
   display: block;
   max-width: 100%;
+  width: auto;
   height: auto;
-  margin: 0 auto;       /* center regular content images */
+  margin: 0 auto;
   border-radius: 5px;
+}
+
+/* ---------- Site-wide fixed background layer ---------- */
+/* This prevents the initial gray flash by painting black until the image loads */
+.bgFixed {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: #000;      /* fallback while bg image decodes */
+}
+.bgFixed picture,
+.bgFixed img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;           /* like background-size: cover */
+  object-position: center;
+  display: block;
+}
+
+/* Optional tint for readability across the site */
+/* .bgOverlay { position: absolute; inset: 0; background: rgba(0,0,0,.3); } */
+
+/* ---------- Motion accessibility ---------- */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
 
 /* ---------- HERO SECTION ---------- */
@@ -211,8 +218,13 @@ img {
   padding: 2rem 0;
 }
 
-.card {
-  text-align: center;
+.card { text-align: center; }
+
+.card :where(img) {
+  /* Don’t override width/height ratio set on the <Image> props */
+  display: block;
+  height: auto;
+  margin-inline: auto;
 }
 
 .card p {
