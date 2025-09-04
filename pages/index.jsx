@@ -11,13 +11,6 @@ import Image from 'next/image';
 import { useRouter } from "next/router";
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
-import meeting from "../public/images/meeting.jpg";
-import petcare from "../public/images/petcare.jpg";
-import dentalhygienist from "../public/images/dentalhygienist.jpg";
-import peopleingym from "../public/images/peopleingym.jpg";
-import plumberlookingatpipe from "../public/images/plumberlookingatpipe.jpg";
-import hvacmenu from "../public/images/hvacmenu.jpg";
-import electricalreadingdevice from "../public/images/electricalreadingdevice.jpg";
 
 function Home() {
 
@@ -67,7 +60,7 @@ function Home() {
         />
 
         <Image
-          src={meeting}
+          src={"/images/meeting.jpg"}
           width={400}
           height={300}
           alt="Business people in a meeting smiling."
@@ -175,32 +168,32 @@ function Home() {
         </div>
         <div className={styles.businessGrid}>
       <div className={styles.card}>
-        <Image src={petcare} width={200} height={100} alt="Dog having fur groomed." />
+        <Image src={"/images/petcare.jpg"} width={200} height={100} alt="Dog having fur groomed." />
         <p>We would love to work on a website for your pet care business!</p>
       </div>
 
       <div className={styles.card}>
-        <Image src={dentalhygienist} width={200} height={100} alt="Dental hygienist at work." />
+        <Image src={"/images/dentalhygienist.jpg"} width={200} height={100} alt="Dental hygienist at work." />
         <p>We work with dentists and some medical practices!</p>
       </div>
 
       <div className={styles.card}>
-        <Image src={peopleingym} width={200} height={100} alt="People in a gym." />
+        <Image src={"/images/peopleingym.jpg"} width={200} height={100} alt="People in a gym." />
         <p>Your gym or fitness training business could really benefit from our expertise!</p>
       </div>
 
       <div className={styles.card}>
-        <Image src={plumberlookingatpipe} width={200} height={100} alt="Plumber looking at a pipe." />
+        <Image src={"/images/plumberlookingatpipe.jpg"} width={200} height={100} alt="Plumber looking at a pipe." />
         <p>Increasing the revenue of your plumbing business sounds like a good idea to us! Get ready!</p>
       </div>
 
       <div className={styles.card}>
-        <Image src={hvacmenu} width={200} height={100} alt="Technician touches HVAC menu." />
+        <Image src={"images/hvacmenu.jpg"} width={200} height={100} alt="Technician touches HVAC menu." />
         <p>Your HVAC business needs the care it deserves!</p>
       </div>
 
       <div className={styles.card}>
-        <Image src={electricalreadingdevice} width={200} height={100} alt="Technician takes electrical reading using a device." />
+        <Image src={"/images/electricalreadingdevice.jpg"} width={200} height={100} alt="Technician takes electrical reading using a device." />
         <p>We have something special in store for your electrical business!</p>
       </div>
     </div>
