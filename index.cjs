@@ -15,6 +15,8 @@ const  connectRedis = require('./lib/redis.cjs');
 const prisma = require("./lib/prisma.cjs");
 const { sendContactEmail } = require("./lib/mailer.cjs");
 const sanitizeHtml = require("sanitize-html");
+const verifySquareSignature = require("./verifySignature");
+const squareWebhookHandler = require("./lib/squareWebhookHandler");
 
 async function initBackend(app) {
   dotenv.config();
@@ -29,6 +31,7 @@ async function initBackend(app) {
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   };
+
   app.use(cors(corsOptions));
 
   // --- Restrict HTTP methods ---
@@ -55,86 +58,86 @@ async function initBackend(app) {
   app.use((req, res, next) => {
     const nonce = res.locals.cspNonce;
 
-const directives = {
-  "default-src": ["'self'"],
+    const directives = {
+      "default-src": ["'self'"],
 
-  // No 'unsafe-inline' here anymore:
-  "script-src": [
-    "'self'",
-    `'nonce-${nonce}'`,
-    ...(isDev ? ["'unsafe-eval'"] : []), // keep only for dev HMR
-    "https://web.squarecdn.com",
-    "https://js.squareup.com",
-    "https://www.google.com",
-    "https://www.gstatic.com",
-    "https://static.cloudflareinsights.com",
-    "https://challenges.cloudflare.com",
-    // remove sandbox when fully live:
-    // "https://sandbox.web.squarecdn.com",
-  ],
+      // No 'unsafe-inline' here anymore:
+      "script-src": [
+        "'self'",
+        `'nonce-${nonce}'`,
+        ...(isDev ? ["'unsafe-eval'"] : []), // keep only for dev HMR
+        "https://web.squarecdn.com",
+        "https://js.squareup.com",
+        "https://www.google.com",
+        "https://www.gstatic.com",
+        "https://static.cloudflareinsights.com",
+        "https://challenges.cloudflare.com",
+        // remove sandbox when fully live:
+        // "https://sandbox.web.squarecdn.com",
+      ],
 
-  // Keep this strict (nonce). This covers any inline <style nonce="..."> you author.
-  "style-src": [
-    "'self'",
-    `'nonce-${nonce}'`,
-    "https://fonts.googleapis.com",
-    "https://web.squarecdn.com",
-    "https://www.gstatic.com",
-  ],
+      // Keep this strict (nonce). This covers any inline <style nonce="..."> you author.
+      "style-src": [
+        "'self'",
+        `'nonce-${nonce}'`,
+        "https://fonts.googleapis.com",
+        "https://web.squarecdn.com",
+        "https://www.gstatic.com",
+      ],
 
-  // Leave this to allow SDK/Next/reCAPTCHA injected <style> tags
-  "style-src-elem": [
-    "'self'",
-    "'unsafe-inline'",
-    "https://fonts.googleapis.com",
-    "https://web.squarecdn.com",
-    "https://www.gstatic.com",
-  ],
+      // Leave this to allow SDK/Next/reCAPTCHA injected <style> tags
+      "style-src-elem": [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com",
+        "https://web.squarecdn.com",
+        "https://www.gstatic.com",
+      ],
 
-  "frame-src": [
-    "'self'",
-    "https://web.squarecdn.com",
-    "https://pci-connect.squareup.com",
-    "https://js.squareup.com",
-    "https://www.google.com",
-    "https://recaptcha.google.com",
-    "https://challenges.cloudflare.com",
-  ],
+      "frame-src": [
+        "'self'",
+        "https://web.squarecdn.com",
+        "https://pci-connect.squareup.com",
+        "https://js.squareup.com",
+        "https://www.google.com",
+        "https://recaptcha.google.com",
+        "https://challenges.cloudflare.com",
+      ],
 
-  "connect-src": [
-    "'self'",
-    "https://ultrawaveinteractive.com",
-    "https://connect.squareup.com",
-    "https://pci-connect.squareup.com",
-    "https://web.squarecdn.com",
-    "https://www.google.com",
-    "https://www.gstatic.com",
-    "https://static.cloudflareinsights.com",
-    ...(isDev ? ["http://localhost:3000", "ws://localhost:3000"] : []),
-  ],
+      "connect-src": [
+        "'self'",
+        "https://ultrawaveinteractive.com",
+        "https://connect.squareup.com",
+        "https://pci-connect.squareup.com",
+        "https://web.squarecdn.com",
+        "https://www.google.com",
+        "https://www.gstatic.com",
+        "https://static.cloudflareinsights.com",
+        ...(isDev ? ["http://localhost:3000", "ws://localhost:3000"] : []),
+      ],
 
-  "img-src": [
-    "'self'",
-    "data:",
-    "blob:",
-    "https://*.squarecdn.com",
-    "https://web.squarecdn.com",
-    "https://www.google.com",
-    "https://www.gstatic.com",
-    "https://static.cloudflareinsights.com",
-  ],
+      "img-src": [
+        "'self'",
+        "data:",
+        "blob:",
+        "https://*.squarecdn.com",
+        "https://web.squarecdn.com",
+        "https://www.google.com",
+        "https://www.gstatic.com",
+        "https://static.cloudflareinsights.com",
+      ],
 
-  "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
-  "worker-src": ["'self'", "blob:"],
-  "media-src": ["'self'", "data:", "blob:"],
-  "manifest-src": ["'self'"],
-  "form-action": ["'self'"],
-  "object-src": ["'none'"],
-  "frame-ancestors": ["'none'"],
-  "upgrade-insecure-requests": [],
-  "base-uri": ["'self'"],
-  "script-src-attr": ["'none'"],
-};
+      "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
+      "worker-src": ["'self'", "blob:"],
+      "media-src": ["'self'", "data:", "blob:"],
+      "manifest-src": ["'self'"],
+      "form-action": ["'self'"],
+      "object-src": ["'none'"],
+      "frame-ancestors": ["'none'"],
+      "upgrade-insecure-requests": [],
+      "base-uri": ["'self'"],
+      "script-src-attr": ["'none'"],
+    };
 
     return helmet({
       contentSecurityPolicy: { useDefaults: false, directives },
@@ -146,13 +149,14 @@ const directives = {
   });
 
   // --- Debug: print the exact CSP header being sent (remove later) ---
-  app.use((req, res, next) => {
-    const csp = res.getHeader("Content-Security-Policy");
-    if (csp) logger?.info ? logger.info(`CSP => ${csp}`) : console.log("CSP =>", csp);
-    next();
-  });
+  // app.use((req, res, next) => {
+  //   const csp = res.getHeader("Content-Security-Policy");
+  //   if (csp) logger?.info ? logger.info(`CSP => ${csp}`) : console.log("CSP =>", csp);
+  //   next();
+  // });
 
   // continue with your routes / Next request handler / start server...
+
   return app;
 }
 
@@ -162,9 +166,15 @@ const directives = {
   //   res.status(204).end();
   // });
 
+  // 🚨 RAW parser ONLY for the Square webhook route
+  app.use("/api/square/webhook", express.raw({ type: "application/json" }));
+
   // Body parsers
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
+
+ // ✅ Handle Square Webhook POST
+  app.post("/api/square/webhook", squareWebhookHandler);
 
   // Redis
   const redis = new Redis(process.env.REDIS_URL || "redis://127.0.0.1:6379");
