@@ -57,7 +57,8 @@ export default async function handler(req, res) {
         email,
         name: name ? String(name).trim() : null,
         hashedPassword,
-        otpVerified: false
+        otpVerified: false,
+        isAdmin: false
       },
       select: { id: true, email: true }
     });
