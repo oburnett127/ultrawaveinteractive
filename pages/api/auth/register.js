@@ -66,6 +66,10 @@ export default async function handler(req, res) {
     return res.status(201).json({ ok: true, user });
   } catch (err) {
     console.error("Register error:", err);
-    return res.status(500).json({ error: "Server error" });
+    return res.status(500).json({
+      error: "Server error",
+      message: err.message,
+      full: JSON.stringify(err, Object.getOwnPropertyNames(err)),
+    });
   }
 }
