@@ -15,8 +15,11 @@ model User {
   email          String   @unique
   emailVerified  DateTime?
   image          String?
-  hashedPassword String   // required for credentials auth
+  hashedPassword String
   otpVerified    Boolean  @default(false)
+  isAdmin        Boolean  @default(false) // ✅ NEW
+
+  blogPosts      BlogPost[]              // ✅ NEW relation
 }
 
 model OtpToken {
@@ -42,5 +45,18 @@ model Payment {
 
   // If you want the relation:
   // user             User?    @relation(fields: [userId], references: [id])
+}
+
+model BlogPost {
+  id        String   @id @default(cuid())
+  title     String
+  slug      String   @unique
+  content   String   // Markdown text
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
 }
 
