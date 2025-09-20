@@ -11,6 +11,7 @@ import Image from 'next/image';
 import { useRouter } from "next/router";
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 function Home() {
 
@@ -40,6 +41,15 @@ function Home() {
             "openingHours": "Su-Sa 08:00-20:00"
           }`;
   
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/blog/list')
+      .then(res => res.json())
+      .then(setPosts)
+      .catch(console.error);
+  }, []);
+
   return (
     <>
       <Head>
@@ -58,6 +68,26 @@ function Home() {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: jsonLd }}
         />
+
+      <section>
+          <h2>Blog Posts</h2>
+          {posts.length === 0 ? (
+            <p>No posts found.</p>
+          ) : (
+            <ul>
+              {posts.map(post => (
+                <li key={post.id}>
+                  <Link href={`/blog/${post.slug}`}>
+                    {post.title}
+                  </Link>{" "}
+                  <small>
+                    ({new Date(post.createdAt).toLocaleDateString()})
+                  </small>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         <Image
           src={"/images/meeting.jpg"}
