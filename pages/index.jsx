@@ -7,7 +7,6 @@ import { List, ListItem, ListItemIcon, ListItemText } from "@mui/material";
 import { Box, Stack, Typography } from "@mui/material";
 import ContactForm from '../components/ContactForm';
 import Head from 'next/head';
-import Image from 'next/image';
 import { useRouter } from "next/router";
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
