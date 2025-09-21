@@ -211,22 +211,76 @@ img {
   background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.35));
 }
 
+/* ---------- FINAL HOMEPAGE GRID + CARD STYLING ---------- */
 .businessGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 2rem;
   padding: 2rem 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  justify-items: center;
 }
 
-.card { text-align: center; }
+.card {
+  text-align: center;
+  background: #111;
+  border-radius: 8px;
+  padding: 1rem;
+  width: 250px;        /* Fixed card width */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
 
-.card :where(img) {
-  /* Don’t override width/height ratio set on the <Image> props */
+.card:hover {
+  transform: translateY(-3px);
+}
+
+/* Hard-lock image size so all cards match */
+.card img {
+  width: 250px;        /* Fixed width */
+  height: 150px;       /* Fixed height */
+  object-fit: cover;   /* Crop nicely */
   display: block;
-  height: auto;
-  margin-inline: auto;
+  margin: 0 auto;
+  border-radius: 5px;
 }
 
 .card p {
   margin-top: 0.5rem;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+/* ---------- RESPONSIVE BEHAVIOR ---------- */
+@media (max-width: 768px) {
+  .businessGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .card {
+    width: 200px;
+  }
+
+  .card img {
+    width: 200px;
+    height: 130px;
+  }
+}
+
+@media (max-width: 480px) {
+  .businessGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .card {
+    width: 90%;
+  }
+
+  .card img {
+    width: 100%;
+    height: 180px;
+  }
 }

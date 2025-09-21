@@ -88,14 +88,14 @@ function Home() {
             </ul>
           )}
         </section>
-
-        <Image
-          src={"/images/meeting.jpg"}
-          width={400}
-          height={300}
-          alt="Business people in a meeting smiling."
-        />
-
+        <div className={styles.businessGrid}>
+          <div className={styles.card}>
+            <img
+              src={"/images/meeting.jpg"}
+              alt="Business people in a meeting smiling."
+            />
+          </div>
+        </div>
         <div className={styles.blockContainer}>
           <a className={styles.flexCenter} href="#contact-form">
             <button className={styles.button}>Schedule a Free Consultation</button>
@@ -197,36 +197,37 @@ function Home() {
 
         </div>
         <div className={styles.businessGrid}>
-      <div className={styles.card}>
-        <Image src={"/images/petcare.jpg"} width={200} height={100} alt="Dog having fur groomed." />
-        <p>We would love to work on a website for your pet care business!</p>
-      </div>
+          <div className={styles.card}>
+            <img src="/images/petcare.jpg" alt="Dog having fur groomed." />
+            <p>We would love to work on a website for your pet care business!</p>
+          </div>
 
-      <div className={styles.card}>
-        <Image src={"/images/dentalhygienist.jpg"} width={200} height={100} alt="Dental hygienist at work." />
-        <p>We work with dentists and some medical practices!</p>
-      </div>
+          <div className={styles.card}>
+            <img src="/images/dentalhygienist.jpg" alt="Dental hygienist at work." />
+            <p>We work with dentists and some medical practices!</p>
+          </div>
 
-      <div className={styles.card}>
-        <Image src={"/images/peopleingym.jpg"} width={200} height={100} alt="People in a gym." />
-        <p>Your gym or fitness training business could really benefit from our expertise!</p>
-      </div>
+          <div className={styles.card}>
+            <img src="/images/peopleingym.jpg" alt="People in a gym." />
+            <p>Your gym or fitness training business could really benefit from our expertise!</p>
+          </div>
 
-      <div className={styles.card}>
-        <Image src={"/images/plumberlookingatpipe.jpg"} width={200} height={100} alt="Plumber looking at a pipe." />
-        <p>Increasing the revenue of your plumbing business sounds like a good idea to us! Get ready!</p>
-      </div>
+          <div className={styles.card}>
+            <img src="/images/plumberlookingatpipe.jpg" alt="Plumber looking at a pipe." />
+            <p>Increasing the revenue of your plumbing business sounds like a good idea to us! Get ready!</p>
+          </div>
 
-      <div className={styles.card}>
-        <Image src={"images/hvacmenu.jpg"} width={200} height={100} alt="Technician touches HVAC menu." />
-        <p>Your HVAC business needs the care it deserves!</p>
-      </div>
+          <div className={styles.card}>
+            <img src="/images/hvacmenu.jpg" alt="Technician touches HVAC menu." />
+            <p>Your HVAC business needs the care it deserves!</p>
+          </div>
 
-      <div className={styles.card}>
-        <Image src={"/images/electricalreadingdevice.jpg"} width={200} height={100} alt="Technician takes electrical reading using a device." />
-        <p>We have something special in store for your electrical business!</p>
-      </div>
-    </div>
+          <div className={styles.card}>
+            <img src="/images/electricalreadingdevice.jpg" alt="Technician takes electrical reading using a device." />
+            <p>We have something special in store for your electrical business!</p>
+          </div>
+        </div>
+
     </>
   );
 }

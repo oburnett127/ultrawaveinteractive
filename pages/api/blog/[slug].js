@@ -1,4 +1,4 @@
-import prisma from "../../../../lib/prisma.cjs";
+import prisma from "../../../lib/prisma.cjs";
 
 export default async function handler(req, res) {
   const slug = req.query.slug;

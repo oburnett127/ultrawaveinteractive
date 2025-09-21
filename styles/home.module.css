@@ -21,13 +21,11 @@
   align-items: center;
 }
 
-/* ---------- Foreground image blocks (cards, logos, etc.) ---------- */
 .imageContainer {
-  /* Use this only for small foreground images, not the hero */
   display: grid;
   place-items: center;
   margin: 0 auto 1.5rem;
-  width: min(100%, 600px);
+  width: min(100%, 250px);  /* Now max width is 250px instead of 600px */
 }
 
 .image {
