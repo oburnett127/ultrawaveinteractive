@@ -65,24 +65,3 @@
   gap: 10px;
   width: 100%;
 }
-
-section ul {
-  list-style: none;        /* removes bullets */
-  padding: 0;              /* removes default padding */
-  margin: 0 auto;          /* centers the list itself */
-  text-align: center;      /* centers text inside list items */
-}
-
-section li {
-  margin: 0.5rem 0;        /* spacing between items */
-}
-
-section li a {
-  text-decoration: none;   /* optional: remove underline */
-  color: #1e90ff;          /* optional: link color */
-}
-
-section li a:hover {
-  text-decoration: underline;
-}
-
