@@ -335,3 +335,7 @@ section li a:hover {
   line-height: 1.8;
   font-weight: 500;
 }
+
+label {
+  color: white;
+}

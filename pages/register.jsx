@@ -136,7 +136,7 @@ export default function Register() {
       <h1>Create account</h1>
 
       {!siteKey && (
-        <p style={{ color: "crimson" }}>
+        <p style={{ color: "red" }}>
           NEXT_PUBLIC_RECAPTCHA_SITE_KEY is not set. The checkbox will not render.
         </p>
       )}
@@ -186,7 +186,7 @@ export default function Register() {
           aria-label="reCAPTCHA"
         />
 
-        {errorMsg && <p style={{ color: "crimson" }}>{errorMsg}</p>}
+        {errorMsg && <p style={{ color: "red" }}>{errorMsg}</p>}
 
         <button type="submit" disabled={submitting}>
           {submitting ? "Creating..." : "Create Account"}
