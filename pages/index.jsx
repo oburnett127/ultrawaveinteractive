@@ -8,7 +8,6 @@ import { Box, Stack, Typography } from "@mui/material";
 import ContactForm from '../components/ContactForm';
 import Head from 'next/head';
 import { useRouter } from "next/router";
-import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -17,7 +16,6 @@ function Home() {
   //console.log('Loaded reCAPTCHA site key:', process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY);
 
   const router = useRouter();
-  const { data: session } = useSession();
 
   const items = ["Marketing", "Landscaping", "Catering", "Pet Care", "Dental Care", "Gyms", "Fitness Training", "Plumbing", "Cleaning", "HVAC", "Electrical"];
 
@@ -61,7 +59,7 @@ function Home() {
 
       {/* Your normal content continues below */}
       <div className={styles.content}>
-        <p>I make websites and technology solutions for less!</p>
+        <p>I replace slow website builders with high-performance custom websites!</p>
 
         <script
           type="application/ld+json"
@@ -126,24 +124,6 @@ function Home() {
           >
             <button className={styles.button}>Read our privacy policy</button>
           </Link>
-
-          {session ? (
-            <>
-              <p>Hello, {session.user.email}</p>
-              <button onClick={() => signOut()}>Sign Out</button>
-            </>
-          ) : (
-            <>
-              <Link href="/auth/signin">
-                <button>Sign In</button>
-              </Link>
-              <br />
-              <br />
-              <Link href="/register">
-                <button>Create Account</button>
-              </Link>
-            </>
-          )}
         </div>
       </div>
       <div>
@@ -151,15 +131,36 @@ function Home() {
             <Stack direction="row" spacing={6}>
               <Box display="flex" flexDirection="column" alignItems="center">
                 <StarIcon fontSize="large" />
-                <Typography variant="subtitle1" textAlign="center">Quality Work</Typography>
+                <Typography
+                  variant="subtitle1"
+                  textAlign="center"
+                  fontSize={{ xs: '16px', sm: '18px', md: '20px' }}
+                  fontWeight={500}
+                >
+                  Quality Work
+                </Typography>
               </Box>
               <Box display="flex" flexDirection="column" alignItems="center">
                 <AttachMoneyIcon fontSize="large" />
-                <Typography variant="subtitle1" textAlign="center">Affordable Prices</Typography>
+                <Typography
+                  variant="subtitle1"
+                  textAlign="center"
+                  fontSize={{ xs: '16px', sm: '18px', md: '20px' }}
+                  fontWeight={500}
+                >
+                  Affordable Prices
+                </Typography>
               </Box>
               <Box display="flex" flexDirection="column" alignItems="center">
                 <TimerIcon fontSize="large" />
-                <Typography variant="subtitle1" textAlign="center">Timely Service</Typography>
+                <Typography
+                  variant="subtitle1"
+                  textAlign="center"
+                  fontSize={{ xs: '16px', sm: '18px', md: '20px' }}
+                  fontWeight={500}
+                >
+                  Timely Service
+                </Typography>
               </Box>
             </Stack>
           </Box>
@@ -175,7 +176,13 @@ function Home() {
                   <ListItemIcon>
                     <CheckIcon color="success" />
                   </ListItemIcon>
-                  <ListItemText primary={item} />
+                  <ListItemText 
+                    primary={
+                      <Typography variant="body1" fontSize="20px" fontWeight="500">
+                        {item}
+                      </Typography>
+                    }
+                  />
                 </ListItem>
               ))}
             </List>

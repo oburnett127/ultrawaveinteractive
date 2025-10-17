@@ -1,33 +1,28 @@
 import '../styles/globals.css';
 import Footer from '../components/Footer';
 import { SessionProvider } from "next-auth/react";
-import Link from 'next/link';
-import Script from 'next/script'; // ✅ Add this line
+import Script from 'next/script';
 import GlobalBackground from "../components/GlobalBackground";
+import Header from "../components/Header"; // ✅ create this
+import { CssBaseline } from "@mui/material";
 
 function MyApp({ Component, pageProps }) {
   return (
-    <div>
-      <SessionProvider session={pageProps.session}>
-        {/* ✅ Load the Square Payment SDK script */}
-        <Script
-          src={
-            process.env.NODE_ENV === 'production'
-              ? 'https://web.squarecdn.com/v1/square.js'
-              : 'https://sandbox.web.squarecdn.com/v1/square.js'
-          }
-          strategy="beforeInteractive"
-        />
-
-        <header>
-          <h1><Link href="/">Ultrawave Interactive Web Design</Link></h1>
-        </header>
-
-        <GlobalBackground />
-        <Component {...pageProps} />
-      </SessionProvider>
+    <SessionProvider session={pageProps.session}>
+      <CssBaseline />
+      <Script
+        src={
+          process.env.NODE_ENV === 'production'
+            ? 'https://web.squarecdn.com/v1/square.js'
+            : 'https://sandbox.web.squarecdn.com/v1/square.js'
+        }
+        strategy="beforeInteractive"
+      />
+      <Header /> {/* ✅ now it’s safely inside the provider */}
+      <GlobalBackground />
+      <Component {...pageProps} />
       <Footer />
-    </div>
+    </SessionProvider>
   );
 }
 
