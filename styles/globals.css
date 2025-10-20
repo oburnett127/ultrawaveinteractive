@@ -339,3 +339,10 @@ section li a:hover {
 label {
   color: white;
 }
+
+.blog-title {
+  color: white;
+  font-size: 2.5rem; /* same as h1 default or adjust to match your theme */
+  font-weight: bold;
+  margin: 0 0 1rem;
+}

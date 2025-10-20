@@ -8,10 +8,15 @@ export async function getServerSideProps(context) {
 }
 
 export default function BlogPost({ post }) {
+  const authorName = post?.author?.name || post?.author?.email || "Admin";
+  const date = new Date(post.createdAt).toLocaleDateString();
+
   return (
     <div>
-      <h1>{post.title}</h1>
-      <p><i>By {post.author.name || post.author.email} on {new Date(post.createdAt).toLocaleDateString()}</i></p>
+      <h1 className="blog-title">{post.title}</h1>
+      <p className="blog-title">
+        <i>By {authorName} on {date}</i>
+      </p>
       <ReactMarkdown>{post.content}</ReactMarkdown>
     </div>
   );

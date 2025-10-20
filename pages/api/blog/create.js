@@ -21,6 +21,9 @@ export default async function handler(req, res) {
         slug,
         authorId: user.id,
       },
+      include: {
+        author: true // ✅ this ensures name is available
+      }
     });
 
     return res.status(201).json(post);
