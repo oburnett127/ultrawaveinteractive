@@ -9,6 +9,7 @@ export default async function handler(req, res) {
       title: true,
       slug: true,
       createdAt: true,
+      content: true,
     },
   });
 
