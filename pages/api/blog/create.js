@@ -6,8 +6,8 @@ export default async function handler(req, res) {
     try {
       const { title, content, authorId } = req.body;
 
-      if (!title || !content || !authorId) {
-        return res.status(400).json({ error: 'Title, content, and authorId are required.' });
+      if (!title || !content) {
+        return res.status(400).json({ error: 'Title and content are required.' });
       }
 
       // Generate base slug
