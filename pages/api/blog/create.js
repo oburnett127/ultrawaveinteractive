@@ -1,4 +1,4 @@
-import prisma from '../../../lib/prisma';
+import prisma from '../../../lib/prisma.cjs';
 import { generateSlug } from '../../../utils/generateSlug';
 
 export default async function handler(req, res) {
