@@ -1,33 +1,47 @@
-import { getToken } from "next-auth/jwt";
-import prisma from "../../../lib/prisma.cjs"; // adjust path
+import prisma from '../../../lib/prisma';
+import { generateSlug } from '../../../utils/generateSlug';
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
+  if (req.method === 'POST') {
+    try {
+      const { title, content, authorId } = req.body;
 
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  if (!token) return res.status(401).json({ error: "Not authenticated" });
-
-  const user = await prisma.user.findUnique({ where: { email: token.email } });
-  if (!user?.isAdmin) return res.status(403).json({ error: "Not authorized" });
-
-  const { title, content } = req.body;
-  const slug = title.toLowerCase().replace(/\s+/g, "-");
-
-  try {
-    const post = await prisma.blogPost.create({
-      data: {
-        title,
-        content,
-        slug,
-        authorId: user.id,
-      },
-      include: {
-        author: true // ✅ this ensures name is available
+      if (!title || !content || !authorId) {
+        return res.status(400).json({ error: 'Title, content, and authorId are required.' });
       }
-    });
 
-    return res.status(201).json(post);
-  } catch (err) {
-    return res.status(500).json({ error: "Failed to create post", details: err.message });
+      // Generate base slug
+      let slug = generateSlug(title);
+
+      // Check if slug already exists, if so, append number
+      let existingPost = await prisma.blogPost.findUnique({ where: { slug } });
+      let count = 1;
+
+      while (existingPost) {
+        slug = `${generateSlug(title)}-${count}`;
+        existingPost = await prisma.blogPost.findUnique({ where: { slug } });
+        count++;
+      }
+
+      const newPost = await prisma.blogPost.create({
+        data: {
+          title,
+          slug,
+          content,
+          authorId,
+        },
+        include: {
+          author: true,
+        },
+      });
+
+      return res.status(201).json(newPost);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Failed to create blog post.' });
+    }
+  } else {
+    res.setHeader('Allow', ['POST']);
+    return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
