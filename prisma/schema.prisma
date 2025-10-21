@@ -53,7 +53,6 @@ model BlogPost {
   slug      String   @unique
   content   String   // Markdown text
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
