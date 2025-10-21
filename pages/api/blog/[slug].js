@@ -6,7 +6,6 @@ export default async function handler(req, res) {
 
   const post = await prisma.blogPost.findUnique({
     where: { slug },
-    include: { author: true }
   });
 
   if (!post) return res.status(404).json({ error: "Not found" });
