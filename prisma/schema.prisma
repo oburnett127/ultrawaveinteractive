@@ -18,8 +18,6 @@ model User {
   hashedPassword String
   otpVerified    Boolean  @default(false)
   isAdmin        Boolean  @default(false) // ✅ NEW
-
-  blogPosts      BlogPost[]              // ✅ NEW relation
 }
 
 model OtpToken {
