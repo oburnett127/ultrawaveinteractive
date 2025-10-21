@@ -10,6 +10,10 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Title and content are required.' });
       }
 
+      if(!authorId) {
+        authorId = 'admin';
+      }
+
       // Generate base slug
       let slug = generateSlug(title);
 
@@ -29,9 +33,6 @@ export default async function handler(req, res) {
           slug,
           content,
           authorId,
-        },
-        include: {
-          author: true,
         },
       });
 
