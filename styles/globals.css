@@ -346,3 +346,7 @@ label {
   font-weight: bold;
   margin: 0 0 1rem;
 }
+
+.left-aligned-text {
+  text-align: left;
+}

@@ -15,7 +15,7 @@ export default function BlogPost({ post }) {
       <pre>{JSON.stringify(post, null, 2)}</pre>
         <div>
           <h1 className="blog-title">{post.title}</h1>
-          <ReactMarkdown>{post.content}</ReactMarkdown>
+          <ReactMarkdown className="left-aligned-text">{post.content}</ReactMarkdown>
         </div>
     </div>
   );
