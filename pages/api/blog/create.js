@@ -1,10 +1,21 @@
 import prisma from '../../../lib/prisma.cjs';
 import { generateSlug } from '../../../utils/generateSlug';
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '2gb',
+    },
+  },
+};
+
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const { title, content, authorId } = req.body;
+
+      console.log("Incoming content:", req.body.content);
+      console.log("Content length:", req.body.content?.length);
 
       if (!title || !content) {
         return res.status(400).json({ error: 'Title and content are required.' });

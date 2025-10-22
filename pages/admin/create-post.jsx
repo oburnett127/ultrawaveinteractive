@@ -34,7 +34,16 @@ export default function CreatePost() {
       <h1>Create Blog Post</h1>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title" required />
-      <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Markdown content" rows={15} required />
+      <textarea
+        name="content"
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        rows={20}
+        style={{ width: "100%" }}
+        placeholder="Write your blog content here in Markdown format..."
+        required
+      ></textarea>
+
       <button type="submit">Publish</button>
     </form>
   );
