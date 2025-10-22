@@ -10,12 +10,8 @@ export async function getServerSideProps(context) {
 export default function BlogPost({ post }) {
   return (
     <div>
-      <h1 style={{ color: 'red', fontSize: '50px' }}>DEPLOY TEST</h1>
-      <pre>{JSON.stringify(post, null, 2)}</pre>
-        <div>
-          <h1 className="blog-title">{post.title}</h1>
-          <ReactMarkdown className="left-aligned-text">{post.content}</ReactMarkdown>
-        </div>
+      <h1 className="blog-title">{post.title}</h1>
+      <ReactMarkdown className="markdown-body">{post.content}</ReactMarkdown>
     </div>
   );
 }

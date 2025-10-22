@@ -347,6 +347,23 @@ label {
   margin: 0 0 1rem;
 }
 
-.left-aligned-text {
+.markdown-body {
   text-align: left;
+  line-height: 1.7;
+  font-size: 18px;
+  color: #333;
+  max-width: 800px;
+  margin: 0 auto; /* center container */
+  padding: 20px 0;
+}
+
+.markdown-body h1, 
+.markdown-body h2, 
+.markdown-body h3 {
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.markdown-body p {
+  margin-bottom: 16px;
 }
