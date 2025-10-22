@@ -375,3 +375,23 @@ label {
 .centered-text {
   text-align: center;
 }
+
+.blog-post-container table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+.blog-post-container th,
+.blog-post-container td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.blog-post-container th {
+  background-color: #333;
+  color: white;
+  font-weight: bold;
+}
+

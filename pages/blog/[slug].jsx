@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export async function getServerSideProps(context) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/blog/${context.params.slug}`);
@@ -9,9 +10,9 @@ export async function getServerSideProps(context) {
 
 export default function BlogPost({ post }) {
   return (
-    <div className="blog-container">
+    <div className="blog-post-container">
       <h1 className="blog-title">{post.title}</h1>
-      <ReactMarkdown className="markdown-body">
+      <ReactMarkdown remarkPlugins={[remarkGfm]} className="markdown-body">
         {post.content}
       </ReactMarkdown>
     </div>
