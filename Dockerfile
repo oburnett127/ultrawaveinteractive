@@ -3,6 +3,8 @@ FROM node:18
 
 WORKDIR /app
 
+ARG CACHE_BREAKER=1
+
 # ---- 1) Install deps (cached) ----
 COPY package*.json ./
 # Prefer npm ci when lockfile exists; fallback to npm install if needed
