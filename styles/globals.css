@@ -58,7 +58,6 @@ p {
   margin: 0 0 1.5rem;
   font-size: 20px;
   line-height: 1.8;
-  text-align: center;
   color: white;
 }
 
@@ -366,8 +365,13 @@ label {
 
 .markdown-body p {
   margin-bottom: 16px;
+  text-align: left;
 }
 
 .blog-container {
   text-align: left;
+}
+
+.centered-text {
+  text-align: center;
 }
