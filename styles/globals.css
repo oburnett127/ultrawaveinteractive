@@ -348,7 +348,7 @@ label {
 }
 
 .markdown-body {
-  text-align: left;
+  text-align: left !important;
   line-height: 1.7;
   font-size: 18px;
   color: #333;
@@ -366,4 +366,8 @@ label {
 
 .markdown-body p {
   margin-bottom: 16px;
+}
+
+.blog-container {
+  text-align: left;
 }

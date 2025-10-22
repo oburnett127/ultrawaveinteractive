@@ -9,10 +9,11 @@ export async function getServerSideProps(context) {
 
 export default function BlogPost({ post }) {
   return (
-    <div>
+    <div className="blog-container">
       <h1 className="blog-title">{post.title}</h1>
-      <ReactMarkdown className="markdown-body">{post.content}</ReactMarkdown>
+      <ReactMarkdown className="markdown-body">
+        {post.content}
+      </ReactMarkdown>
     </div>
   );
 }
-//
