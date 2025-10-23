@@ -423,3 +423,7 @@ label {
   color: white;
   white-space: pre-wrap; /* for <pre> blocks */
 }
+
+.largeText {
+  font-size: 21.33px;
+}
