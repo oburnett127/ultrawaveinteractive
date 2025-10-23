@@ -77,7 +77,7 @@ function Home() {
                   <Link href={`/blog/${post.slug}`} className="largeText">
                     {post.title}
                   </Link>{" "}
-                  <medium>
+                  <medium className="whiteText">
                     ({new Date(post.createdAt).toLocaleDateString()})
                   </medium>
                 </li>
