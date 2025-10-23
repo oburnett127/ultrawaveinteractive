@@ -36,8 +36,8 @@ const TermsOfService = () => {
         <meta name="description" content="Read the Terms of Service for Ultrawave Interactive Web Design to learn about the guidelines, responsibilities, and rights that apply to our website and services." />
       </Head>
 
-      <h1>Terms of Service</h1>
-      <pre style={{ whiteSpace: "pre-wrap" }}>{termsOfServiceText}</pre>
+      <h1 className="whiteText">Terms of Service</h1>
+      <pre style={{ whiteSpace: "pre-wrap" }} className="whiteText">{termsOfServiceText}</pre>
     </div>
   );
 };

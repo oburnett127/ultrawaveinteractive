@@ -395,3 +395,31 @@ label {
   font-weight: bold;
 }
 
+.blog-post-container,
+.blog-post-container p,
+.blog-post-container li,
+.blog-post-container ul,
+.blog-post-container ol {
+  color: white !important;
+}
+
+.blog-post-container ul,
+.blog-post-container ol {
+  margin-left: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+.blog-post-container li {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+  color: white !important;
+}
+
+.blog-post-container li::marker {
+  color: #00eaff; /* or any accent color you want for bullets */
+}
+
+.whiteText {
+  color: white;
+  white-space: pre-wrap; /* for <pre> blocks */
+}

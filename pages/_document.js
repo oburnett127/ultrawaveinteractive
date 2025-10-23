@@ -13,8 +13,42 @@ export default class MyDocument extends Document {
     return (
       <Html lang="en">
         <Head>
-          {/* No image preloads: avoids "preloaded but not used" warnings */}
-          {/* If you add preloads later, only preload ONE likely candidate (e.g., 1280 AVIF) */}
+          {/* Osano Cookie Consent: CSS */}
+          <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css"
+          />
+
+          {/* Osano Cookie Consent: JS */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+              window.addEventListener("load", function(){
+                window.cookieconsent.initialise({
+                  "palette": {
+                    "popup": {
+                      "background": "#000"
+                    },
+                    "button": {
+                      "background": "#f1d600"
+                    }
+                  },
+                  "theme": "classic",
+                  "position": "bottom",
+                  "content": {
+                    "message": "This website uses cookies to ensure you get the best experience.",
+                    "dismiss": "Got it!",
+                    "link": "Learn more",
+                    "href": "/privacypolicy"
+                  }
+                });
+              });
+              `,
+            }}
+          />
+
+          {/* Osano script loader (must come AFTER the config above) */}
+          <script src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js" />
         </Head>
         <body>
           <Main />
@@ -24,3 +58,4 @@ export default class MyDocument extends Document {
     );
   }
 }
+

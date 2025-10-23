@@ -29,8 +29,8 @@ function CookiePolicy() {
         <meta name="description" content="Read our Cookie Policy to understand how Ultrawave Interactive uses cookies to enhance your browsing experience and provide personalized services." />
       </Head>
 
-      <h1>Cookie Policy</h1>
-      <div id="CookieDeclaration"></div>
+      <h1 className="whiteText">Cookie Policy</h1>
+      <div className="whiteText" id="CookieDeclaration"></div>
     </div>
   );
 }

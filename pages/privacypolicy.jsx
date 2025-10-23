@@ -33,11 +33,14 @@ const PrivacyPolicy = () => {
     <div>
       <Head>
         <title>Ultrawave Interactive Web Design | Privacy Policy</title>
-        <meta name="description" content="Explore our Privacy Policy to understand how Ultrawave Interactive Web Design collects, uses, and protects your personal data to ensure your privacy and trust." />
+        <meta
+          name="description"
+          content="Explore our Privacy Policy to understand how Ultrawave Interactive Web Design collects, uses, and protects your personal data to ensure your privacy and trust."
+        />
       </Head>
 
-      <h1>Privacy Policy</h1>
-      <pre style={{ whiteSpace: "pre-wrap" }}>{policyText}</pre>
+      <h1 className="whiteText">Privacy Policy</h1>
+      <pre className="whiteText">{policyText}</pre>
     </div>
   );
 };
