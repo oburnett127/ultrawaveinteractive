@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../lib/prisma.cjs");
 const { hash } = require("bcryptjs");
+// If Node < 18, uncomment:
+// const fetch = require("node-fetch");
 
 // Server-side verification of v2 checkbox token
 async function verifyRecaptchaToken(token) {
@@ -32,6 +34,10 @@ router.post("/auth/register", async (req, res) => {
       return res.status(400).json({ error: "Email and password are required." });
     }
 
+    if (password.length < 8) {
+      return res.status(400).json({ error: "Password must be at least 8 characters." });
+    }
+
     if (!recaptchaToken) {
       return res.status(400).json({ error: "Missing reCAPTCHA token." });
     }
@@ -42,8 +48,11 @@ router.post("/auth/register", async (req, res) => {
     }
 
     const email = String(emailText).trim().toLowerCase();
-    const existing = await prisma.user.findUnique({ where: { email } });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: "Invalid email format." });
+    }
 
+    const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return res.status(409).json({ error: "Email is already registered." });
     }
@@ -73,4 +82,3 @@ router.post("/auth/register", async (req, res) => {
 });
 
 module.exports = router;
-

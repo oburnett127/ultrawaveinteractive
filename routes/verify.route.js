@@ -11,45 +11,49 @@ function json(res, status, body) {
 router.post("/otp/verify", async (req, res) => {
   try {
     const { email, otp } = req.body || {};
-    if (!email || !otp) return json(res, 400, { error: "Email and OTP are required" });
+    if (!email || !otp) {
+      return res.status(400).json({ error: "Email and OTP are required." });
+    }
 
     const lower = String(email).trim().toLowerCase();
     const key = `otp:${lower}`;
-
     const r = await getRedis();
-    const stored = await r.get(key);
 
-    if (process.env.NODE_ENV !== "production") {
-      console.log(`[verify-otp] key=${key} stored=${stored}`);
+    const storedOtp = await r.get(key);
+    if (!storedOtp) {
+      return res.status(400).json({ error: "OTP expired or not found." });
     }
 
-    if (!stored) return json(res, 400, { error: "OTP expired or not found" });
-    if (String(stored) !== String(otp)) return json(res, 401, { error: "Invalid OTP" });
-
-    // 1) Update user
-    const update = await prisma.user.update({
-      where: { email: lower },
-      data: { otpVerified: true, emailVerified: new Date() },
-      select: { id: true, email: true, otpVerified: true },
-    });
-
-    // 2) Re-read to be 100% sure (and to return to client for debugging)
-    const check = await prisma.user.findUnique({
-      where: { email: lower },
-      select: { id: true, email: true, otpVerified: true },
-    });
-
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[verify-otp] after update:", check);
+    if (storedOtp !== otp) {
+      return res.status(400).json({ error: "Invalid OTP." });
     }
 
-    // 3) Consume OTP only after successful update
+    // ✅ OTP is correct — delete it to prevent reuse
     await r.del(key);
 
-    return json(res, 200, { ok: true, user: check });
+    // ✅ Update user in Prisma
+    const updatedUser = await prisma.user.update({
+      where: { email: lower },
+      data: {
+        otpVerified: true,
+        emailVerified: new Date(),
+      },
+      select: {
+        id: true,
+        email: true,
+        otpVerified: true,
+      },
+    });
+
+    return res.status(200).json({
+      ok: true,
+      message: "OTP verified successfully.",
+      user: updatedUser,
+    });
+
   } catch (err) {
-    console.error("[verify-otp] error:", err);
-    return json(res, 500, { error: "Server error verifying OTP" });
+    console.error("[otp/verify] error:", err);
+    return res.status(500).json({ error: "Verification failed" });
   }
 });
 
