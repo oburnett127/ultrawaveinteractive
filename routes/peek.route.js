@@ -1,12 +1,13 @@
-// pages/api/otp/peek.js
-const getRedis = require("../../../lib/redis.cjs");
+const express = require("express");
+const router = express.Router();
+const getRedis = require("../lib/redis.cjs");
 
 function json(res, status, body) {
   res.status(status).setHeader("Content-Type", "application/json");
   res.end(JSON.stringify(body));
 }
 
-export default async function handler(req, res) {
+router.get("/otp/peek", async (req, res) => {
   if (process.env.NODE_ENV === "production") return json(res, 404, { error: "Not found" });
 
   const { email } = req.query || {};
@@ -23,4 +24,6 @@ export default async function handler(req, res) {
     console.error("[otp/peek] error:", e);
     return json(res, 500, { error: "peek failed" });
   }
-}
+});
+
+module.exports = router;

@@ -5,7 +5,7 @@ const { getServerSession } = require('next-auth/next');
 const { authOptions } = require('../pages/api/auth/[...nextauth]'); // ✅ Temporarily reuse existing file
 const prisma = require('../lib/prisma.cjs'); // Adjust path if needed
 
-router.get('/update-token', async (req, res) => {
+router.post('/update-token', async (req, res) => {
   try {
     // ✅ Get session using NextAuth (works in Express if req/res are passed)
     const session = await getServerSession(req, res, authOptions);

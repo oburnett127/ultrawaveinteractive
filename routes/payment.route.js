@@ -1,6 +1,5 @@
-// pages/api/square/pay.js
 import crypto from "crypto";
-import prisma from "../../../lib/prisma.cjs";
+import prisma from "../lib/prisma.cjs";
 
 // OPTIONAL: if you have a NextAuth session and exported authOptions from [...nextauth].js,
 // this will attach userId/email to the Payment row. If not, it will still work without it.
@@ -8,7 +7,7 @@ async function tryGetSession(req, res) {
   try {
     const { getServerSession } = await import("next-auth/next");
     // You need to export `authOptions` from your [...nextauth].js for this to work:
-    const mod = await import("../auth/[...nextauth].js");
+    const mod = await import("../pages/api/auth/[...nextauth].js");
     const authOptions = mod.authOptions || mod.default?.authOptions;
     if (!authOptions) return null;
     return await getServerSession(req, res, authOptions);

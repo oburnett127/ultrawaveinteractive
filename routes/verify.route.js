@@ -1,15 +1,14 @@
-// pages/api/otp/verify.js
-const prisma = require("../../../lib/prisma.cjs");
-const getRedis = require("../../../lib/redis.cjs");
+const express = require("express");
+const router = express.Router();
+const prisma = require("../lib/prisma.cjs");
+const getRedis = require("../lib/redis.cjs");
 
 function json(res, status, body) {
   res.status(status).setHeader("Content-Type", "application/json");
   res.end(JSON.stringify(body));
 }
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
-
+router.post("/otp/verify", async (req, res) => {
   try {
     const { email, otp } = req.body || {};
     if (!email || !otp) return json(res, 400, { error: "Email and OTP are required" });
@@ -52,4 +51,6 @@ export default async function handler(req, res) {
     console.error("[verify-otp] error:", err);
     return json(res, 500, { error: "Server error verifying OTP" });
   }
-}
+});
+
+module.exports = router;

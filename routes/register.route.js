@@ -1,5 +1,7 @@
-import prisma from "../lib/prisma.cjs";
-import { hash } from "bcryptjs";
+const express = require("express");
+const router = express.Router();
+const prisma = require("../lib/prisma.cjs");
+const { hash } = require("bcryptjs");
 
 // Server-side verification of v2 checkbox token
 async function verifyRecaptchaToken(token) {
@@ -19,13 +21,10 @@ async function verifyRecaptchaToken(token) {
   });
 
   const data = await resp.json();
-  // For v2 checkbox, data.success is the key signal. You can also check data.hostname.
   return Boolean(data && data.success);
 }
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end();
-
+router.post("/auth/register", async (req, res) => {
   try {
     const { emailText, password, name, recaptchaToken } = req.body || {};
 
@@ -42,10 +41,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Failed reCAPTCHA verification." });
     }
 
-    // Create user (example)
     const email = String(emailText).trim().toLowerCase();
-
     const existing = await prisma.user.findUnique({ where: { email } });
+
     if (existing) {
       return res.status(409).json({ error: "Email is already registered." });
     }
@@ -72,4 +70,7 @@ export default async function handler(req, res) {
       full: JSON.stringify(err, Object.getOwnPropertyNames(err)),
     });
   }
-}
+});
+
+module.exports = router;
+

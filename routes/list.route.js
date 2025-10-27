@@ -1,7 +1,8 @@
-// /pages/api/blog/list.js
-import prisma from "../../../lib/prisma.cjs";
+const express = require("express");
+const router = express.Router();
+const prisma = require("../lib/prisma.cjs");
 
-export default async function handler(req, res) {
+router.get("/blog/list", async (req, res) => {
   const posts = await prisma.blogPost.findMany({
     orderBy: { createdAt: "desc" },
     select: {
@@ -14,4 +15,6 @@ export default async function handler(req, res) {
   });
 
   res.status(200).json(posts);
-}
+});
+
+module.exports = router;

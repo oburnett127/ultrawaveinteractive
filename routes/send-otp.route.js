@@ -1,13 +1,14 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "./[...nextauth]";
-import canResendOtp from "../../../lib/otp.cjs";
-import generateOtp  from "../../../lib/otp.cjs";
-import saveOtpForEmail from "../../../lib/otp.cjs";
-import sendOtpEmail from "../../../lib/mailer.cjs";
+const express = require("express");
+const router = express.Router();
+const { getServerSession } = require("next-auth/next");
+const { authOptions } = require("../pages/api/auth/[...nextauth]");
+const canResendOtp = require("../lib/otp.cjs");
+const generateOtp = require("../lib/otp.cjs");
+const saveOtpForEmail = require("../lib/otp.cjs");
+const sendOtpEmail = require("../lib/mailer.cjs");
+const { RouterContext } = require("next/dist/shared/lib/router-context.shared-runtime");
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-
+router.post("/auth/send-otp", async (req, res) => {
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.email) return res.status(401).json({ error: "Unauthorized" });
 
@@ -26,4 +27,6 @@ export default async function handler(req, res) {
     console.error("send-otp error:", e);
     return res.status(500).json({ error: "Server error" });
   }
-}
+});
+
+module.exports = RouterContext;
