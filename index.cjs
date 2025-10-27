@@ -1,7 +1,6 @@
 const express = require('express');
 const app = express();
 const  cors = require('cors');
-const  { Client, Environment } = require('square');
 const  dotenv = require('dotenv');
 const  crypto = require('crypto');
 const  rateLimit = require('express-rate-limit');
@@ -11,14 +10,17 @@ const { sendContactEmail } = require("./lib/mailer.cjs");
 const sanitizeHtml = require("sanitize-html");
 //const squareWebhookHandler = require("./lib/squareWebhookHandler");
 
-// ✅ Import your route files
+const blogRoute = require("./routes/blog");
 const blogCreateRoute = require("./routes/blogCreate");
+const listRoute = require("./routes/list");
+const paymentRoute = require("./routes/payment");
+const peekRoute = require("./routes/peek");
+const registerRoute = require("./routes/register");
 const salesbotRoute = require("./routes/salesbot");
+const sendRoute = require("./routes/send");
+const squareWebhookRoute = require("./routes/squareWebhook");
 const updateTokenRoute = require("./routes/updateToken");
-
-
-//IMPORT THE REST OF YOUR ROUTE FILES <------------------
-
+const verifyRoute = require("./routes/verify");
 
 async function initBackend(app) {
   // ✅ Load environment
@@ -33,20 +35,84 @@ async function initBackend(app) {
   app.use(bodyParser.urlencoded({ extended: true }));
 
   // ✅ Rate limiting
-  const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 15,
+  const sensitiveLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 5,
     message: "Too many requests, please try again later.",
     // standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
     // legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   });
 
-  // Apply rate limiter to specific routes
-  app.use("/process-payment", apiLimiter);
-  app.use("/send-otp", apiLimiter);
-  app.use("/verify-otp", apiLimiter);
-  app.use("/contact", apiLimiter);
-  app.use("/verify-recaptcha", apiLimiter);
+  const moderateLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 300,
+    message: "Too many requests, please try again later.",
+    // standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    // legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  });
+
+  const verifyLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 10,
+    message: "Too many requests, please try again later.",
+    // standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    // legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  });
+
+  const updateTokenLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 5,
+    message: "Too many requests, please try again later.",
+    // standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    // legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  });
+
+  const salesbotLimiter = rateLimit({
+      windowMs: 60 * 60 * 1000,
+      max: 30,
+      message: "Too many requests, please try again later.",
+      // standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+      // legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    });
+
+  const blogCreateLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 10,
+    message: "Too many requests, please try again later.",
+    // standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    // legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  });
+
+  app.use("/auth/register", sensitiveLimiter);
+  // app.use("/otp/send", sensitiveLimiter); //fallback only
+  // app.use("/otp/verify", sensitiveLimiter); //fallback only
+  app.use("/contact", sensitiveLimiter);
+
+  app.use("/blog/list", moderateLimiter);
+  app.use("/blog", moderateLimiter);
+
+  app.use("/verify-recaptcha", verifyLimiter);
+
+  app.use("/update-token", updateTokenLimiter);
+
+  app.use("/salesbot", salesbotLimiter);
+
+  app.use("/blog/create", blogCreateLimiter);
+  
+
+
+  //verify recaptcha and contact routes rate limited?
+
+
+
+
+
+
+
+
+
+
+
 
   const corsOptions = {
     origin: [
@@ -177,234 +243,18 @@ async function initBackend(app) {
   return app;
 }
 
-  // ✅ Redis connection
-  const redis = new Redis(process.env.REDIS_URL || "redis://127.0.0.1:6379");
-
-  // ✅ Initialize Square client
-  const squareClient = new Client({
-    accessToken: process.env.SQUARE_ACCESS_TOKEN,
-    environment: process.env.NODE_ENV === "production" ? Environment.Production : Environment.Sandbox,
-  });
-
-  // Zod schema for payment validation
-  // const paymentSchema = z.object({
-  //   googleProviderId: z.string().min(1, "Google Provider ID is required"), // Must be a non-empty string
-  //   email: z.string().email("Invalid email format"), // Standard email validation
-  //   nonce: z.string().min(1, "Nonce is required"), // Nonce must be present
-  //   amount: z.number().positive("Amount must be greater than 0"), // Positive number validation
-  // });
-
-  // ✅ Define or import reusable middleware
-  const validatePaymentRequest = (req, res, next) => {
-    const { googleProviderId, email, receiptEmail, nonce, amount } = req.body;
-    if (!googleProviderId || !email || !receiptEmail || !nonce || !amount) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-    if (typeof amount !== "number" || amount <= 0) {
-      return res.status(400).json({ error: "Invalid amount" });
-    }
-    req.validatedData = { googleProviderId, email, receiptEmail, nonce, amount };
-    next();
-  };
-
   // ✅ Register Express-powered backend routes
+  app.use("/api", blogRoute);
   app.use("/api", blogCreateRoute);
+  app.use("/api", listRoute);
+  app.use("/api", paymentRoute);
+  app.use("/api", peekRoute);
+  app.use("/api", registerRoute);
   app.use("/api", salesbotRoute);
+  app.use("/api", sendRoute);
+  app.use("/api", squareWebhookRoute);
   app.use("/api", updateTokenRoute);
-
-
-  //REGISTER THE REST OF YOUR BACKEND ROUTES <==============
-
-
-  // ✅ Square Webhook Handler Example
-  app.post("/api/square/webhook", async (req, res) => {
-    // squareWebhookHandler logic goes here...
-  });
-
-  // ✅ Payment route example
-  app.post("/process-payment", validatePaymentRequest, async (req, res) => {
-    try {
-      const { googleProviderId, email, receiptEmail, nonce, amount } = req.validatedData;
-
-      // Convert the amount to cents (ensure it's a valid BigInt for Square)
-      const amountInCents = BigInt(amount);
-
-      // Create a unique idempotency key
-      const idempotencyKey = crypto.randomUUID();
-
-      // console.log('Processing payment with the following details:');
-      // console.log({
-      //   googleProviderId,
-      //   email,
-      //   receiptEmail,
-      //   nonce,
-      //   amount: amountInCents.toString(),
-      //   idempotencyKey,
-      // });
-
-      // Create the payment request to Square API
-      const paymentResponse = await squareClient.paymentsApi.createPayment({
-        sourceId: nonce, // The payment token from the frontend
-        idempotencyKey, // Ensures no duplicate payments
-        amountMoney: {
-          amount: amountInCents, // Amount in cents as BigInt
-          currency: 'USD', // Use your preferred currency
-        },
-        buyerEmailAddress: receiptEmail,
-        referenceId: googleProviderId,
-        note: `Payment by user: ${email}`,
-      });
-
-      //console.log('Payment response from Square:', paymentResponse);
-
-      // Convert BigInt values in the response to strings for JSON compatibility
-      const sanitizedResponse = JSON.parse(
-        JSON.stringify(paymentResponse.result, (_, value) =>
-          typeof value === 'bigint' ? value.toString() : value
-        )
-      );
-
-      // Respond with success
-      res.status(200).json({
-        success: true,
-        payment: sanitizedResponse.payment,
-      });
-    } catch (error) {
-      console.error('Error during payment processing:', error);
-
-      // Handle errors from Square API or other unknown errors
-      if (error instanceof Error && error.message) {
-        res.status(500).json({ error: `Square API Error: ${error.message}` });
-      } else if (error.result && error.result.errors) {
-        res.status(500).json({ error: error.result.errors[0]?.detail || 'Payment failed' });
-      } else {
-        res.status(500).json({ error: 'An unknown error occurred during payment processing' });
-      }
-    }
-  });
-
-  // ✅ Contact route example
-  app.post("/contact", async (req, res) => {
-    try {
-        const { email, name, phone, message, recaptchaToken } = req.body || {};
-
-        if (!email || !message) {
-          return res.status(400).json({ error: "Email and message are required." });
-        }
-
-        const fromEmail = String(email).trim();
-        const fromName = name ? String(name).trim() : "";
-        const fromPhone = phone ? String(phone).trim() : "";
-
-        // Sanitize the message
-        const safeMessage = sanitizeHtml(message, {
-          allowedTags: ["b", "i", "em", "strong", "p", "br", "ul", "ol", "li"],
-          allowedAttributes: {}, // no attributes allowed
-        });
-
-        // Verify reCAPTCHA
-        if (!recaptchaToken) {
-          return res.status(400).json({ error: "Missing reCAPTCHA token" });
-        }
-        const response = await verifyRecaptchaToken(recaptchaToken);
-        if (!response.success) {
-          return res.status(400).json({ error: "Failed reCAPTCHA verification" });
-        }
-
-        await sendContactEmail({
-          fromEmail,
-          name: fromName,
-          phone: fromPhone,
-          message: safeMessage,
-        });
-
-        return res.status(200).json({ ok: true });
-      } catch (err) {
-        console.error("Error sending contact email:", err);
-        return res.status(500).json({ error: "Failed to send email." });
-      }
-  });
-
-  async function verifyRecaptchaToken(token) {
-    if (!token) {
-      return { success: false, "error-codes": ["missing-input-response"] }; // Token is missing
-    }
-
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-
-    if (!secretKey) {
-      console.error("Missing reCAPTCHA secret key in environment variables.");
-      return { success: false, "error-codes": ["missing-secret-key"] };
-    }
-
-    const verificationURL = "https://www.google.com/recaptcha/api/siteverify";
-
-    try {
-      const response = await fetch(verificationURL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          secret: secretKey,
-          response: token,
-        }).toString(),
-      });
-
-      if (response.ok === false) {
-        console.error(`reCAPTCHA verification failed: ${response.statusText}`);
-        return { success: false, "error-codes": ["verification-failed"] };
-      }
-
-      const data = (await response.json());
-      //console.log("Google's reCAPTCHA verification response:", data); // Debugging
-
-      // Handle failure from Google's response
-      if (data.success === false) {
-        console.error("reCAPTCHA verification failed:", data);
-        return { success: false, "error-codes": data["error-codes"] };
-      }
-
-      // Success case
-      return data;
-    } catch (error) {
-      console.error("Error verifying reCAPTCHA token:", error);
-      return { success: false, "error-codes": ["internal-error"] };
-    }
-  }
-
-  // ✅ Recaptcha route example
-  app.post("/verify-recaptcha", async (req, res) => {
-    const { recaptchaToken } = req.body; //Recaptcha token generated on the frontend by the recaptcha widget
-
-      //console.log("Received reCAPTCHA token:", recaptchaToken); // Debugging
-
-      // Check if the token exists
-      if (!recaptchaToken) {
-        return res.status(400).json({ success: false, message: "Token is missing." });
-      }
-
-      try {
-        const data = await verifyRecaptchaToken(recaptchaToken);
-
-        if (data.success === true) {
-          return res.status(200).json({ success: true, message: "reCAPTCHA verification successful." });
-        } else if(data.success === false) {
-          console.error("reCAPTCHA verification failed:", data["error-codes"]);
-          return res.status(400).json({
-            success: false,
-            message: "reCAPTCHA verification failed.",
-            errors: data["error-codes"],
-          });
-        }
-      } catch (error) {
-        console.error("Error verifying reCAPTCHA:", error.message);
-        return res.status(500).json({
-          success: false,
-          message: "An error occurred during reCAPTCHA verification.",
-        });
-      }
-  });
+  app.use("/api", verifyRoute);
 
   // ✅ Global error handlers
   app.use((err, req, res, next) => {

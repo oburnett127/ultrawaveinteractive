@@ -14,6 +14,25 @@ export default class MyDocument extends Document {
     return (
       <Html lang="en">
         <Head>
+          <script
+          src="https://www.google.com/recaptcha/api.js"
+          async
+          defer
+        ></script>
+
+        {/* Square Web Payments SDK */}
+        {/* Testing script
+        <script
+          type="text/javascript"
+          src="https://sandbox.web.squarecdn.com/v1/square.js"
+        ></script> */}
+
+        {/* For production, replace with: */}
+        <script
+          type="text/javascript"
+          src="https://web.squarecdn.com/v1/square.js"
+        ></script>
+
           {/* Osano Cookie Consent CSS */}
           <link
             rel="stylesheet"
@@ -43,7 +62,7 @@ export default class MyDocument extends Document {
                     "message": "This website uses cookies to ensure you get the best experience.",
                     "dismiss": "Got it!",
                     "link": "Learn more",
-                    "href": "/privacy-policy"
+                    "href": "/privacypolicy"
                   }
                 });
               });
