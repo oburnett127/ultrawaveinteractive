@@ -3,7 +3,6 @@ const router = express.Router();
 const crypto = require("crypto");
 const getRedis = require("../lib/redis.cjs");
 const sendOtpEmail = require("../lib/mail.cjs");
-const fetch = require("node-fetch"); // if using Node < 18, otherwise remove
 
 // Generate a 6-digit OTP using crypto
 function genOtp() {
