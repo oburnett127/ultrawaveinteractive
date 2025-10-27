@@ -1,4 +1,4 @@
-import prisma from "../../../lib/prisma.cjs";
+import prisma from "../lib/prisma.cjs";
 import { hash } from "bcryptjs";
 
 // Server-side verification of v2 checkbox token

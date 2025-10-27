@@ -16,7 +16,9 @@ const blogCreateRoute = require("./routes/blogCreate");
 const salesbotRoute = require("./routes/salesbot");
 const updateTokenRoute = require("./routes/updateToken");
 
-//import the rest of your route files
+
+//IMPORT THE REST OF YOUR ROUTE FILES <------------------
+
 
 async function initBackend(app) {
   // ✅ Load environment
