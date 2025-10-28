@@ -10,17 +10,17 @@ const { RedisStore } = require("rate-limit-redis"); // npm i rate-limit-redis
 const sanitizeHtml = require("sanitize-html");
 
 // --- Your route modules ---
-const blogRoute = require("./routes/blog.route");
-const blogCreateRoute = require("./routes/blogCreate.route");
-const listRoute = require("./routes/list.route");
-const paymentRoute = require("./routes/payment.route");
-const peekRoute = require("./routes/peek.route");
-const registerRoute = require("./routes/register.route");
-const salesbotRoute = require("./routes/salesbot.route");
-const sendRoute = require("./routes/send.route"); // (likely /api/otp/send)
-const squareWebhookRoute = require("./routes/squareWebhook.route");
-const updateTokenRoute = require("./routes/updateToken.route");
-const verifyRoute = require("./routes/verify.route"); // (likely /api/otp/verify or /api/verify-recaptcha)
+const blogRoute = require("./routes/blog.route.cjs");
+const blogCreateRoute = require("./routes/blogCreate.route.cjs");
+const listRoute = require("./routes/list.route.cjs");
+const paymentRoute = require("./routes/payment.route.cjs");
+const peekRoute = require("./routes/peek.route.cjs");
+const registerRoute = require("./routes/register.route.cjs");
+const salesbotRoute = require("./routes/salesbot.route.cjs");
+const sendRoute = require("./routes/send.route.cjs"); // (likely /api/otp/send)
+const squareWebhookRoute = require("./routes/squareWebhook.route.cjs");
+const updateTokenRoute = require("./routes/updateToken.route.cjs");
+const verifyRoute = require("./routes/verify.route.cjs"); // (likely /api/otp/verify or /api/verify-recaptcha)
 
 // --- Helpers ---
 function boolFromEnv(v, def = false) {
