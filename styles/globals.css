@@ -427,3 +427,7 @@ label {
 .largeText {
   font-size: 21.33px;
 }
+
+input, textarea {
+  color: #000; /* or #fff if using dark background */
+}
