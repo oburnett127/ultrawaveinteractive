@@ -1,4 +1,5 @@
-export function generateSlug(title) {
+// generateSlug.js
+function generateSlug(title) {
   return title
     .toLowerCase()
     .trim()
@@ -6,3 +7,5 @@ export function generateSlug(title) {
     .replace(/\s+/g, '-')         // replace spaces with hyphens
     .replace(/-+/g, '-');         // collapse multiple hyphens
 }
+
+module.exports = generateSlug;
