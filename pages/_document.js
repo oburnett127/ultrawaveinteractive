@@ -11,29 +11,32 @@ export default class MyDocument extends Document {
 
   render() {
     const { nonce } = this.props;
+    const isProduction = process.env.NODE_ENV === "production";
+
     return (
       <Html lang="en">
         <Head>
-          <script
-          src="https://www.google.com/recaptcha/api.js"
-          async
-          defer
-        ></script>
+          {/* ✅ Google reCAPTCHA */}
+          <Script
+            src="https://www.google.com/recaptcha/api.js"
+            strategy="afterInteractive"
+            async
+            defer
+            nonce={nonce}
+          />
 
-        {/* Square Web Payments SDK */}
-        {/* Testing script
-        <script
-          type="text/javascript"
-          src="https://sandbox.web.squarecdn.com/v1/square.js"
-        ></script> */}
+          {/* ✅ Square Payment SDK - Automatically picks sandbox or production based on env */}
+          <Script
+            src={
+              isProduction
+                ? "https://web.squarecdn.com/v1/square.js"
+                : "https://sandbox.web.squarecdn.com/v1/square.js"
+            }
+            strategy="afterInteractive"
+            nonce={nonce}
+          />
 
-        {/* For production, replace with: */}
-        <script
-          type="text/javascript"
-          src="https://web.squarecdn.com/v1/square.js"
-        ></script>
-
-          {/* Osano Cookie Consent CSS */}
+          {/* ✅ Osano Cookie Consent CSS */}
           <link
             rel="stylesheet"
             href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css"
@@ -43,36 +46,37 @@ export default class MyDocument extends Document {
           <Main />
           <NextScript nonce={nonce} />
 
-          {/* Osano config script: must come BEFORE the loader */}
-          <Script id="cookieconsent-init" strategy="afterInteractive">
+          {/* ✅ Osano initialisation (inline script with nonce) */}
+          <Script id="cookieconsent-init" strategy="afterInteractive" nonce={nonce}>
             {`
               window.addEventListener("load", function(){
                 window.cookieconsent.initialise({
-                  "palette": {
-                    "popup": {
-                      "background": "#000"
+                  palette: {
+                    popup: {
+                      background: "#000"
                     },
-                    "button": {
-                      "background": "#f1d600"
+                    button: {
+                      background: "#f1d600"
                     }
                   },
-                  "theme": "classic",
-                  "position": "bottom",
-                  "content": {
-                    "message": "This website uses cookies to ensure you get the best experience.",
-                    "dismiss": "Got it!",
-                    "link": "Learn more",
-                    "href": "/privacypolicy"
+                  theme: "classic",
+                  position: "bottom",
+                  content: {
+                    message: "This website uses cookies to ensure you get the best experience.",
+                    dismiss: "Got it!",
+                    link: "Learn more",
+                    href: "/privacypolicy"
                   }
                 });
               });
             `}
           </Script>
 
-          {/* Osano external JS loader (non-blocking) */}
+          {/* ✅ Osano external JS (non-blocking) */}
           <Script
             src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js"
             strategy="afterInteractive"
+            nonce={nonce}
           />
         </body>
       </Html>
