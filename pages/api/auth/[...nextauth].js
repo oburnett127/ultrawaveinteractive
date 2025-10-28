@@ -1,8 +1,7 @@
-// ✅ This is correct for NextAuth v4 + CJS authOptions
+// pages/api/auth/[...nextauth].js
+const NextAuth = require("next-auth").default;
+const { authOptions } = require("../../../lib/authOptions.cjs");
 
-import NextAuth from "next-auth";
-import { authOptions } from "../../../lib/authOptions.cjs"; // named import from CJS
-
-export default function handler(req, res) {
+module.exports = function handler(req, res) {
   return NextAuth(req, res, authOptions);
-}
+};
