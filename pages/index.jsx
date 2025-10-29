@@ -59,7 +59,7 @@ function Home() {
 
       {/* Your normal content continues below */}
       <div className={styles.content}>
-        <p className="centered-text" style={{marginTop: '20px'}}>I replace slow website builders with high-performance custom websites!</p>
+        <p className="centered-text margin-top">I replace slow website builders with high-performance custom websites!</p>
 
         <script
           type="application/ld+json"
@@ -71,15 +71,15 @@ function Home() {
           {posts.length === 0 ? (
             <p>No posts found.</p>
           ) : (
-            <ul className="largeText">
+            <ul className="large-text">
               {posts.map(post => (
-                <li key={post.id} className="largeText">
-                  <Link href={`/blog/${post.slug}`} className="largeText">
+                <li key={post.id} className="large-text">
+                  <Link href={`/blog/${post.slug}`} className="large-text">
                     {post.title}
                   </Link>{" "}
-                  <medium className="whiteText">
+                  <span className={"white-text"}>
                     ({new Date(post.createdAt).toLocaleDateString()})
-                  </medium>
+                  </span>
                 </li>
               ))}
             </ul>

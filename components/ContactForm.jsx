@@ -65,7 +65,7 @@ const ContactForm = () => {
     setStatus({ sending: true, msg: "", err: "" });
 
     try {
-      const res = await fetch(`${backendUrl}/contact`, {
+      const res = await fetch(`${backendUrl}/api/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // Send everything the backend may need, including the captcha token

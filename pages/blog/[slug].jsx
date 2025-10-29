@@ -12,9 +12,11 @@ export default function BlogPost({ post }) {
   return (
     <div className="blog-post-container">
       <h1 className="blog-title">{post.title}</h1>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} className="markdown-body">
-        {post.content}
-      </ReactMarkdown>
+      <div className="left-aligned-text">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {post.content}
+        </ReactMarkdown>
+      </div>
     </div>
   );
 }

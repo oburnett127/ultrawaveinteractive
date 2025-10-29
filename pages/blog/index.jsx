@@ -1,11 +1,15 @@
 import Link from 'next/link';
 
 export async function getServerSideProps() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/blog/list`);
-  const posts = await res.json();
+  const res = await fetch(`http://localhost:3000/api/blog/list`);
+  const data = await res.json();
 
-  return { props: { posts } };
+  console.log("✅ API Response to frontend:", data);
+
+  return { props: { posts: Array.isArray(data) ? data : [] } };
 }
+
+
 
 export default function BlogList({ posts }) {
   return (

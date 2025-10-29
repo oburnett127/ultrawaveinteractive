@@ -419,15 +419,55 @@ label {
   color: #00eaff; /* or any accent color you want for bullets */
 }
 
-.whiteText {
-  color: white;
-  white-space: pre-wrap; /* for <pre> blocks */
-}
-
-.largeText {
+.large-text {
   font-size: 21.33px;
 }
 
 input, textarea {
   color: #000; /* or #fff if using dark background */
+}
+
+.header-text {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 1rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid #333;
+}
+
+.right-aligned-controls {
+  display: flex; 
+  justify-content: flex-end; 
+  gap: 1rem; 
+  align-items: center;
+}
+
+.email-text {
+  color: white; 
+  font-size: 0.9rem;
+}
+
+.centered-heading {
+  margin: 0; 
+  font-size: 1.8rem; 
+  text-align: center;
+}
+
+.white-text {
+  color: white;
+}
+
+.register-styling {
+  max-width: 420px;    /* Or use rem: max-width: 26.25rem; */
+  margin: 2rem auto;
+  padding: 16px;       /* Or use rem: padding: 1rem; */
+}
+
+.red-text {
+  color: red;
 }

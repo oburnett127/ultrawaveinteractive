@@ -124,7 +124,7 @@ export default function Register() {
   };
 
   return (
-    <div style={{ maxWidth: 420, margin: "2rem auto", padding: 16 }}>
+    <div className={"register-styling"}>
       {/* IMPORTANT: give the Script a stable id so HMR/StrictMode doesn't inject duplicates */}
       <Script
         id="recaptcha-v2-script"
@@ -136,7 +136,7 @@ export default function Register() {
       <h1>Create account</h1>
 
       {!siteKey && (
-        <p style={{ color: "red" }}>
+        <p className="red-text">
           NEXT_PUBLIC_RECAPTCHA_SITE_KEY is not set. The checkbox will not render.
         </p>
       )}

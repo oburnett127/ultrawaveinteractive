@@ -1,18 +1,19 @@
 const express = require("express");
 const next = require("next");
-const dotenv = require("dotenv")
+const dotenv = require("dotenv");
 
 dotenv.config();
 
-const { initBackend } = require('./index.cjs');
+const { initBackend } = require("./index.cjs");
 const dev = process.env.NODE_ENV !== "production";
 const port = process.env.PORT || 3000;
 
 const nextApp = next({ dev });
 const handle = nextApp.getRequestHandler();
 
-nextApp.prepare()
-  .then(() => {
+(async () => {
+  try {
+    await nextApp.prepare();
     const server = express();
 
     const ONE_YEAR = 31536000;
@@ -30,20 +31,20 @@ nextApp.prepare()
 
     server.set("trust proxy", 1);
 
-    // ✅ Let NextAuth handle auth routes first
+    // ✅ NextAuth handled first by Next.js
     server.all("/api/auth/*", (req, res) => handle(req, res));
 
-    // ✅ Set up backend routes (but NOT /api/auth/* ones!)
-    initBackend(server);
+    // ✅ IMPORTANT: Wait for Express backend routes to mount
+    await initBackend(server);
 
-    // All other routes handled by Next.js
+    // ✅ Only after backend routes are ready, let Next.js handle everything else
     server.all("*", (req, res) => handle(req, res));
 
     server.listen(port, (err) => {
       if (err) throw err;
-      //console.log(`✅ Server ready on http://localhost:${port}`);
+      console.log(`✅ Server ready on http://localhost:${port}`);
     });
-  })
-  .catch((err) => {
-    console.error("💥 nextApp.prepare() failed:", err);
-  });
+  } catch (err) {
+    console.error("💥 Server startup error:", err);
+  }
+})();
