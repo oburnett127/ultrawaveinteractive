@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { getServerSession } = require('next-auth/next');
-const { authOptions } = require('../pages/api/auth/[...nextauth]'); // ✅ Temporarily reuse existing file
+const { authOptions } = require("../lib/authOptions.cjs"); // ✅ CommonJS-safe import
 const prisma = require('../lib/prisma.cjs'); // Adjust path if needed
 
 router.get('/', async (req, res) => {
