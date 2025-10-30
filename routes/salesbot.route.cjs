@@ -61,7 +61,7 @@ If user provides email or phone, acknowledge positively and continue moving towa
 "Hi there! 👋 Are you currently using an existing website like Wix or WordPress, or are you looking to build a new custom website for your business?"
 `;
 
-router.post('/salesbot', async (req, res) => {
+router.post('/', async (req, res) => {
   const userMessage = req.body.message;
   const previousMessages = req.body.messages || []; // optional for chat history
 

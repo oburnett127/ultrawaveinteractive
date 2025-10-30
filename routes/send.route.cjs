@@ -33,7 +33,7 @@ async function verifyRecaptchaToken(token) {
   return Boolean(data && data.success);
 }
 
-router.post("/otp/send", async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { email, recaptchaToken } = req.body || {};
 

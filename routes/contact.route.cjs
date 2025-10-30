@@ -19,7 +19,7 @@ let rateLimiterByIP, rateLimiterByEmail;
     rateLimiterByIP = new RateLimiterRedis({
       storeClient: redisClient,
       keyPrefix: "contact_ip",
-      points: 5,
+      points: 10,
       duration: 3600,       // 1 hour
       blockDuration: 1800,  // 30 minutes
     });
@@ -27,7 +27,7 @@ let rateLimiterByIP, rateLimiterByEmail;
     rateLimiterByEmail = new RateLimiterRedis({
       storeClient: redisClient,
       keyPrefix: "contact_email",
-      points: 3,
+      points: 6,
       duration: 86400,      // 24 hours
       blockDuration: 1800,
     });
@@ -47,7 +47,7 @@ function ensureRateLimiterReady(req, res, next) {
   next();
 }
 
-router.post("/contact", ensureRateLimiterReady, async (req, res) => {
+router.post("/", ensureRateLimiterReady, async (req, res) => {
   try {
     const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
     const { email, name, phone, message, recaptchaToken } = req.body || {};

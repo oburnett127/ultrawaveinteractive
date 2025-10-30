@@ -8,7 +8,7 @@ function json(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-router.post("/otp/verify", async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { email, otp } = req.body || {};
     if (!email || !otp) {

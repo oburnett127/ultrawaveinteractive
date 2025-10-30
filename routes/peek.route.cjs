@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const getRedis = require("../lib/redis.cjs");
 
-router.get("/otp/peek", async (req, res) => {
+router.get("/", async (req, res) => {
   // Disable in production
   if (process.env.NODE_ENV === "production") {
     return res.status(404).json({ error: "Not found" });

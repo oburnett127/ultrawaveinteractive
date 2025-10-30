@@ -7,7 +7,7 @@ const { generateSlug } = require('../utils/generateSlug');
 // Middleware to handle large JSON payloads
 router.use(express.json({ limit: '2gb' }));
 
-router.post('/blog/create', async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     let { title, content, authorId } = req.body;
 

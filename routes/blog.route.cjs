@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../lib/prisma.cjs");
 
-router.get("/blog/:slug", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const slug = req.params.slug;
     console.log("Incoming slug:", slug);

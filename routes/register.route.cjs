@@ -26,7 +26,7 @@ async function verifyRecaptchaToken(token) {
   return Boolean(data && data.success);
 }
 
-router.post("/auth/register", async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { emailText, password, name, recaptchaToken } = req.body || {};
 

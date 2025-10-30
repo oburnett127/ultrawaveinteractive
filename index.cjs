@@ -329,19 +329,24 @@ async function initBackend(app) {
     };
   }
 
-  app.use("/api/auth/register", waitForRedis, rateLimitMiddleware(sensitiveLimiter));
-  app.use("/api/contact", waitForRedis, rateLimitMiddleware(sensitiveLimiter));
+  app.use(
+    "/api/auth/register",
+    waitForRedis,
+    rateLimitMiddleware(sensitiveLimiter),
+    registerRoute
+  );
 
-  app.use("/api/otp/send", waitForRedis, rateLimitMiddleware(sensitiveLimiter));
-  app.use("/api/otp/verify", waitForRedis, rateLimitMiddleware(verifyLimiter));
-  app.use("/api/update-token", waitForRedis, rateLimitMiddleware(updateTokenLimiter));
+  app.use("/api/contact", waitForRedis, rateLimitMiddleware(sensitiveLimiter), contactRoute);
 
-  app.use("/api/salesbot", waitForRedis, rateLimitMiddleware(salesbotLimiter));
+  app.use("/api/otp/send", waitForRedis, rateLimitMiddleware(sensitiveLimiter), sendRoute);
+  app.use("/api/otp/verify", waitForRedis, rateLimitMiddleware(verifyLimiter), verifyRoute);
+  app.use("/api/update-token", waitForRedis, rateLimitMiddleware(updateTokenLimiter), updateTokenRoute);
 
-  app.use("/api/blog/create", waitForRedis, rateLimitMiddleware(blogCreateLimiter));
-  app.use("/api/blog/list", waitForRedis, rateLimitMiddleware(moderateLimiter));
-  app.use("/api/blog", waitForRedis, rateLimitMiddleware(moderateLimiter));
-  app.use("/api/verify-recaptcha", waitForRedis, rateLimitMiddleware(verifyLimiter)); 
+  app.use("/api/salesbot", waitForRedis, rateLimitMiddleware(salesbotLimiter), salesbotRoute);
+
+  app.use("/api/blog/create", waitForRedis, rateLimitMiddleware(blogCreateLimiter), blogCreateRoute);
+  app.use("/api/blog/list", waitForRedis, rateLimitMiddleware(moderateLimiter), listRoute);
+  app.use("/api/blog", waitForRedis, rateLimitMiddleware(moderateLimiter), blogRoute);
 
   // 8) Attach a sanitizer you can use inside routers if desired
   // You can also call makeSanitizer() inside specific routers only.
