@@ -182,11 +182,11 @@ export default function Register() {
         {/* Target container for explicit render */}
         <div
           ref={recaptchaRef}
-          style={{ marginTop: 12, marginBottom: 12 }}
+          className="space-above-below"
           aria-label="reCAPTCHA"
         />
 
-        {errorMsg && <p style={{ color: "red" }}>{errorMsg}</p>}
+        {errorMsg && <p className="red-text">{errorMsg}</p>}
 
         <button type="submit" disabled={submitting}>
           {submitting ? "Creating..." : "Create Account"}

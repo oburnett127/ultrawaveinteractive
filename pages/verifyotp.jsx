@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { getSession, useSession } from "next-auth/react";
+import "../styles/verify-otp.css"; // <-- Make sure path is correct
 
 export default function VerifyOTP() {
   const { update } = useSession();
@@ -10,11 +11,10 @@ export default function VerifyOTP() {
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
   const [sending, setSending] = useState(false);
-  const [cooldown, setCooldown] = useState(0); // seconds until resend allowed
+  const [cooldown, setCooldown] = useState(0);
   const didSendRef = useRef(false);
   const router = useRouter();
 
-  // Kick off OTP send on first render
   useEffect(() => {
     const email = (localStorage.getItem("otpEmail") || "").trim().toLowerCase();
     if (!email) {
@@ -22,7 +22,6 @@ export default function VerifyOTP() {
       router.replace("/auth/signin");
       return;
     }
-    // Prevent double-send from React Strict Mode
     if (didSendRef.current) return;
     didSendRef.current = true;
 
@@ -44,28 +43,25 @@ export default function VerifyOTP() {
           ? await res.json()
           : { raw: await res.text() };
 
-        if (!res.ok) {
-          console.error("send-otp failed:", data);
-          throw new Error(data.error || "Failed to send OTP");
-        }
+        if (!res.ok) throw new Error(data.error || "Failed to send OTP");
 
         setInfo("We sent a 6-digit code to your email.");
-        setCooldown(30); // small resend cooldown
-      } catch (err) {
-        console.error("Error sending OTP:", err);
-        setError(err.message || "Failed to send OTP");
-        setInfo("");
+        setCooldown(30);
+      } catch (error) {
+        setError(error.message || "Failed to send OTP");
       } finally {
         setSending(false);
       }
     })();
   }, [router]);
 
-  // Resend cooldown timer
   useEffect(() => {
     if (!cooldown) return;
-    const t = setInterval(() => setCooldown((s) => (s > 0 ? s - 1 : 0)), 1000);
-    return () => clearInterval(t);
+    const timer = setInterval(
+      () => setCooldown((s) => (s > 0 ? s - 1 : 0)),
+      1000
+    );
+    return () => clearInterval(timer);
   }, [cooldown]);
 
   async function handleVerify(e) {
@@ -76,12 +72,7 @@ export default function VerifyOTP() {
 
     try {
       const email = (localStorage.getItem("otpEmail") || "").trim().toLowerCase();
-      if (!email) {
-        throw new Error("Missing email. Please sign in again.");
-      }
-
-      //console.log('email is: ', email);
-      //console.log('otp is: ', otp);
+      if (!email) throw new Error("Missing email. Please sign in again.");
 
       const res = await fetch("/api/otp/verify", {
         method: "POST",
@@ -95,27 +86,11 @@ export default function VerifyOTP() {
         ? await res.json()
         : { raw: await res.text() };
 
-      if (!res.ok) {
-        if (payload.raw && payload.raw.startsWith("<!DOCTYPE")) {
-          console.error("Server returned HTML:\n", payload.raw);
-          throw new Error("Server error (HTML response). Check route path and logs.");
-        }
-        throw new Error(payload.error || "OTP verification failed");
-      }
+      if (!res.ok) throw new Error(payload.error || "OTP verification failed");
 
-      // Refresh session so otpVerified reflects in the session
-      const session = await getSession();
-      if (session?.user?.email) {
-        //console.log('session.user.email is set');
-        await update({ user: { otpVerified: true } });
-
-        // Now navigate to /payment — middleware will let it through
-        window.location.assign("/payment");
-      } else {
-        throw new Error("Session didn’t refresh. Please reload and try again.");
-      }
+      await update({ user: { otpVerified: true } });
+      window.location.assign("/payment");
     } catch (err) {
-      console.error("OTP verification failed:", err);
       setError(err.message || "Failed to verify OTP");
     } finally {
       setBusy(false);
@@ -143,6 +118,7 @@ export default function VerifyOTP() {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to resend OTP");
+
       setInfo("New code sent.");
       setCooldown(30);
     } catch (e) {
@@ -153,20 +129,12 @@ export default function VerifyOTP() {
   }
 
   return (
-    <div style={{ maxWidth: 420, margin: "2rem auto", padding: "1rem" }}>
+    <div className="verify-form">
       <h1>Verify OTP</h1>
-      {info && (
-        <div style={{ marginTop: 10, padding: "8px 12px", background: "#eef9ff", border: "1px solid #bde3f8" }}>
-          {info}
-        </div>
-      )}
-      {error && (
-        <div role="alert" style={{ marginTop: 10, padding: "8px 12px", background: "#ffe8e8", border: "1px solid #ffb3b3" }}>
-          {error}
-        </div>
-      )}
+      {info && <div className="info-box">{info}</div>}
+      {error && <div role="alert" className="error-box">{error}</div>}
 
-      <form onSubmit={handleVerify} style={{ marginTop: 16 }}>
+      <form onSubmit={handleVerify} className="verify-form-inner">
         <label>
           6-digit code
           <input
@@ -177,18 +145,18 @@ export default function VerifyOTP() {
             required
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
-            style={{ display: "block", width: "100%", padding: 8, marginTop: 6 }}
+            className="verify-input"
             placeholder="123456"
           />
         </label>
 
-        <button type="submit" disabled={busy} style={{ marginTop: 12, padding: "10px 14px" }}>
+        <button type="submit" disabled={busy} className="verify-button">
           {busy ? "Verifying..." : "Verify"}
         </button>
       </form>
 
-      <div style={{ marginTop: 12 }}>
-        <button onClick={handleResend} disabled={sending || cooldown > 0} style={{ padding: "8px 12px" }}>
+      <div className="resend-container">
+        <button onClick={handleResend} disabled={sending || cooldown > 0} className="resend-button">
           {sending ? "Sending..." : cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
         </button>
       </div>

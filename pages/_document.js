@@ -1,12 +1,11 @@
 // pages/_document.js
 import Document, { Html, Head, Main, NextScript } from "next/document";
-import Script from "next/script";
 
 export default class MyDocument extends Document {
   static async getInitialProps(ctx) {
-    const initial = await Document.getInitialProps(ctx);
+    const initialProps = await Document.getInitialProps(ctx);
     const nonce = ctx?.res?.locals?.cspNonce || "";
-    return { ...initial, nonce };
+    return { ...initialProps, nonce };
   }
 
   render() {
@@ -15,69 +14,75 @@ export default class MyDocument extends Document {
 
     return (
       <Html lang="en">
-        <Head>
+        <Head nonce={nonce}>
+          {/* ✅ Cookie Consent CSS */}
+          <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css"
+          />
+
           {/* ✅ Google reCAPTCHA */}
-          <Script
+          <script
             src="https://www.google.com/recaptcha/api.js"
-            strategy="afterInteractive"
             async
             defer
             nonce={nonce}
-          />
+          ></script>
 
-          {/* ✅ Square Payment SDK - Automatically picks sandbox or production based on env */}
-          <Script
+          {/* ✅ Square Payment SDK (auto switch for sandbox vs prod) */}
+          <script
             src={
               isProduction
                 ? "https://web.squarecdn.com/v1/square.js"
                 : "https://sandbox.web.squarecdn.com/v1/square.js"
             }
-            strategy="afterInteractive"
+            async
+            defer
             nonce={nonce}
-          />
-
-          {/* ✅ Osano Cookie Consent CSS */}
-          <link
-            rel="stylesheet"
-            href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css"
-          />
+          ></script>
         </Head>
+
         <body>
           <Main />
+
+          {/* ✅ Nonced Next.js inline scripts for hydration */}
           <NextScript nonce={nonce} />
 
-          {/* ✅ Osano initialisation (inline script with nonce) */}
-          <Script id="cookieconsent-init" strategy="afterInteractive" nonce={nonce}>
-            {`
-              window.addEventListener("load", function(){
-                window.cookieconsent.initialise({
-                  palette: {
-                    popup: {
-                      background: "#000"
-                    },
-                    button: {
-                      background: "#f1d600"
-                    }
-                  },
-                  theme: "classic",
-                  position: "bottom",
-                  content: {
-                    message: "This website uses cookies to ensure you get the best experience.",
-                    dismiss: "Got it!",
-                    link: "Learn more",
-                    href: "/privacypolicy"
+          {/* ✅ Osano CookieConsent JS (must load before init) */}
+          <script
+            src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js"
+            async
+            defer
+            nonce={nonce}
+          ></script>
+
+          {/* ✅ Osano CookieConsent Init (inline, nonced) */}
+          <script
+            id="cookieconsent-init"
+            nonce={nonce}
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.addEventListener("load", function () {
+                  if (window.cookieconsent) {
+                    window.cookieconsent.initialise({
+                      palette: {
+                        popup: { background: "#000" },
+                        button: { background: "#f1d600" }
+                      },
+                      theme: "classic",
+                      position: "bottom",
+                      content: {
+                        message: "This website uses cookies to ensure you get the best experience.",
+                        dismiss: "Got it!",
+                        link: "Learn more",
+                        href: "/privacypolicy"
+                      }
+                    });
                   }
                 });
-              });
-            `}
-          </Script>
-
-          {/* ✅ Osano external JS (non-blocking) */}
-          <Script
-            src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js"
-            strategy="afterInteractive"
-            nonce={nonce}
-          />
+              `,
+            }}
+          ></script>
         </body>
       </Html>
     );

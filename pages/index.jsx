@@ -67,7 +67,7 @@ function Home() {
         />
 
       <section>
-          <h2>Blog Posts</h2>
+          <h2>Blog</h2>
           {posts.length === 0 ? (
             <p>No posts found.</p>
           ) : (

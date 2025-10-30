@@ -37,7 +37,7 @@ const TermsOfService = () => {
       </Head>
 
       <h1 className="whiteText">Terms of Service</h1>
-      <pre style={{ whiteSpace: "pre-wrap" }} className="whiteText">{termsOfServiceText}</pre>
+      <pre className="white-text">{termsOfServiceText}</pre>
     </div>
   );
 };

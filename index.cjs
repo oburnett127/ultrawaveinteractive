@@ -58,10 +58,11 @@ async function initBackend(app) {
   // 2) Per-request CSP nonce (before Helmet)
   app.use((req, res, next) => {
     res.locals.cspNonce = crypto.randomBytes(16).toString("base64");
+    globalThis.__CSP_NONCE__ = res.locals.cspNonce; // Used in _document.js
     next();
   });
 
-  // 3) Helmet (dynamic import since Helmet v8 is ESM)
+  // 3) Helmet setup (dynamic import)
   const helmet = (await import("helmet")).default;
 
   app.use((req, res, next) => {
@@ -70,40 +71,65 @@ async function initBackend(app) {
     const directives = {
       "default-src": ["'self'"],
 
+      // ✅ Scripts (Next inline hydration + Square + reCAPTCHA)
       "script-src": [
+        "'self'",
+        `'nonce-${nonce}'`,
+        ...(isProd ? [] : ["'unsafe-eval'"]), // Needed for Next.js dev/HMR
+        "https://web.squarecdn.com",
+        "https://js.squareup.com",
+        "https://sandbox.web.squarecdn.com",
+        "https://cdn.jsdelivr.net",
+        "https://www.google.com",
+        "https://www.gstatic.com",
+        "https://static.cloudflareinsights.com",
+        "https://challenges.cloudflare.com",
+      ],
+
+      // ✅ For external <script src="..."> tags
+      "script-src-elem": [
         "'self'",
         `'nonce-${nonce}'`,
         ...(isProd ? [] : ["'unsafe-eval'"]),
         "https://web.squarecdn.com",
         "https://js.squareup.com",
+        "https://sandbox.web.squarecdn.com",
+        "https://cdn.jsdelivr.net",
         "https://www.google.com",
         "https://www.gstatic.com",
         "https://static.cloudflareinsights.com",
         "https://challenges.cloudflare.com",
-        // add sandbox if you use Square sandbox:
-        // "https://sandbox.web.squarecdn.com",
       ],
 
+      // Block dangerous script attributes (e.g., onclick)
+      "script-src-attr": ["'none'"],
+
+      // ✅ Allow inline *styles only* (no inline JS!)
+      // Needed for CookieConsent, reCAPTCHA, and Square injected styles
       "style-src": [
         "'self'",
         `'nonce-${nonce}'`,
         "https://fonts.googleapis.com",
         "https://web.squarecdn.com",
         "https://www.gstatic.com",
+        "https://cdn.jsdelivr.net",
       ],
 
-      // Keep elem relaxed for injected styles by SDKs/Next/recaptcha
+      // ✅ Inline <style> tags are safe here (low risk)
       "style-src-elem": [
         "'self'",
-        "'unsafe-inline'",
+        "'unsafe-inline'", // ✅ Allow inline styles only (safe)
         "https://fonts.googleapis.com",
         "https://web.squarecdn.com",
         "https://www.gstatic.com",
+        "https://cdn.jsdelivr.net",
       ],
 
+      // ✅ Square + reCAPTCHA frames
       "frame-src": [
         "'self'",
         "https://web.squarecdn.com",
+        "https://sandbox.web.squarecdn.com",
         "https://pci-connect.squareup.com",
         "https://js.squareup.com",
         "https://www.google.com",
@@ -111,27 +137,40 @@ async function initBackend(app) {
         "https://challenges.cloudflare.com",
       ],
 
+      // ✅ API, WebSocket, and CDN connections
       "connect-src": [
         "'self'",
         "https://ultrawaveinteractive.com",
         "https://connect.squareup.com",
         "https://pci-connect.squareup.com",
         "https://web.squarecdn.com",
+        "https://sandbox.web.squarecdn.com",
+        "https://cdn.jsdelivr.net",
         "https://www.google.com",
         "https://www.gstatic.com",
         "https://static.cloudflareinsights.com",
-        ...(isProd ? [] : ["http://localhost:3000", "ws://localhost:3000"]),
+        ...(isProd
+          ? []
+          : [
+              "http://localhost:3000",
+              "ws://localhost:3000",
+              "http://127.0.0.1:3000",
+              "ws://127.0.0.1:3000",
+            ]),
       ],
 
+      // ✅ Images
       "img-src": [
         "'self'",
         "data:",
         "blob:",
+        "https://cdn.jsdelivr.net",
         "https://*.squarecdn.com",
         "https://web.squarecdn.com",
         "https://www.google.com",
         "https://www.gstatic.com",
         "https://static.cloudflareinsights.com",
+        ...(isProd ? [] : ["http://localhost:3000"]),
       ],
 
       "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
@@ -141,18 +180,19 @@ async function initBackend(app) {
       "form-action": ["'self'"],
       "object-src": ["'none'"],
       "frame-ancestors": ["'none'"],
-      "upgrade-insecure-requests": [],
       "base-uri": ["'self'"],
-      "script-src-attr": ["'none'"],
+      "upgrade-insecure-requests": [],
     };
 
     return helmet({
-      contentSecurityPolicy: { useDefaults: false, directives },
+      contentSecurityPolicy: {
+        useDefaults: false,
+        directives,
+      },
       referrerPolicy: { policy: "no-referrer-when-downgrade" },
       frameguard: { action: "deny" },
       noSniff: true,
       permittedCrossDomainPolicies: true,
-      // xssFilter removed in Helmet v5+, CSP replaces it
     })(req, res, next);
   });
 

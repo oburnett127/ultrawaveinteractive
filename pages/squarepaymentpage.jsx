@@ -105,7 +105,7 @@ export default function SquarePaymentPage() {
         required
       />
 
-      <div id="card-container" style={{ marginTop: "20px" }}></div>
+      <div id="card-container" className="space-above"></div>
 
       <div
         className="g-recaptcha"
