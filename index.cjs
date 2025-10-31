@@ -251,6 +251,8 @@ async function initBackend(app) {
     try {
       redis = await createRedisClient();
 
+      console.log("🔍 REDIS_URL:", process.env.REDIS_URL);
+
       sensitiveLimiter = limiterFactory({
         redisClient: redis,
         keyPrefix: "rl:sensitive",
