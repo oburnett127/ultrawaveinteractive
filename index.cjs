@@ -245,7 +245,7 @@ async function initBackend(app) {
   const { createRedisClient, limiterFactory } = require("./lib/redisClient.cjs");
 
   let redis;
-  let sensitiveLimiter, moderateLimiter, verifyLimiter, updateTokenLimiter, salesbotLimiter, blogCreateLimiter;
+  let sensitiveLimiter, moderateLimiter, verifyLimiter, updateTokenLimiter, salesbotLimiter, blogCreateLimiter, publicLimiter;
 
   (async () => {
     try {
@@ -301,6 +301,14 @@ async function initBackend(app) {
         blockDuration: 1800
       });
 
+      publicLimiter = limiterFactory({ 
+        redisClient: redis,
+        keyPrefix: "rl:public",
+        points: 100,
+        duration: 60, 
+        blockDuration: 10
+      });   // safe for blog/pages
+
       console.log("[Redis + Rate Limiting] Initialized ✅");
     } catch (err) {
       console.error("[Redis Init Error ❌]", err);
@@ -347,8 +355,8 @@ async function initBackend(app) {
   app.use("/api/salesbot", waitForRedis, rateLimitMiddleware(salesbotLimiter), salesbotRoute);
 
   app.use("/api/blog/create", waitForRedis, rateLimitMiddleware(blogCreateLimiter), blogCreateRoute);
-  app.use("/api/blog/list", waitForRedis, rateLimitMiddleware(moderateLimiter), listRoute);
-  app.use("/api/blog", waitForRedis, rateLimitMiddleware(moderateLimiter), blogRoute);
+  app.use("/api/blog/list", waitForRedis, rateLimitMiddleware(publicLimiter), listRoute); // relaxed
+  app.use("/api/blog", waitForRedis, rateLimitMiddleware(publicLimiter), blogRoute);
 
   // 8) Attach a sanitizer you can use inside routers if desired
   // You can also call makeSanitizer() inside specific routers only.

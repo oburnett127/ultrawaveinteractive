@@ -38,13 +38,25 @@ function Home() {
             "openingHours": "Su-Sa 08:00-20:00"
           }`;
   
-  const [posts, setPosts] = useState([]);
-
   useEffect(() => {
-    fetch('/api/blog/list')
-      .then(res => res.json())
-      .then(setPosts)
-      .catch(console.error);
+    async function fetchPosts() {
+      try {
+        const res = await fetch("/api/blog/list");
+        const data = await res.json();
+
+        if (!Array.isArray(data)) {
+          console.error("Unexpected blog data:", data);
+          return setPosts([]); // or show a fallback message
+        }
+
+        setPosts(data);
+      } catch (err) {
+        console.error("Error fetching blog posts:", err);
+        setPosts([]);
+      }
+    }
+
+    fetchPosts();
   }, []);
 
   return (
