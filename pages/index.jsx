@@ -38,6 +38,8 @@ function Home() {
             "openingHours": "Su-Sa 08:00-20:00"
           }`;
   
+  const [posts, setPosts] = useState([]);
+
   useEffect(() => {
     async function fetchPosts() {
       try {
