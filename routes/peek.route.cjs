@@ -1,8 +1,6 @@
-const express = require("express");
-const router = express.Router();
 const getRedis = require("../lib/redis.cjs");
 
-router.get("/", async (req, res) => {
+module.exports = async function peekHandler(req, res) {
   // Disable in production
   if (process.env.NODE_ENV === "production") {
     return res.status(404).json({ error: "Not found" });
@@ -37,6 +35,4 @@ router.get("/", async (req, res) => {
     console.error("[otp/peek] error:", e);
     return res.status(500).json({ error: "peek failed" });
   }
-});
-
-module.exports = router;
+};

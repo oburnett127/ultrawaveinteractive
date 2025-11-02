@@ -1,11 +1,8 @@
-// /routes/updateToken.js
-const express = require('express');
-const router = express.Router();
 const { getServerSession } = require('next-auth/next');
 const { authOptions } = require("../lib/authOptions.cjs"); // ✅ CommonJS-safe import
 const prisma = require('../lib/prisma.cjs'); // Adjust path if needed
 
-router.get('/', async (req, res) => {
+module.exports = async function updateTokenHandler(req, res) {
   try {
     // ✅ Get session using NextAuth (works in Express if req/res are passed)
     const session = await getServerSession(req, res, authOptions);
@@ -29,6 +26,4 @@ router.get('/', async (req, res) => {
     console.error("update-token failed:", e);
     return res.status(500).json({ error: "DB update failed" });
   }
-});
-
-module.exports = router;
+};

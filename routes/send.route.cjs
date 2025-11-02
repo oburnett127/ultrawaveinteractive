@@ -1,5 +1,3 @@
-const express = require("express");
-const router = express.Router();
 const crypto = require("crypto");
 const getRedis = require("../lib/redis.cjs");
 const sendOtpEmail = require("../lib/mail.cjs");
@@ -33,7 +31,7 @@ async function verifyRecaptchaToken(token) {
   return Boolean(data && data.success);
 }
 
-router.post("/", async (req, res) => {
+module.exports = async function sendHandler(req, res) {
   try {
     const { email, recaptchaToken } = req.body || {};
 
@@ -85,6 +83,4 @@ router.post("/", async (req, res) => {
     console.error("[send-otp] error:", err);
     return res.status(500).json({ error: "Failed to send OTP" });
   }
-});
-
-module.exports = router;
+};

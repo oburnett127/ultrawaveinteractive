@@ -1,5 +1,3 @@
-const express = require("express");
-const router = express.Router();
 const crypto = require("crypto");
 const prisma = require("../lib/prisma.cjs");
 
@@ -34,7 +32,7 @@ function uuid() {
   return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-router.post("/", async (req, res) => {
+module.exports = async function paymentHandler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -128,6 +126,4 @@ router.post("/", async (req, res) => {
     console.error("Square pay handler error:", err);
     return res.status(500).json({ error: "Payment server error" });
   }
-});
-
-module.exports = router;
+};

@@ -241,140 +241,139 @@ async function initBackend(app) {
     })
   );
 
-  // 7) Redis-backed rate limiting using rate-limiter-flexible
-  const { createRedisClient, limiterFactory } = require("./lib/redisClient.cjs");
+ // 7) Redis-backed rate limiting using rate-limiter-flexible
+const { createRedisClient, limiterFactory } = require("./lib/redisClient.cjs");
 
-  let redis;
-  let sensitiveLimiter, moderateLimiter, verifyLimiter, updateTokenLimiter, salesbotLimiter, blogCreateLimiter, publicLimiter;
+let redis;
+let sensitiveLimiter, verifyLimiter, updateTokenLimiter, salesbotLimiter, blogCreateLimiter, publicLimiter;
 
-  (async () => {
+(async () => {
+  try {
+    redis = await createRedisClient();
+
+    console.log("🔍 REDIS_URL:", process.env.REDIS_URL);
+
+    // --- Rate limiters based on sensitivity ---
+
+    // Highly sensitive: signup, login, OTP, etc.
+    sensitiveLimiter = limiterFactory({
+      redisClient: redis,
+      keyPrefix: "sensitive",
+      points: 5,            // max requests
+      duration: 3600,       // per 1 hour
+      blockDuration: 1800,  // block for 30 minutes
+    });
+
+    // OTP validation
+    verifyLimiter = limiterFactory({
+      redisClient: redis,
+      keyPrefix: "verify",
+      points: 10,
+      duration: 60,         // per 1 minute
+      blockDuration: 300,   // block for 5 minutes
+    });
+
+    // Token update
+    updateTokenLimiter = limiterFactory({
+      redisClient: redis,
+      keyPrefix: "update",
+      points: 5,
+      duration: 600,        // per 10 minutes
+      blockDuration: 1800,  // block for 30 minutes
+    });
+
+    // Sales bot
+    salesbotLimiter = limiterFactory({
+      redisClient: redis,
+      keyPrefix: "salesbot",
+      points: 30,
+      duration: 3600,       // per 1 hour
+      blockDuration: 1800,  // block for 30 minutes
+    });
+
+    // Blog post creation (admin only)
+    blogCreateLimiter = limiterFactory({
+      redisClient: redis,
+      keyPrefix: "blogcreate",
+      points: 10,
+      duration: 3600,       // per 1 hour
+      blockDuration: 1800,  // block for 30 minutes
+    });
+
+    // Public-friendly API (blog list, etc.)
+    publicLimiter = limiterFactory({
+      redisClient: redis,
+      keyPrefix: "public",
+      points: 100,          // Allow up to 100 requests
+      duration: 60,         // per 1 minute
+      blockDuration: 10,    // block for 10 seconds
+    });
+
+    console.log("[Redis + Rate Limiting] Initialized ✅");
+  } catch (err) {
+    console.error("[Redis Init Error ❌]", err);
+  }
+})();
+
+// Middleware to wait for Redis initialization
+function waitForRedis(req, res, next) {
+  if (!redis || !sensitiveLimiter) {
+    return res
+      .status(503)
+      .json({ error: "Service is starting, please try again shortly." });
+  }
+  next();
+}
+
+// Rate limiter middleware factory
+function rateLimitMiddleware(limiter) {
+  // Disable in dev
+  if (process.env.NODE_ENV !== "production") {
+    return (req, res, next) => next();
+  }
+
+  // Resolve client IP behind Cloudflare
+  return async (req, res, next) => {
+    const realIp = req.headers["x-forwarded-for"]?.split(",")[0] || req.ip;
     try {
-      redis = await createRedisClient();
-
-      console.log("🔍 REDIS_URL:", process.env.REDIS_URL);
-
-      sensitiveLimiter = limiterFactory({
-        redisClient: redis,
-        keyPrefix: "rl:sensitive",
-        points: 5,
-        duration: 3600,       // 1 hour
-        blockDuration: 1800   // 30 min
-      });
-
-      moderateLimiter = limiterFactory({
-        redisClient: redis,
-        keyPrefix: "rl:moderate",
-        points: 300,
-        duration: 3600,
-        blockDuration: 600    // 10 min
-      });
-
-      verifyLimiter = limiterFactory({
-        redisClient: redis,
-        keyPrefix: "rl:verify",
-        points: 10,
-        duration: 60,
-        blockDuration: 300    // 5 min
-      });
-
-      updateTokenLimiter = limiterFactory({
-        redisClient: redis,
-        keyPrefix: "rl:update",
-        points: 5,
-        duration: 600,
-        blockDuration: 1800
-      });
-
-      salesbotLimiter = limiterFactory({
-        redisClient: redis,
-        keyPrefix: "rl:salesbot",
-        points: 30,
-        duration: 3600,
-        blockDuration: 1800
-      });
-
-      blogCreateLimiter = limiterFactory({
-        redisClient: redis,
-        keyPrefix: "rl:blogcreate",
-        points: 10,
-        duration: 3600,
-        blockDuration: 1800
-      });
-
-      publicLimiter = limiterFactory({ 
-        redisClient: redis,
-        keyPrefix: "rl:public",
-        points: 100,
-        duration: 60, 
-        blockDuration: 10
-      });   // safe for blog/pages
-
-      console.log("[Redis + Rate Limiting] Initialized ✅");
-    } catch (err) {
-      console.error("[Redis Init Error ❌]", err);
+      await limiter.consume(realIp);
+      next();
+    } catch {
+      return res.status(429).json({ error: "Too many requests. Please try again later." });
     }
-  })();
+  };
+}
 
-  function waitForRedis(req, res, next) {
-    if (!redis || !sensitiveLimiter) {
-      return res.status(503).json({ error: "Service is starting, please try again in a moment." });
-    }
-    next();
-  }
+  // Auth register
+  app.post("/api/auth/register", waitForRedis, rateLimitMiddleware(sensitiveLimiter), registerRoute);
+  
+  app.post("/api/payment/charge", waitForRedis, rateLimitMiddleware(sensitiveLimiter), paymentRoute);
 
-  function rateLimitMiddleware(limiter) {
-    // ⚠ Disable rate limiting in development
-    if (process.env.NODE_ENV !== "production") {
-      return (req, res, next) => next();
-    }
+  app.post("/api/squareWebhook", waitForRedis, rateLimitMiddleware(sensitiveLimiter), squareWebhookRoute);
 
-    // ✅ Production behavior
-    return async (req, res, next) => {
-      try {
-        await limiter.consume(req.ip);
-        next();
-      } catch {
-        return res.status(429).json({ error: "Too many requests. Please try again later." });
-      }
-    };
-  }
+  // Contact form
+  app.post("/api/contact", waitForRedis, rateLimitMiddleware(sensitiveLimiter), contactRoute);
 
-  app.use(
-    "/api/auth/register",
-    waitForRedis,
-    rateLimitMiddleware(sensitiveLimiter),
-    registerRoute
-  );
+  // OTP (send / verify)
+  app.post("/api/otp/send", waitForRedis, rateLimitMiddleware(sensitiveLimiter), sendRoute);
+  app.post("/api/otp/verify", waitForRedis, rateLimitMiddleware(verifyLimiter), verifyRoute);
 
-  app.use("/api/contact", waitForRedis, rateLimitMiddleware(sensitiveLimiter), contactRoute);
+  // Update token
+  app.post("/api/update-token", waitForRedis, rateLimitMiddleware(updateTokenLimiter), updateTokenRoute);
 
-  app.use("/api/otp/send", waitForRedis, rateLimitMiddleware(sensitiveLimiter), sendRoute);
-  app.use("/api/otp/verify", waitForRedis, rateLimitMiddleware(verifyLimiter), verifyRoute);
-  app.use("/api/update-token", waitForRedis, rateLimitMiddleware(updateTokenLimiter), updateTokenRoute);
+  // Sales bot
+  app.post("/api/salesbot", waitForRedis, rateLimitMiddleware(salesbotLimiter), salesbotRoute);
 
-  app.use("/api/salesbot", waitForRedis, rateLimitMiddleware(salesbotLimiter), salesbotRoute);
-
-  app.use("/api/blog/create", waitForRedis, rateLimitMiddleware(blogCreateLimiter), blogCreateRoute);
-  app.use("/api/blog/list", waitForRedis, rateLimitMiddleware(publicLimiter), listRoute); // relaxed
-  app.use("/api/blog", waitForRedis, rateLimitMiddleware(publicLimiter), blogRoute);
+  // Blog (create / list / slug)
+  app.post("/api/blog/create", waitForRedis, rateLimitMiddleware(blogCreateLimiter), blogCreateRoute);
+  app.get("/api/blog/list", waitForRedis, rateLimitMiddleware(publicLimiter), listRoute);
+  app.get("/api/blog/:slug", waitForRedis, rateLimitMiddleware(publicLimiter), blogRoute);
 
   // 8) Attach a sanitizer you can use inside routers if desired
   // You can also call makeSanitizer() inside specific routers only.
   app.use(makeSanitizer());
 
   // 9) Register routes (now safely behind Helmet/CORS/limits)
-  app.use("/api", listRoute);
-  app.use("/api", blogRoute);
-  app.use("/api", blogCreateRoute);
-  app.use("/api", contactRoute);
-  app.use("/api", paymentRoute);
-  app.use("/api", peekRoute);
-  app.use("/api", registerRoute);
-  app.use("/api", salesbotRoute);
-  app.use("/api", sendRoute);
-  app.use("/api", squareWebhookRoute);
-  app.use("/api", updateTokenRoute);
-  app.use("/api", verifyRoute);
 
   // 10) Error handlers (last)
   // Note: If you actually use CSRF middleware elsewhere, keep this; otherwise it’s harmless.

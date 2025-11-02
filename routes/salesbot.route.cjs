@@ -1,6 +1,3 @@
-const express = require('express');
-const router = express.Router();
-
 // ✅ SYSTEM PROMPT (Full conversion-focused logic)
 const SYSTEM_PROMPT = `
 You are a high-converting AI sales assistant for Ultrawave Interactive Web Design. Your ONLY mission is to convert website visitors into paying clients.
@@ -61,7 +58,7 @@ If user provides email or phone, acknowledge positively and continue moving towa
 "Hi there! 👋 Are you currently using an existing website like Wix or WordPress, or are you looking to build a new custom website for your business?"
 `;
 
-router.post('/', async (req, res) => {
+module.exports = async function salesbotHandler(req, res) {
   const userMessage = req.body.message;
   const previousMessages = req.body.messages || []; // optional for chat history
 
@@ -106,6 +103,4 @@ router.post('/', async (req, res) => {
     console.error('OpenAI API Error:', error);
     res.status(500).json({ error: 'AI request failed' });
   }
-});
-
-module.exports = router;
+};

@@ -1,76 +1,15 @@
 // /routes/contact.route.cjs
-const express = require("express");
 const sanitizeHtml = require("sanitize-html");
 const validator = require("validator");
-const { RateLimiterRedis } = require("rate-limiter-flexible");
-const { createRedisClient } = require("../lib/redisClient.cjs");
 const verifyRecaptchaToken = require("../lib/verifyRecaptchaToken.cjs");
 const sendContactEmail = require("../lib/sendContactEmail.cjs");
 
-const router = express.Router();
-
-let rateLimiterByIP, rateLimiterByEmail;
-
-// ✅ Self-invoking async setup
-(async function initRateLimiters() {
+// Contact API handler (for /api/contact)
+module.exports = async function contactHandler(req, res) {
   try {
-    const redisClient = await createRedisClient();
-
-    rateLimiterByIP = new RateLimiterRedis({
-      storeClient: redisClient,
-      keyPrefix: "contact_ip",
-      points: 10,
-      duration: 3600,       // 1 hour
-      blockDuration: 1800,  // 30 minutes
-    });
-
-    rateLimiterByEmail = new RateLimiterRedis({
-      storeClient: redisClient,
-      keyPrefix: "contact_email",
-      points: 6,
-      duration: 86400,      // 24 hours
-      blockDuration: 1800,
-    });
-
-    console.log("[Contact Route] Rate limiters initialized ✅");
-  } catch (err) {
-    console.error("[Contact Route] Redis initialization failed ❌", err);
-  }
-})();
-
-// Middleware to ensure limiters are ready
-function ensureRateLimiterReady(req, res, next) {
-  if (!rateLimiterByIP || !rateLimiterByEmail) {
-    console.warn("[Contact Route] Rate limiter not ready yet.");
-    return res.status(503).json({ error: "Service not ready. Please try again shortly." });
-  }
-  next();
-}
-
-router.post("/", ensureRateLimiterReady, async (req, res) => {
-  try {
-    const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
     const { email, name, phone, message, recaptchaToken } = req.body || {};
 
-    // ✅ RATE LIMIT IP
-    try {
-      await rateLimiterByIP.consume(ip);
-    } catch {
-      return res.status(429).json({ error: "Too many requests from this IP. Please try again later." });
-    }
-
-    // ✅ RATE LIMIT EMAIL
-    if (email) {
-      try {
-        await rateLimiterByEmail.consume(email.toLowerCase());
-      } catch {
-        return res.status(429).json({ error: "Too many messages from this email. Try again tomorrow." });
-      }
-    }
-
-    // ==============================
-    // ✅ VALIDATION
-    // ==============================
+    // ✅ Basic validation
     if (!email || !message) {
       return res.status(400).json({ error: "Email and message are required." });
     }
@@ -79,10 +18,11 @@ router.post("/", ensureRateLimiterReady, async (req, res) => {
     }
 
     const fromEmail = validator.normalizeEmail(email);
-    const fromName = name ? validator.escape(name.trim()) : "";
-    const fromPhone = phone && validator.isMobilePhone(phone, "any") ? phone.trim() : "Not provided";
+    const fromName = name ? validator.escape(name.trim()) : "Anonymous";
+    const fromPhone =
+      phone && validator.isMobilePhone(phone, "any") ? phone.trim() : "Not provided";
 
-    // ✅ Sanitize message
+    // ✅ Sanitize message content
     const safeMessage = sanitizeHtml(message, {
       allowedTags: ["b", "i", "em", "strong", "p", "br", "ul", "ol", "li"],
       allowedAttributes: {},
@@ -101,7 +41,7 @@ router.post("/", ensureRateLimiterReady, async (req, res) => {
       return res.status(400).json({ error: "Failed reCAPTCHA verification" });
     }
 
-    // ✅ Send Email
+    // ✅ Send email
     await sendContactEmail({
       fromEmail,
       name: fromName,
@@ -111,9 +51,7 @@ router.post("/", ensureRateLimiterReady, async (req, res) => {
 
     return res.status(200).json({ ok: true });
   } catch (err) {
-    console.error("Error in /contact route:", err);
+    console.error("Error in /api/contact handler:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
-});
-
-module.exports = router;
+};

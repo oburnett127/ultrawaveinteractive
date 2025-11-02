@@ -1,8 +1,6 @@
-const express = require("express");
-const router = express.Router();
 const prisma = require("../lib/prisma.cjs");
 
-router.get("/", async (req, res) => {
+module.exports = async function blogHandler(req, res) {
   try {
     const slug = req.params.slug;
     console.log("Incoming slug:", slug);
@@ -24,6 +22,4 @@ router.get("/", async (req, res) => {
     console.error("Error fetching post:", err);
     return res.status(500).json({ error: "Server error", message: err.message });
   }
-});
-
-module.exports = router;
+};
