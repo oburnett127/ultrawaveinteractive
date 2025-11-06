@@ -13,6 +13,7 @@ const listRoute = require("./routes/list.route.cjs");
 const blogRoute = require("./routes/blog.route.cjs");
 const blogCreateRoute = require("./routes/blogCreate.route.cjs");
 const contactRoute = require("./routes/contact.route.cjs");
+const leadsRoute = require("./routes/leads.route.cjs");
 const paymentRoute = require("./routes/payment.route.cjs");
 const peekRoute = require("./routes/peek.route.cjs");
 const registerRoute = require("./routes/register.route.cjs");
@@ -245,7 +246,7 @@ async function initBackend(app) {
 const { createRedisClient, limiterFactory } = require("./lib/redisClient.cjs");
 
 let redis;
-let sensitiveLimiter, verifyLimiter, updateTokenLimiter, salesbotLimiter, blogCreateLimiter, publicLimiter;
+let sensitiveLimiter, verifyLimiter, updateTokenLimiter, salesbotLimiter, blogCreateLimiter, publicLimiter, leadsLimiter;
 
 (async () => {
   try {
@@ -298,6 +299,15 @@ let sensitiveLimiter, verifyLimiter, updateTokenLimiter, salesbotLimiter, blogCr
       points: 10,
       duration: 3600,       // per 1 hour
       blockDuration: 1800,  // block for 30 minutes
+    });
+
+    // Leads submitting route
+    leadsLimiter = limiterFactory({
+      redisClient: redis,
+      keyPrefix: "leads",
+      points: 10,            // Allow up to 10 leads per user
+      duration: 3600,        // per 1 hour
+      blockDuration: 1800    // block for 30 minutes
     });
 
     // Public-friendly API (blog list, etc.)
@@ -368,6 +378,9 @@ function rateLimitMiddleware(limiter) {
   app.post("/api/blog/create", waitForRedis, rateLimitMiddleware(blogCreateLimiter), blogCreateRoute);
   app.get("/api/blog/list", waitForRedis, rateLimitMiddleware(publicLimiter), listRoute);
   app.get("/api/blog/:slug", waitForRedis, rateLimitMiddleware(publicLimiter), blogRoute);
+
+  app.post("/api/leads", waitForRedis, rateLimitMiddleware(leadsLimiter), leadsRoute);
+
 
   // 8) Attach a sanitizer you can use inside routers if desired
   // You can also call makeSanitizer() inside specific routers only.

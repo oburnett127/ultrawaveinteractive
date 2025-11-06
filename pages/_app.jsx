@@ -5,6 +5,7 @@ import Script from 'next/script';
 import GlobalBackground from "../components/GlobalBackground";
 import Header from "../components/Header"; // ✅ create this
 import { CssBaseline } from "@mui/material";
+import SalesChatbot from '../components/SalesChatbot';
 
 function MyApp({ Component, pageProps }) {
   return (
@@ -21,6 +22,7 @@ function MyApp({ Component, pageProps }) {
       <Header /> {/* ✅ now it’s safely inside the provider */}
       <GlobalBackground />
       <Component {...pageProps} />
+      <SalesChatbot />
       <Footer />
     </SessionProvider>
   );
