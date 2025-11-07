@@ -59,16 +59,13 @@ model BlogPost {
 }
 
 model Lead {
-  id             Int       @id @default(autoincrement())
-  email          String?   @db.VarChar(255)
-  phone          String?   @db.VarChar(50)
-  name           String?   @db.VarChar(255)
-  company        String?   @db.VarChar(255)
-  projectDetails String?   @db.Text
-  estimatedBudget Int?
-  timeline       String?   @db.VarChar(255)
-  source         String?   @db.VarChar(255)
-  leadStatus     String    @default("new") @db.VarChar(50)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id              Int      @id @default(autoincrement())
+  name            String
+  email           String
+  phone           String
+  company         String?
+  projectDetails  String
+  estimatedBudget String
+  timeline        String?
+  createdAt       DateTime @default(now())
 }

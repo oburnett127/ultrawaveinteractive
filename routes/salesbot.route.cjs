@@ -1,6 +1,5 @@
 // /routes/salesbot.route.cjs
 const express = require('express');
-const router = express.Router();
 const OpenAI = require('openai');
 
 const openai = new OpenAI({
@@ -65,46 +64,21 @@ const openai = new OpenAI({
 
   ### ✅ Conversation Flow
 
-  1. Start by introducing yourself:
-    > “Hey there! I’m the Ultrawave Salesbot. I can help you get a quote for a custom website. Can I start by getting your name?”
-
-  2. For each field you need to collect, ask a single question.
+  1. For each field you need to collect, ask a single question.
     - Example:
       > “Great, thanks Alex! What email should we reach you at?”
 
-  3. If the user gives a partial or invalid answer, gently ask for clarification.
+  2. If the user gives a partial or invalid answer, gently ask for clarification.
     - Example:
       > “Got it. Just want to confirm, is that alex@gmail.com?”
 
-  4. If the user asks you a question:
+  3. If the user asks you a question:
     - Answer directly **if it is simple and relevant** (e.g., “Do you build e-commerce sites?” -> “Yes, we build custom e-commerce sites with secure payments and admin dashboards.”)
     - If the user asks about technical or pricing details:
       > “That’s a great question. Our human team can answer that once they review your project details.”
 
-  5. Once all required fields are collected, end with:
+  4. Once all required fields are collected, end with:
     > “Awesome, thanks! I’ve sent your details to the Ultrawave team. You’ll hear from us soon 👋”
-
-  ---
-
-  ### ✅ Example Dialogue:
-
-  User: Hi  
-  Bot: Hey there! I’m the Ultrawave Salesbot. Can I grab your name to get started?  
-
-  User: I’m Jamie  
-  Bot: Thanks Jamie! What’s the best email to reach you at?  
-
-  User: jamie@greenbiz.com  
-  Bot: Perfect. And what phone number should we use if we want to text or call you?  
-
-  User: 555-123-4567  
-  Bot: Thanks! Last thing—what kind of website or project are you thinking about?  
-
-  User: I need a booking system for my gym  
-  Bot: Got it! Do you have a rough budget range in mind?  
-
-  User: Maybe around $6000  
-  Bot: Awesome, that works. I'll pass all this to the team now. You’ll hear from us soon!
 
   ---
 
@@ -122,11 +96,9 @@ const openai = new OpenAI({
   ---
 
   You must always follow the rules above. Never skip fields or go out of order. Always stay polite and helpful.
-
-  If you understand, begin the conversation immediately with: “Hey there! I’m the Ultrawave Salesbot…” and start with the first question.
   `;
 
-router.post('/salesbot', async (req, res) => {
+module.exports = async function salesbotHandler(req, res) {
   try {
     const userMessage = req.body.message;
 
@@ -145,6 +117,4 @@ router.post('/salesbot', async (req, res) => {
     console.error("Salesbot error:", err);
     res.status(500).json({ error: "Failed to generate bot reply" });
   }
-});
-
-module.exports = router;
+};
