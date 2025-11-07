@@ -6,7 +6,7 @@ const crypto = require("crypto");
 const rateLimit = require("express-rate-limit");
 const bodyParser = require("body-parser");
 const sanitizeHtml = require("sanitize-html");
-const { createRedisClient, limiterFactory } = require("./lib/redisClient.cjs");
+const { createRedisClient, limiterFactory, disconnectRedisClient } = require("./lib/redisClient.cjs");
 
 // Route handlers (function exports)
 const salesbotHandler = require("./routes/salesbot.route.cjs");
@@ -139,7 +139,7 @@ async function initBackend(app) {
       sensitiveLimiter = limiterFactory({ redisClient: redis, keyPrefix: "sensitive", points: 5, duration: 3600 });
       verifyLimiter = limiterFactory({ redisClient: redis, keyPrefix: "verify", points: 10, duration: 60 });
       updateTokenLimiter = limiterFactory({ redisClient: redis, keyPrefix: "update", points: 5, duration: 600 });
-      salesbotLimiter = limiterFactory({ redisClient: redis, keyPrefix: "salesbot", points: 30, duration: 3600 });
+      salesbotLimiter = limiterFactory({ redisClient: redis, keyPrefix: "salesbot", points: 50, duration: 3600 });
       blogCreateLimiter = limiterFactory({ redisClient: redis, keyPrefix: "blogcreate", points: 10, duration: 3600 });
       leadsLimiter = limiterFactory({ redisClient: redis, keyPrefix: "leads", points: 10, duration: 3600 });
       publicLimiter = limiterFactory({ redisClient: redis, keyPrefix: "public", points: 100, duration: 60 });

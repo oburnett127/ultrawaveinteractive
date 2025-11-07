@@ -1,6 +1,8 @@
 const express = require("express");
 const next = require("next");
 const dotenv = require("dotenv");
+const { disconnectRedisClient } = require("./lib/redisClient.cjs");
+const prisma = require("./lib/prisma.cjs");
 
 dotenv.config();
 
@@ -48,3 +50,25 @@ const handle = nextApp.getRequestHandler();
     console.error("💥 Server startup error:", err);
   }
 })();
+
+async function handleShutdown(signal) {
+  console.warn(`\n[Server] Received ${signal}. Shutting down gracefully...`);
+
+  try {
+    // Close Redis
+    await disconnectRedisClient();
+
+    // Close Prisma connection
+    await prisma.$disconnect();
+    console.log("[Prisma ✅] Disconnected cleanly");
+  } catch (err) {
+    console.error("[Shutdown ❌] Error during cleanup:", err.message);
+  }
+
+  process.exit(0);
+}
+
+// Handle common exit signals (e.g., CTRL+C, Docker shutdown)
+["SIGINT", "SIGTERM"].forEach((signal) => {
+  process.on(signal, () => handleShutdown(signal));
+});
