@@ -755,3 +755,27 @@ input, textarea {
     right: 10px;
   }
 }
+
+.container {
+  max-width: 400px;
+  margin: 2rem auto;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 1rem;
+}
+
+.error {
+  color: red;
+}
+
+.success {
+  color: green;
+}

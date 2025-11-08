@@ -23,6 +23,8 @@ const leadsHandler = require("./routes/leads.route.cjs");
 const blogCreateRoute = require("./routes/blogCreate.route.cjs");
 const listRoute = require("./routes/list.route.cjs");
 const blogRoute = require("./routes/blog.route.cjs");
+const changePasswordRoute = require("./routes/changePassword.route.cjs");
+const healthRoute = require("./routes/health.route.cjs");
 
 function boolFromEnv(v, def = false) {
   if (v === undefined) return def;
@@ -130,19 +132,56 @@ async function initBackend(app) {
 
   // Initialize Redis + Rate Limiters
   let redis;
-  let sensitiveLimiter, verifyLimiter, updateTokenLimiter, salesbotLimiter, leadsLimiter, blogCreateLimiter, publicLimiter;
+  let sensitiveLimiter, verifyLimiter, updateTokenLimiter, salesbotLimiter, leadsLimiter, blogCreateLimiter, publicLimiter, changePasswordLimiter, redisHealthLimiter;
   (async () => {
     try {
       redis = await createRedisClient();
       console.log("🔍 REDIS_URL:", process.env.REDIS_URL);
 
-      sensitiveLimiter = limiterFactory({ redisClient: redis, keyPrefix: "sensitive", points: 5, duration: 3600 });
-      verifyLimiter = limiterFactory({ redisClient: redis, keyPrefix: "verify", points: 10, duration: 60 });
-      updateTokenLimiter = limiterFactory({ redisClient: redis, keyPrefix: "update", points: 5, duration: 600 });
-      salesbotLimiter = limiterFactory({ redisClient: redis, keyPrefix: "salesbot", points: 50, duration: 3600 });
+      sensitiveLimiter = limiterFactory({
+        redisClient: redis,
+        keyPrefix: "sensitive",
+        points: 5,
+        duration: 3600,      // 1 hour
+        blockDuration: 1800  // Block for 30 min after 5 tries
+      });
+
+      verifyLimiter = limiterFactory({
+        redisClient: redis,
+        keyPrefix: "verify",
+        points: 10,
+        duration: 60,        // 1 min
+        blockDuration: 300   // Block for 5 min
+      });
+
+      updateTokenLimiter = limiterFactory({
+        redisClient: redis,
+        keyPrefix: "update",
+        points: 5,
+        duration: 600,       // 10 min
+        blockDuration: 600   // Block for 10 min
+      });
+
+      salesbotLimiter = limiterFactory({
+        redisClient: redis,
+        keyPrefix: "salesbot",
+        points: 50,
+        duration: 3600,       // 1 hour
+        blockDuration: 3600   // Block for 1 hour
+      });
+
+      leadsLimiter = limiterFactory({
+        redisClient: redis,
+        keyPrefix: "leads",
+        points: 10,
+        duration: 3600,       // 1 hour
+        blockDuration: 900    // Block for 15 min
+      });
+
       blogCreateLimiter = limiterFactory({ redisClient: redis, keyPrefix: "blogcreate", points: 10, duration: 3600 });
-      leadsLimiter = limiterFactory({ redisClient: redis, keyPrefix: "leads", points: 10, duration: 3600 });
       publicLimiter = limiterFactory({ redisClient: redis, keyPrefix: "public", points: 100, duration: 60 });
+      changePasswordLimiterLimiter = limiterFactory({ redisClient: redis, keyPrefix: "change-password", points: 3, duration: 900, blockDuration: 1800 });
+      redisHealthLimiter = limiterFactory({ redisClient: redis, keyPrefix: "health", points: 30, duration: 60, blockDuration: 300 });
 
       console.log("[Redis + Rate Limiting] Initialized ✅");
     } catch (err) {
@@ -181,6 +220,8 @@ async function initBackend(app) {
   app.post("/api/blog/create", waitForRedis, rateLimitMiddleware(blogCreateLimiter), blogCreateRoute);
   app.get("/api/blog/list", waitForRedis, rateLimitMiddleware(publicLimiter), listRoute);
   app.get("/api/blog/:slug", waitForRedis, rateLimitMiddleware(publicLimiter), blogRoute);
+  app.use("/api/auth/change-password", waitForRedis, rateLimitMiddleware(changePasswordLimiter), changePasswordRoute);
+  app.use("/api/health", waitForRedis, rateLimitMiddleware(redisHealthLimiter), healthRoute);
 
   // Sanitizer
   app.use(makeSanitizer());
