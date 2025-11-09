@@ -5,15 +5,18 @@ export default function ChangePassword() {
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState({ error: "", success: "" });
 
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus({ error: "", success: "" });
 
     try {
-      const res = await fetch("/api/auth/change-password", {
+      const res = await fetch(`${backendUrl}/api/auth/change-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currentPassword, newPassword }),
+        credentials: "include",
       });
 
       const data = await res.json();

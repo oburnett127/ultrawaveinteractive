@@ -1,0 +1,86 @@
+# 🍪 Cookie Policy  
+**Last Updated:** 11-09-2025
+
+This Cookie Policy explains how **Ultrawave Interactive LLC** (“we,” “us,” or “our”) uses cookies and similar technologies on our website located at <https://ultrawaveinteractive.com> (the “Site”).
+
+By using our Site, you agree to the use of cookies as described in this Cookie Policy. If you do not agree, you should adjust your browser settings or discontinue using the Site.
+
+---
+
+## 1. What Are Cookies?
+
+Cookies are small text files stored on your device (computer, tablet, or mobile) when you visit a website. Cookies help make websites work more efficiently and provide information to the website owners.
+
+Cookies can be **session cookies** (deleted when you close your browser) or **persistent cookies** (saved until they expire or are deleted). They may also be **first-party** (set by us) or **third-party** (set by services we use, such as analytics providers).
+
+---
+
+## 2. How We Use Cookies
+
+We use cookies on the Site to:
+
+- **Make sure the website works correctly**
+- **Improve website performance and user experience**
+- **Understand how visitors use our website (analytics)**
+- **Enhance security and prevent fraud**
+- **Remember your preferences (such as contact form details you’ve typed in)**
+
+---
+
+## 3. Types of Cookies We Use
+
+| Cookie Type            | Purpose                                                                 | Example(s)                           | Duration      |
+|------------------------|--------------------------------------------------------------------------|--------------------------------------|---------------|
+| **Strictly Necessary** | Required for core Site functions (e.g. contact form, login)             | Session cookies                      | Session-only  |
+| **Performance / Analytics** | Help us understand how visitors use the Site to improve user experience | Google Analytics (if used)           | Up to 2 years |
+| **Functionality**      | Make the Site more personalized (e.g., remember form input)              | LocalStorage/sessionStorage entries  | Varies        |
+| **Security**           | Detect and prevent security issues or fraud                              | CSRF cookies or anti-abuse tokens    | Session-only  |
+
+> **Note:** We do not serve third-party advertising cookies and do not sell personal information collected through cookies.
+
+---
+
+## 4. Third-Party Cookies
+
+Some cookies may be set by third-party services that help us operate our Site (e.g. analytics, payment processors, reCAPTCHA). For example:
+
+- **Google reCAPTCHA**, used on contact or login forms, helps prevent bots  
+- **Cloudflare**, used for content delivery and security, may set performance cookies  
+- **Square**, if you submit a payment, may use cookies or tracking scripts to process secure transactions
+
+These third parties have their own privacy and cookie policies that govern their use of cookies.
+
+---
+
+## 5. How You Can Control Cookies
+
+Most web browsers let you control cookies through settings. Popular browser controls:
+
+- **Chrome:** Settings → Privacy and Security → Cookies  
+- **Firefox:** Preferences → Privacy & Security  
+- **Safari:** Preferences → Privacy  
+- **Edge:** Settings → Cookies and site permissions  
+
+You can also delete specific cookies at any time or activate “Do Not Track” features.
+
+> Disabling cookies may impact certain features of our Site, such as contact forms or account login.
+
+---
+
+## 6. Updates to This Policy
+
+We may update this Cookie Policy occasionally, for example if we add new features, technologies, or integrations. The date at the top of the page will reflect the latest update.
+
+---
+
+## 7. Contact Us
+
+If you have questions about this Cookie Policy or our use of cookies, you can reach us at:
+
+**Ultrawave Interactive LLC**  
+Oklahoma, United States  
+Email: info@ultrawaveinteractive.com
+Phone: +1 405-519-8318
+
+---
+

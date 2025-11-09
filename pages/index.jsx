@@ -43,7 +43,8 @@ function Home() {
   useEffect(() => {
     async function fetchPosts() {
       try {
-        const res = await fetch("/api/blog/list");
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
+        const res = await fetch(`${backendUrl}/api/blog/list`);
         const data = await res.json();
 
         if (!Array.isArray(data)) {

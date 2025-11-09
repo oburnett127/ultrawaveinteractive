@@ -368,6 +368,34 @@ label {
   text-align: left;
 }
 
+/* 🎨 Make Markdown table text white */
+.markdown table {
+  color: white;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.markdown th,
+.markdown td {
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown th {
+  background-color: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+}
+
+.markdown tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.markdown tr:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
 .blog-container {
   text-align: left;
 }
@@ -778,4 +806,8 @@ input {
 
 .success {
   color: green;
+}
+
+li {
+  color: white;
 }

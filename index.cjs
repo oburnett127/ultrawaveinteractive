@@ -8,18 +8,15 @@ const bodyParser = require("body-parser");
 const sanitizeHtml = require("sanitize-html");
 const { createRedisClient, limiterFactory, disconnectRedisClient } = require("./lib/redisClient.cjs");
 
-// Route handlers (function exports)
-const salesbotHandler = require("./routes/salesbot.route.cjs");
-const registerHandler = require("./routes/register.route.cjs");
-const paymentHandler = require("./routes/payment.route.cjs");
-const contactHandler = require("./routes/contact.route.cjs");
-const sendOtpHandler = require("./routes/send.route.cjs");
-const verifyOtpHandler = require("./routes/verify.route.cjs");
-const updateTokenHandler = require("./routes/updateToken.route.cjs");
-const squareWebhookHandler = require("./routes/squareWebhook.route.cjs");
-const leadsHandler = require("./routes/leads.route.cjs");
-
-// Route routers (Express Router exports)
+const salesbotRoute = require("./routes/salesbot.route.cjs");
+const registerRoute = require("./routes/register.route.cjs");
+const paymentRoute = require("./routes/payment.route.cjs");
+const contactRoute = require("./routes/contact.route.cjs");
+const sendOtpRoute = require("./routes/send.route.cjs");
+const verifyOtpRoute = require("./routes/verify.route.cjs");
+const updateTokenRoute = require("./routes/updateToken.route.cjs");
+const squareWebhookRoute = require("./routes/squareWebhook.route.cjs");
+const leadsRoute = require("./routes/leads.route.cjs");
 const blogCreateRoute = require("./routes/blogCreate.route.cjs");
 const listRoute = require("./routes/list.route.cjs");
 const blogRoute = require("./routes/blog.route.cjs");
@@ -205,23 +202,21 @@ async function initBackend(app) {
         }
       : (req, res, next) => next(); // Skip in dev
 
-  // ✅ Register Functional Route Handlers
-  app.post("/api/auth/register", waitForRedis, rateLimitMiddleware(sensitiveLimiter), registerHandler);
-  app.post("/api/payment/charge", waitForRedis, rateLimitMiddleware(sensitiveLimiter), paymentHandler);
-  app.post("/api/square/webhook", waitForRedis, squareWebhookHandler);
-  app.post("/api/contact", waitForRedis, rateLimitMiddleware(sensitiveLimiter), contactHandler);
-  app.post("/api/otp/send", waitForRedis, rateLimitMiddleware(sensitiveLimiter), sendOtpHandler);
-  app.post("/api/otp/verify", waitForRedis, rateLimitMiddleware(verifyLimiter), verifyOtpHandler);
-  app.post("/api/update-token", waitForRedis, rateLimitMiddleware(updateTokenLimiter), updateTokenHandler);
-  app.post("/api/salesbot", waitForRedis, rateLimitMiddleware(salesbotLimiter), salesbotHandler);
-  app.post("/api/leads", waitForRedis, rateLimitMiddleware(leadsLimiter), leadsHandler);
-
-  // ✅ Register Express Router Routes
-  app.post("/api/blog/create", waitForRedis, rateLimitMiddleware(blogCreateLimiter), blogCreateRoute);
-  app.get("/api/blog/list", waitForRedis, rateLimitMiddleware(publicLimiter), listRoute);
-  app.get("/api/blog/:slug", waitForRedis, rateLimitMiddleware(publicLimiter), blogRoute);
-  app.use("/api/auth/change-password", waitForRedis, rateLimitMiddleware(changePasswordLimiter), changePasswordRoute);
-  app.use("/api/health", waitForRedis, rateLimitMiddleware(redisHealthLimiter), healthRoute);
+  
+  app.use("/api", waitForRedis, rateLimitMiddleware(sensitiveLimiter), registerRoute);
+  app.use("/api", waitForRedis, rateLimitMiddleware(sensitiveLimiter), paymentRoute);
+  app.use("/api", waitForRedis, squareWebhookRoute);
+  app.use("/api", waitForRedis, rateLimitMiddleware(sensitiveLimiter), contactRoute);
+  app.use("/api", waitForRedis, rateLimitMiddleware(sensitiveLimiter), sendOtpRoute);
+  app.use("/api", waitForRedis, rateLimitMiddleware(verifyLimiter), verifyOtpRoute);
+  app.use("/api", waitForRedis, rateLimitMiddleware(updateTokenLimiter), updateTokenRoute);
+  app.use("/api", waitForRedis, rateLimitMiddleware(salesbotLimiter), salesbotRoute);
+  app.use("/api", waitForRedis, rateLimitMiddleware(leadsLimiter), leadsRoute);
+  app.use("/api", waitForRedis, rateLimitMiddleware(blogCreateLimiter), blogCreateRoute);
+  app.use("/api", waitForRedis, rateLimitMiddleware(publicLimiter), listRoute);
+  app.use("/api", waitForRedis, rateLimitMiddleware(publicLimiter), blogRoute);
+  app.use("/api", waitForRedis, rateLimitMiddleware(changePasswordLimiter), changePasswordRoute);
+  app.use("/api", waitForRedis, rateLimitMiddleware(redisHealthLimiter), healthRoute);
 
   // Sanitizer
   app.use(makeSanitizer());

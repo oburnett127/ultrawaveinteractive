@@ -1,7 +1,9 @@
 import Link from 'next/link';
 
 export async function getServerSideProps() {
-  const res = await fetch(`http://localhost:3000/api/blog/list`);
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
+  
+  const res = await fetch(`${backendUrl}/api/blog/list`);
   const data = await res.json();
 
   console.log("✅ API Response to frontend:", data);

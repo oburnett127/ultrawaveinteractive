@@ -4,7 +4,7 @@ const router = express.Router();
 const prisma = require("../lib/prisma.cjs");
 const { getClient } = require("../lib/redisManager.cjs");
 
-router.get("/", async (req, res) => {
+router.get("/health", async (req, res) => {
   try {
     const redis = await getClient();
     const redisStatus = await redis.ping();

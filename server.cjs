@@ -40,7 +40,9 @@ const handle = nextApp.getRequestHandler();
     await initBackend(server);
 
     // ✅ Only after backend routes are ready, let Next.js handle everything else
-    server.all("*", (req, res) => handle(req, res));
+    server.get("*", (req, res) => {
+      return handle(req, res, { cspNonce: res.locals.cspNonce });
+    });
 
     server.listen(port, (err) => {
       if (err) throw err;

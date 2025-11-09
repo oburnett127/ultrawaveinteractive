@@ -9,10 +9,12 @@ export default function CreatePost() {
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
 
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const res = await fetch('/api/blog/create', {
+    const res = await fetch(`${backendUrl}/api/blog/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, content }),

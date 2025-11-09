@@ -1,13 +1,12 @@
 // routes/changePassword.route.cjs
 const express = require("express");
+const router = express.Router();
 const bcrypt = require("bcryptjs");
 const prisma = require("../lib/prisma.cjs");
-const { authenticateUser } = require("../middleware/authenticateUser.cjs");
-
-const router = express.Router();
+const { nextAuthMiddleware } = require("../middleware/nextAuthMiddleware.cjs");
 
 // POST /api/auth/change-password
-router.post("/", authenticateUser, async (req, res) => {
+router.post("/auth/change-password", nextAuthMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     const { currentPassword, newPassword } = req.body;

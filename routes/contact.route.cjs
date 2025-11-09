@@ -3,9 +3,11 @@ const sanitizeHtml = require("sanitize-html");
 const validator = require("validator");
 const verifyRecaptchaToken = require("../lib/verifyRecaptchaToken.cjs");
 const sendContactEmail = require("../lib/sendContactEmail.cjs");
+const express = require('express');
+const router = express.Router();
 
 // Contact API handler (for /api/contact)
-module.exports = async function contactHandler(req, res) {
+router.post("/contact", async (req, res) => {
   try {
     const { email, name, phone, message, recaptchaToken } = req.body || {};
 
@@ -54,4 +56,6 @@ module.exports = async function contactHandler(req, res) {
     console.error("Error in /api/contact handler:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
-};
+});
+
+module.exports = router;

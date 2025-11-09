@@ -7,7 +7,7 @@ const { generateSlug } = require('../utils/generateSlug');
 // Middleware to handle large JSON payloads
 router.use(express.json({ limit: '2gb' }));
 
-module.exports = async function blogCreateHandler(req, res) {
+router.post("/blog/create", async (req, res) => {
   try {
     let { title, content, authorId } = req.body;
 
@@ -49,4 +49,6 @@ module.exports = async function blogCreateHandler(req, res) {
     console.error('Error creating blog post:', error);
     return res.status(500).json({ error: 'Failed to create blog post.' });
   }
-};
+});
+
+module.exports = router;

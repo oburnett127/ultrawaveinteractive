@@ -13,6 +13,8 @@ export default function VerifyOTP() {
   const [cooldown, setCooldown] = useState(0);
   const didSendRef = useRef(false);
   const router = useRouter();
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
+
 
   useEffect(() => {
     const email = (localStorage.getItem("otpEmail") || "").trim().toLowerCase();
@@ -30,7 +32,7 @@ export default function VerifyOTP() {
         setInfo("Sending code...");
         setError("");
 
-        const res = await fetch("/api/otp/send", {
+        const res = await fetch(`${backendUrl}/api/otp/send`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -73,7 +75,7 @@ export default function VerifyOTP() {
       const email = (localStorage.getItem("otpEmail") || "").trim().toLowerCase();
       if (!email) throw new Error("Missing email. Please sign in again.");
 
-      const res = await fetch("/api/otp/verify", {
+      const res = await fetch(`${backendUrl}/api/otp/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -108,7 +110,7 @@ export default function VerifyOTP() {
       setInfo("Resending code...");
       setError("");
 
-      const res = await fetch("/api/otp/send", {
+      const res = await fetch(`${backendUrl}/api/otp/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

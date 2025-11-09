@@ -1,6 +1,8 @@
 const crypto = require("crypto");
 const getRedis = require("../lib/redis.cjs");
 const sendOtpEmail = require("../lib/mail.cjs");
+const express = require('express');
+const router = express.Router();
 
 // Generate a 6-digit OTP using crypto
 function genOtp() {
@@ -31,7 +33,7 @@ async function verifyRecaptchaToken(token) {
   return Boolean(data && data.success);
 }
 
-module.exports = async function sendHandler(req, res) {
+router.post("/otp/send", async (req, res) => {
   try {
     const { email, recaptchaToken } = req.body || {};
 
@@ -83,4 +85,6 @@ module.exports = async function sendHandler(req, res) {
     console.error("[send-otp] error:", err);
     return res.status(500).json({ error: "Failed to send OTP" });
   }
-};
+});
+
+module.exports = router;

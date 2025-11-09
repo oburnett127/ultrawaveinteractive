@@ -1,7 +1,7 @@
 const prisma = require("../lib/prisma.cjs");
 const { hash } = require("bcryptjs");
-// If Node < 18, uncomment:
-// const fetch = require("node-fetch");
+const express = require('express');
+const router = express.Router();
 
 // Server-side verification of v2 checkbox token
 async function verifyRecaptchaToken(token) {
@@ -24,7 +24,7 @@ async function verifyRecaptchaToken(token) {
   return Boolean(data && data.success);
 }
 
-module.exports = async function registerHandler(req, res) {
+router.post("/auth/register", async (req, res) => {
   try {
     const { emailText, password, name, recaptchaToken } = req.body || {};
 
@@ -77,4 +77,6 @@ module.exports = async function registerHandler(req, res) {
       full: JSON.stringify(err, Object.getOwnPropertyNames(err)),
     });
   }
-};
+});
+
+module.exports = router;

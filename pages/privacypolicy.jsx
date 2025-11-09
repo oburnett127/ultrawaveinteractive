@@ -39,8 +39,8 @@ const PrivacyPolicy = () => {
         />
       </Head>
 
-      <h1 className="whiteText">Privacy Policy</h1>
-      <pre className="whiteText">{policyText}</pre>
+      <h1 className="white-text">Privacy Policy</h1>
+      <pre className="white-text">{policyText}</pre>
     </div>
   );
 };

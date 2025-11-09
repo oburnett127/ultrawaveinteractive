@@ -1,12 +1,14 @@
 const prisma = require("../lib/prisma.cjs");
 const getRedis = require("../lib/redis.cjs");
+const express = require('express');
+const router = express.Router();
 
 function json(res, status, body) {
   res.status(status).setHeader("Content-Type", "application/json");
   res.end(JSON.stringify(body));
 }
 
-module.exports = async function verifyHandler(req, res) {
+router.post("/otp/verify", async (req, res) => {
   try {
     const { email, otp } = req.body || {};
     if (!email || !otp) {
@@ -53,4 +55,6 @@ module.exports = async function verifyHandler(req, res) {
     console.error("[otp/verify] error:", err);
     return res.status(500).json({ error: "Verification failed" });
   }
-};
+});
+
+module.exports = router;

@@ -4,7 +4,15 @@ import Document, { Html, Head, Main, NextScript } from "next/document";
 export default class MyDocument extends Document {
   static async getInitialProps(ctx) {
     const initialProps = await Document.getInitialProps(ctx);
-    const nonce = ctx?.res?.locals?.cspNonce || "";
+
+    // ✅ Try to read from Express res.locals first
+    const nonceFromExpress = ctx?.res?.locals?.cspNonce;
+
+    // ✅ Fallback: read from the custom prop we passed in app.get('*')
+    const nonceFromRenderOpts = ctx?.renderPage?.options?.cspNonce;
+
+    const nonce = nonceFromExpress || nonceFromRenderOpts || "";
+
     return { ...initialProps, nonce };
   }
 
@@ -45,10 +53,10 @@ export default class MyDocument extends Document {
         <body>
           <Main />
 
-          {/* ✅ Nonced Next.js inline scripts for hydration */}
+          {/* ✅ Nonced Next.js hydration scripts */}
           <NextScript nonce={nonce} />
 
-          {/* ✅ Osano CookieConsent JS (must load before init) */}
+          {/* ✅ CookieConsent JS */}
           <script
             src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js"
             async
@@ -56,7 +64,7 @@ export default class MyDocument extends Document {
             nonce={nonce}
           ></script>
 
-          {/* ✅ Osano CookieConsent Init (inline, nonced) */}
+          {/* ✅ CookieConsent Init (inline, nonced) */}
           <script
             id="cookieconsent-init"
             nonce={nonce}

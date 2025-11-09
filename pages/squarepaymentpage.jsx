@@ -69,7 +69,8 @@ export default function SquarePaymentPage() {
       const recaptchaToken = await executeRecaptcha();
 
       // 3️⃣ Call backend route
-      const response = await fetch("/api/payments/charge", {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
+      const response = await fetch(`${backendUrl}/api/payments/charge`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

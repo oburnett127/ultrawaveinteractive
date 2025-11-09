@@ -1,4 +1,6 @@
 const getRedis = require("../lib/redis.cjs");
+const express = require('express');
+const router = express.Router();
 
 async function verifyRecaptchaToken(token) {
   if (!token) {
@@ -48,7 +50,7 @@ async function verifyRecaptchaToken(token) {
   }
 }
 
-module.exports = async function verifyRecaptchaHandler(req, res) {
+router.post("/verify-recaptcha", async (req, res) => {
   const { recaptchaToken } = req.body;
 
   if (!recaptchaToken) {
@@ -97,4 +99,6 @@ module.exports = async function verifyRecaptchaHandler(req, res) {
       message: "An error occurred during reCAPTCHA verification.",
     });
   }
-};
+});
+
+module.exports = router;

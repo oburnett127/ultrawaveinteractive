@@ -104,7 +104,7 @@ async function saveSession(sessionId, session, redis) {
 }
 
 // 🧠 Main Route: POST /api/salesbot
-module.exports = async function salesbotHandler(req, res) {
+router.post("/salesbot", async (req, res) => {
   try {
     const userMessage = req.body.message;
     const sessionId = req.ip || "default-session";
@@ -189,4 +189,6 @@ module.exports = async function salesbotHandler(req, res) {
     console.error("Salesbot Error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
-};
+});
+
+module.exports = router;

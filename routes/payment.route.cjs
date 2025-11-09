@@ -1,5 +1,7 @@
 const crypto = require("crypto");
 const prisma = require("../lib/prisma.cjs");
+const express = require('express');
+const router = express.Router();
 
 // OPTIONAL: if you have a NextAuth session and exported authOptions from [...nextauth].js,
 // this will attach userId/email to the Payment row. If not, it will still work without it.
@@ -32,7 +34,7 @@ function uuid() {
   return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-module.exports = async function paymentHandler(req, res) {
+router.post("/payment/charge", async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -126,4 +128,6 @@ module.exports = async function paymentHandler(req, res) {
     console.error("Square pay handler error:", err);
     return res.status(500).json({ error: "Payment server error" });
   }
-};
+});
+
+module.exports = router;

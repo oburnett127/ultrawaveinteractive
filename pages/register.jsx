@@ -95,7 +95,8 @@ export default function Register() {
 
       setSubmitting(true);
 
-      const res = await fetch("/api/auth/register", {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
+      const res = await fetch(`${backendUrl}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

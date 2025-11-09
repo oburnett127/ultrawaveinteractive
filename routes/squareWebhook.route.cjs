@@ -1,7 +1,9 @@
 // /routes/squareWebhook.route.cjs
 const crypto = require("crypto");
+const express = require('express');
+const router = express.Router();
 
-module.exports = async function squareWebhookHandler(req, res) {
+router.post("square/webhook/", async (req, res) => {
   try {
     const sigKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
     const sigHdr = req.headers["x-square-hmacsha256"];
@@ -46,4 +48,6 @@ module.exports = async function squareWebhookHandler(req, res) {
     console.error("[Webhook] Handler error:", err);
     return res.status(500).json({ error: "Internal webhook error" });
   }
-};
+});
+
+module.exports = router;

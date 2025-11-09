@@ -19,7 +19,7 @@ const TermsOfService = () => {
         setLoading(false);
       })
       .catch((error) => {
-        console.error("Error loading privacy policy:", error);
+        console.error("Error loading terms of service:", error);
         setTermsOfServiceText("Sorry, we couldn't load the terms of service at this time.");
         setLoading(false);
       });
@@ -36,7 +36,7 @@ const TermsOfService = () => {
         <meta name="description" content="Read the Terms of Service for Ultrawave Interactive Web Design to learn about the guidelines, responsibilities, and rights that apply to our website and services." />
       </Head>
 
-      <h1 className="whiteText">Terms of Service</h1>
+      <h1 className="white-text">Terms of Service</h1>
       <pre className="white-text">{termsOfServiceText}</pre>
     </div>
   );

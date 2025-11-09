@@ -1,9 +1,11 @@
 // /routes/leads.route.cjs
 const prisma = require("../lib/prisma.cjs");
+const express = require('express');
+const router = express.Router();
 
 const SECRET_TOKEN = process.env.LEADS_API_TOKEN;
 
-module.exports = async function leadsHandler(req, res) {
+router.post("/leads", async (req, res) => {
   try {
     if (req.method !== "POST") {
       return res.status(405).json({ error: "Method Not Allowed" });
@@ -46,4 +48,6 @@ module.exports = async function leadsHandler(req, res) {
     console.error("❌ Lead creation error:", err);
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
-};
+});
+
+module.exports = router;

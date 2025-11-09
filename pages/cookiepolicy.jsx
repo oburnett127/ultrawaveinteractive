@@ -1,38 +1,48 @@
-import Head from 'next/head';
-import { useEffect } from 'react';
+import Head from "next/head";
+import React, { useState, useEffect } from "react";
+import remarkGfm from 'remark-gfm';
+import ReactMarkdown from 'react-markdown';
 
-function CookiePolicy() {
+const CookiePolicy = () => {
+  const [cookiePolicyText, setCookiePolicyText] = useState("");
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const existingScript = document.getElementById('CookieDeclarationScript');
-    if (!existingScript) {
-      const script = document.createElement('script');
-      script.id = 'CookieDeclarationScript';
-      script.src = 'https://consent.cookiebot.com/1123ad0d-92b4-4708-9484-2156b78a0795/cd.js';
-      script.type = 'text/javascript';
-      script.async = true;
-      script.setAttribute('data-cbid', '1123ad0d-92b4-4708-9484-2156b78a0795');
-      script.setAttribute('data-blockingmode', 'auto');
-      script.setAttribute('data-culture', 'EN');
-
-      document.body.appendChild(script);
-
-      return () => {
-        document.body.removeChild(script);
-      };
-    }
+    fetch("/cookie-policy.txt")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch the cookie policy.");
+        }
+        return response.text();
+      })
+      .then((text) => {
+        setCookiePolicyText(text);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error loading cookie policy:", error);
+        setTermsOfServiceText("Sorry, we couldn't load the cookie policy at this time.");
+        setLoading(false);
+      });
   }, []);
+
+  if (loading) {
+    return <p>Loading cookie policy...</p>;
+  }
 
   return (
     <div>
       <Head>
         <title>Ultrawave Interactive Web Design | Cookie Policy</title>
-        <meta name="description" content="Read our Cookie Policy to understand how Ultrawave Interactive uses cookies to enhance your browsing experience and provide personalized services." />
+        <meta name="description" content="Read the Cookie Policy for Ultrawave Interactive Web Design to learn about how we use cookies on our website." />
       </Head>
 
-      <h1 className="whiteText">Cookie Policy</h1>
-      <div className="whiteText" id="CookieDeclaration"></div>
+      <h1 className="white-text">Cookie Policy</h1>
+      <div className="markdown">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{cookiePolicyText}</ReactMarkdown>
+      </div>
     </div>
   );
-}
+};
 
 export default CookiePolicy;
