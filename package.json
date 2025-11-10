@@ -10,10 +10,12 @@
         "*.scss"
     ],
     "scripts": {
-        "dev": "node server.cjs",
+        "dev": "next dev",
+        "dev:backend": "node server.cjs",
         "build": "next build",
         "start": "node server.cjs",
-        "lint": "eslint . --ext .js,.jsx"
+        "lint": "eslint . --ext .js,.jsx",
+        "start": "node server.cjs"
     },
     "engines": {
         "node": "18.x",

@@ -78,7 +78,7 @@ router.post("/payment/charge", async (req, res) => {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
-        "Square-Version": "2025-05-15", // keep reasonably current
+        "Square-Version": process.env.SQUARE_VERSION, // keep reasonably current
       },
       body: JSON.stringify({
         idempotency_key: idem,

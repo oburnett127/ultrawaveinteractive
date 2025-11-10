@@ -8,7 +8,7 @@ dotenv.config();
 
 const { initBackend } = require("./index.cjs");
 const dev = process.env.NODE_ENV !== "production";
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 
 const nextApp = next({ dev });
 const handle = nextApp.getRequestHandler();
@@ -33,16 +33,8 @@ const handle = nextApp.getRequestHandler();
 
     server.set("trust proxy", 1);
 
-    // ✅ NextAuth handled first by Next.js
-    server.all("/api/auth/*", (req, res) => handle(req, res));
-
     // ✅ IMPORTANT: Wait for Express backend routes to mount
-    await initBackend(server);
-
-    // ✅ Only after backend routes are ready, let Next.js handle everything else
-    server.get("*", (req, res) => {
-      return handle(req, res, { cspNonce: res.locals.cspNonce });
-    });
+    await initBackend(server, handle);
 
     server.listen(port, (err) => {
       if (err) throw err;

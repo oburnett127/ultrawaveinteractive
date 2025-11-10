@@ -20,6 +20,12 @@ export default function ChangePassword() {
       });
 
       const data = await res.json();
+
+      if (res.status === 429) {
+        console.warn("Rate limited. Backing off.");
+        return; // don't retry immediately
+      }
+      
       if (!res.ok) {
         setStatus({ error: data.error || "Something went wrong." });
       } else {

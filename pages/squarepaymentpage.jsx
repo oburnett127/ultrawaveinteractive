@@ -70,7 +70,7 @@ export default function SquarePaymentPage() {
 
       // 3️⃣ Call backend route
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
-      const response = await fetch(`${backendUrl}/api/payments/charge`, {
+      const res = await fetch(`${backendUrl}/api/payments/charge`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -80,12 +80,18 @@ export default function SquarePaymentPage() {
         }),
       });
 
-      const data = await response.json();
-      if (response.ok) {
-        setMessage("✅ Payment successful!");
-      } else {
-        setMessage("❌ Payment failed: " + (data.error || "Unknown error"));
+      if (res.status === 429) {
+        console.warn("Rate limited. Backing off.");
+        return; // don't retry immediately
       }
+      
+      if (!res.ok) {
+        setMessage("❌ Payment failed: " + (data.error || "Unknown error"));
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const data = await response.json();
+      setMessage("✅ Payment successful!");
     } catch (err) {
       setMessage("❌ " + err.message);
     } finally {

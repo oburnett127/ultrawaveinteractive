@@ -103,6 +103,13 @@ export default function Register() {
         body: JSON.stringify({ emailText, password, name, recaptchaToken: token }),
       });
 
+      if (res.status === 429) {
+        console.warn("Rate limited. Backing off.");
+        return; // don't retry immediately
+      }
+      
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
       let data;
       try {
         data = await res.json();

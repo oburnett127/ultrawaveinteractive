@@ -45,6 +45,14 @@ function Home() {
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
         const res = await fetch(`${backendUrl}/api/blog/list`);
+        
+        if (res.status === 429) {
+          console.warn("Rate limited. Backing off.");
+          return; // don't retry immediately
+        }
+      
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
         const data = await res.json();
 
         if (!Array.isArray(data)) {

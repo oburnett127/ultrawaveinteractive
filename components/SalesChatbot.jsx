@@ -30,6 +30,14 @@ export default function SalesChatbot() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: input }),
       });
+
+      if (res.status === 429) {
+        console.warn("Rate limited. Backing off.");
+        return; // don't retry immediately
+      }
+      
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
       const data = await res.json();
 
       setMessages((prev) => [

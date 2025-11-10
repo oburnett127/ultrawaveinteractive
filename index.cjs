@@ -41,7 +41,7 @@ function makeSanitizer(options = {}) {
   };
 }
 
-async function initBackend(app) {
+async function initBackend(app, handle) {
   dotenv.config();
   const isProd = process.env.NODE_ENV === "production";
 
@@ -55,11 +55,21 @@ async function initBackend(app) {
     next();
   });
 
+  app.use((req, res, next) => {
+    console.log("➡️ Incoming request:", req.method, req.url);
+    next();
+  });
+
   // Helmet dynamic CSP setup
   // 3) Helmet setup (dynamic import)
   const helmet = (await import("helmet")).default;
 
   app.use((req, res, next) => {
+
+    if (req.url.startsWith("/_next/") || req.url.startsWith("/favicon")) {
+      return next();
+    }
+
     const nonce = res.locals.cspNonce;
     const isProd = process.env.NODE_ENV === "production";
 
@@ -76,15 +86,31 @@ async function initBackend(app) {
         "https://www.gstatic.com",
         "https://sandbox.web.squarecdn.com",
         "https://cdn.jsdelivr.net",
-        ...(isProd ? [] : ["'unsafe-eval'", "http://localhost:3000"]),
+        ...(isProd
+          ? []
+          : [
+              "'unsafe-eval'",
+              "'unsafe-inline'", // 👈 allow inline only in dev
+              "http://localhost:3000",
+              "http://localhost:3000/_next/",
+              "http://localhost:3000/_next/static/",
+            ]),
       ],
       "style-src": [
         "'self'",
         "'unsafe-inline'",
-        "https://cdn.jsdelivr.net",
         "https://fonts.googleapis.com",
+        "https://cdn.jsdelivr.net",
+        "http://localhost:3000/_next/",
       ],
-      "connect-src": ["'self'", "https://*", ...(isProd ? [] : ["ws://localhost:3000"])],
+      "connect-src": [
+        "'self'",
+        "https://*",
+        ...(isProd ? [] : [
+          "ws://localhost:3000", // HMR websocket
+          "http://localhost:3000/_next/",
+        ]),
+      ],
       "frame-src": ["'self'", "https://www.google.com", "https://*.squareup.com"],
     };
 
@@ -218,8 +244,12 @@ async function initBackend(app) {
   app.use("/api", waitForRedis, rateLimitMiddleware(changePasswordLimiter), changePasswordRoute);
   app.use("/api", waitForRedis, rateLimitMiddleware(redisHealthLimiter), healthRoute);
 
-  // Sanitizer
   app.use(makeSanitizer());
+
+  app.all("*", (req, res) => {
+    // Pass the nonce so Next.js can apply it to inline scripts
+    return handle(req, res, { cspNonce: res.locals.cspNonce });
+  });
 
   // Error handlers
   app.use((err, req, res, next) => {

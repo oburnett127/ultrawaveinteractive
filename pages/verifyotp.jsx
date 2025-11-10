@@ -39,12 +39,17 @@ export default function VerifyOTP() {
           body: JSON.stringify({ email }),
         });
 
+        if (res.status === 429) {
+          console.warn("Rate limited. Backing off.");
+          return; // don't retry immediately
+        }
+        
+        if (!res.ok) throw new Error(data.error || "Failed to send OTP");
+
         const contentType = res.headers.get("content-type") || "";
         const data = contentType.includes("application/json")
           ? await res.json()
           : { raw: await res.text() };
-
-        if (!res.ok) throw new Error(data.error || "Failed to send OTP");
 
         setInfo("We sent a 6-digit code to your email.");
         setCooldown(30);
@@ -82,12 +87,17 @@ export default function VerifyOTP() {
         body: JSON.stringify({ email, otp }),
       });
 
+      if (res.status === 429) {
+        console.warn("Rate limited. Backing off.");
+        return; // don't retry immediately
+      }
+      
+      if (!res.ok) throw new Error(payload.error || "OTP verification failed");
+
       const contentType = res.headers.get("content-type") || "";
       const payload = contentType.includes("application/json")
         ? await res.json()
         : { raw: await res.text() };
-
-      if (!res.ok) throw new Error(payload.error || "OTP verification failed");
 
       await update({ user: { otpVerified: true } });
       window.location.assign("/payment");
@@ -117,8 +127,14 @@ export default function VerifyOTP() {
         body: JSON.stringify({ email }),
       });
 
-      const data = await res.json();
+      if (res.status === 429) {
+        console.warn("Rate limited. Backing off.");
+        return; // don't retry immediately
+      }
+
       if (!res.ok) throw new Error(data.error || "Failed to resend OTP");
+
+      const data = await res.json();
 
       setInfo("New code sent.");
       setCooldown(30);
