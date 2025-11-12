@@ -1,16 +1,18 @@
 // /routes/salesbot.route.cjs
 const express = require("express");
-const router = express.Router();
 const rateLimit = require("express-rate-limit");
+const crypto = require("crypto");
 const OpenAI = require("openai");
-const { createRedisClient } = require("../lib/redisClient.cjs");
 const prisma = require("../lib/prisma.cjs");
+const { createRedisClient } = require("../lib/redisClient.cjs");
 const { sendNewLeadEmail } = require("../lib/mailerlead.cjs");
 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const router = express.Router();
+
+// -------- Config / Constants --------
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const SESSION_TTL_SECONDS = 60 * 15; // 15 minutes
 
 const PREFIX = "salesbot:";
 const REQUIRED_FIELDS = [
@@ -22,40 +24,76 @@ const REQUIRED_FIELDS = [
   "estimatedBudget",
 ];
 
-// ✅ System Prompt (Condensed for Token Efficiency)
-const systemPrompt = `
-You are Ultrawave Salesbot, a friendly lead-collection assistant for Ultrawave Interactive (https://ultrawaveinteractive.com), a U.S.-based web design agency.
+// Fail fast if missing critical secrets (but don’t crash app)
+if (!OPENAI_API_KEY) {
+  console.error("[Salesbot] Missing OPENAI_API_KEY — route will return 503.");
+}
+const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-🎯 Goal: Ask one question at a time to collect these fields:
-1. Full Name (first + last)
-2. Email
-3. Phone
-4. Company (optional)
-5. Project Details (brief)
-6. Estimated Budget (USD)
-7. Timeline (optional)
+// -------- Body size limit (protect memory) --------
+router.use(express.json({ limit: "32kb" }));
 
-📝 After each reply:
-- Acknowledge the answer briefly
-- Ask the next missing field
-- Keep messages short and conversational
-- No pressure or sales tactics
-- Write at a 6th–8th grade reading level
+// -------- Rate limit (protect abuse) --------
+const salesbotLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 50,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." },
+});
+router.use(salesbotLimiter);
 
-✅ Rules:
-- Validate data: email must look like email, phone must be numeric, name must be full name.
-- If user refuses info: explain it's required for a quote and let them continue when ready.
-- Simple service questions OK, but refer technical/pricing questions to human team.
-- Stop asking when all required fields are collected:
-  > “Thanks! I’ve sent this to our team. You’ll hear from us soon 👋”
+// -------- Helpers --------
+function isLeadComplete(lead) {
+  return REQUIRED_FIELDS.every((field) => lead[field]);
+}
 
-🚫 Forbidden:
-- No guarantees, contracts, pricing, or legal topics
-- No technical code or instructions
-- No unrelated services
-`;
+function coerceLeadTypes(obj) {
+  const lead = { ...obj };
+  if (lead.estimatedBudget != null) {
+    const n = parseInt(String(lead.estimatedBudget).replace(/[^\d]/g, ""), 10);
+    lead.estimatedBudget = Number.isFinite(n) ? n : null;
+  }
+  if (lead.name) lead.name = String(lead.name).trim();
+  if (lead.email) lead.email = String(lead.email).trim().toLowerCase();
+  if (lead.phone) lead.phone = String(lead.phone).trim();
+  if (lead.company) lead.company = String(lead.company).trim();
+  if (lead.projectDetails) lead.projectDetails = String(lead.projectDetails).trim();
+  if (lead.timeline) lead.timeline = String(lead.timeline).trim();
+  return lead;
+}
 
-// ✅ OpenAI function to extract lead data from messages
+function basicLeadValidate(lead) {
+  const emailOk = !lead.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead.email);
+  const phoneOk = !lead.phone || /^[0-9+()\s\-]{7,20}$/.test(lead.phone);
+  const nameOk = !lead.name || /\s/.test(lead.name); // roughly "first last"
+  return emailOk && phoneOk && nameOk;
+}
+
+function getSessionKey(req) {
+  // Robust session id: header > cookie > hash(ip+ua)
+  const hdr = req.headers["x-session-id"];
+  if (hdr && typeof hdr === "string" && hdr.length <= 128) return `${PREFIX}${hdr}`;
+
+  const cookie = (req.headers.cookie || "").match(/sbid=([^;]+)/);
+  if (cookie) return `${PREFIX}${cookie[1]}`;
+
+  const ua = req.headers["user-agent"] || "";
+  const base = `${req.ip || "0.0.0.0"}|${ua}`;
+  const hash = crypto.createHash("sha256").update(base).digest("hex");
+  return `${PREFIX}${hash}`;
+}
+
+async function getSession(redis, key) {
+  const raw = await redis.get(key);
+  return raw ? JSON.parse(raw) : { messages: [], lead: {}, updatedAt: Date.now() };
+}
+
+async function saveSession(redis, key, session) {
+  await redis.set(key, JSON.stringify(session), { EX: SESSION_TTL_SECONDS });
+}
+
+// OpenAI function for lead extraction
 const FUNCTION_DEFINITION = {
   name: "extractLeadData",
   description: "Extracts valid lead data from the current user message",
@@ -67,127 +105,181 @@ const FUNCTION_DEFINITION = {
       phone: { type: "string", description: "Phone number" },
       company: { type: "string", description: "Company name" },
       projectDetails: { type: "string", description: "Brief project description" },
-      estimatedBudget: { type: "string", description: "Estimated budget" },
+      estimatedBudget: { type: "string", description: "Estimated budget (USD)" },
       timeline: { type: "string", description: "Project timeline" },
     },
   },
 };
 
-// 🔒 Rate limit: max 50 requests per hour per IP
-const salesbotLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 50,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    error: "Too many requests, please try again later.",
-  },
-});
-router.use(salesbotLimiter);
+// System prompt
+const systemPrompt = `
+You are Ultrawave Salesbot, a friendly lead-collection assistant for a U.S.-based web design agency.
+Goal: Collect these fields one at a time: name (first+last), email, phone, company (optional), projectDetails (brief), estimatedBudget (USD), timeline (optional).
+Be short, warm, 6th–8th grade reading level. Validate basics: email looks like email, phone looks like phone, name includes first and last.
+If the user refuses, say it's needed for a quote and continue when they're ready.
+Stop when all required fields are collected and say: "Thanks! I’ve sent this to our team. You’ll hear from us soon 👋"
+No promises, pricing, legal, or technical instructions.
+`;
 
-// 🔧 Utilities
-function isLeadComplete(lead) {
-  return REQUIRED_FIELDS.every((field) => lead[field]);
-}
-
-async function getSession(sessionId, redis) {
-  const key = `${PREFIX}${sessionId}`;
-  const data = await redis.get(key);
-  return data ? JSON.parse(data) : null;
-}
-
-async function saveSession(sessionId, session, redis) {
-  const key = `${PREFIX}${sessionId}`;
-  await redis.set(key, JSON.stringify(session), {
-    EX: 60 * 15, // 15 min TTL
-  });
-}
-
-// 🧠 Main Route: POST /api/salesbot
+// -------- Route --------
 router.post("/salesbot", async (req, res) => {
+  const started = Date.now();
+
   try {
-    const userMessage = req.body.message;
-    const sessionId = req.ip || "default-session";
-
-    // ✅ Ensure Redis is ready
-    const redis = await createRedisClient();
-
-    let session = await getSession(sessionId, redis);
-    if (!session) {
-      session = { messages: [], lead: {} };
+    // Service availability check
+    if (!OPENAI_API_KEY) {
+      return res.status(503).json({ error: "AI service unavailable. Please try again later." });
     }
+
+    const userMessage = (req.body && req.body.message) ? String(req.body.message) : "";
+    if (!userMessage || userMessage.length > 2000) {
+      return res.status(400).json({ error: "Message is required and must be under 2000 characters." });
+    }
+
+    // Redis
+    const redis = await createRedisClient().catch((e) => {
+      console.error("[Salesbot] Redis connect error:", e.message);
+      return null;
+    });
+
+    const sessionKey = getSessionKey(req);
+    let session = redis ? await getSession(redis, sessionKey) : { messages: [], lead: {}, updatedAt: Date.now() };
 
     session.updatedAt = Date.now();
     session.messages.push({ role: "user", content: userMessage });
 
-    // 🔍 Use OpenAI Function Calling to extract fields
-    const extractResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...session.messages,
-      ],
-      functions: [FUNCTION_DEFINITION],
-      function_call: "auto",
-    });
+    // ---------- Step 1: Extract fields ----------
+    let extracted = {};
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout
 
-    const msg = extractResponse.choices[0].message;
-    if (msg.function_call?.arguments) {
-      const extracted = JSON.parse(msg.function_call.arguments);
-      Object.entries(extracted).forEach(([field, value]) => {
-        if (value && !session.lead[field]) session.lead[field] = value;
-      });
+      const extractResponse = await openai.chat.completions.create({
+        model: OPENAI_MODEL,
+        messages: [{ role: "system", content: systemPrompt }, ...session.messages],
+        functions: [FUNCTION_DEFINITION],
+        function_call: "auto",
+        temperature: 0.2,
+      }, { signal: controller.signal });
+
+      clearTimeout(timeout);
+
+      const msg = extractResponse.choices?.[0]?.message || {};
+      if (msg.function_call?.arguments) {
+        try {
+          extracted = JSON.parse(msg.function_call.arguments);
+        } catch (e) {
+          extracted = {};
+        }
+      }
+    } catch (aiErr) {
+      console.error("[Salesbot] OpenAI extract error:", aiErr?.message || aiErr);
+      // Graceful fallback: continue conversation without extraction this turn
+      extracted = {};
     }
 
-    // ✅ Save to DB and notify team if lead is completed
+    // Merge extracted → session.lead (first write wins)
+    Object.entries(extracted).forEach(([k, v]) => {
+      if (v && session.lead[k] == null) session.lead[k] = v;
+    });
+
+    // Coerce and validate
+    session.lead = coerceLeadTypes(session.lead);
+    if (!basicLeadValidate(session.lead)) {
+      // Don’t purge; we’ll let the model ask clarifying Qs next step
+    }
+
+    // ---------- Step 2: Save & Notify when complete ----------
     if (isLeadComplete(session.lead)) {
-      const savedLead = await prisma.lead.create({
-        data: {
-          name: session.lead.name,
-          email: session.lead.email,
-          phone: session.lead.phone,
-          company: session.lead.company || null,
-          projectDetails: session.lead.projectDetails,
-          estimatedBudget: session.lead.estimatedBudget,
-          timeline: session.lead.timeline || null,
-        },
-      });
+      // Persist lead; make email send non-fatal
+      let savedLead = null;
+      try {
+        savedLead = await prisma.lead.create({
+          data: {
+            name: session.lead.name,
+            email: session.lead.email,
+            phone: session.lead.phone,
+            company: session.lead.company || null,
+            projectDetails: session.lead.projectDetails,
+            estimatedBudget: session.lead.estimatedBudget, // integer USD if you want cents, convert earlier
+            timeline: session.lead.timeline || null,
+            source: "salesbot",
+          },
+        });
+      } catch (dbErr) {
+        console.error("[Salesbot] Lead save error:", dbErr);
+        // Keep going; we can still reply to user
+      }
 
-      // 📧 Send email notification
-      await sendNewLeadEmail(savedLead);
+      try {
+        if (savedLead) await sendNewLeadEmail(savedLead);
+      } catch (mailErr) {
+        console.warn("[Salesbot] Lead email notify failed:", mailErr?.message || mailErr);
+      }
 
-      const reply = `Awesome, thanks! I’ve sent this to our team. You’ll hear from us soon 👋`;
+      const reply = "Awesome, thanks! I’ve sent this to our team. You’ll hear from us soon 👋";
       session.messages.push({ role: "assistant", content: reply });
 
-      await redis.del(`${PREFIX}${sessionId}`);
+      if (redis) {
+        // End session once complete
+        await redis.del(sessionKey);
+      }
 
-      return res.json({ reply, lead: session.lead, saved: true });
+      return res.status(200).json({
+        ok: true,
+        saved: Boolean(savedLead),
+        reply,
+        lead: session.lead,
+        latency_ms: Date.now() - started,
+      });
     }
 
-    // 🔁 Otherwise, ask the next missing field
-    const nextField = REQUIRED_FIELDS.find((f) => !session.lead[f]);
+    // ---------- Step 3: Ask next field ----------
+    const nextField = REQUIRED_FIELDS.find((f) => !session.lead[f]) || "projectDetails";
 
-    const promptResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...session.messages,
-        {
-          role: "system",
-          content: `Ask for the "${nextField}" field next.`,
-        },
-      ],
-      max_tokens: 100,
-    });
+    let reply = "Could you share a bit more so I can help?";
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout
 
-    const reply = promptResponse.choices[0].message.content;
+      const promptResponse = await openai.chat.completions.create({
+        model: OPENAI_MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...session.messages,
+          { role: "system", content: `Ask for the "${nextField}" field next.` },
+        ],
+        max_tokens: 120,
+        temperature: 0.4,
+      }, { signal: controller.signal });
+
+      clearTimeout(timeout);
+
+      reply = promptResponse.choices?.[0]?.message?.content?.trim() || reply;
+    } catch (aiErr) {
+      console.error("[Salesbot] OpenAI prompt error:", aiErr?.message || aiErr);
+      reply = "Got it. Could you share a bit more so I can help?";
+    }
+
     session.messages.push({ role: "assistant", content: reply });
 
-    await saveSession(sessionId, session, redis);
-    res.json({ reply, lead: session.lead });
+    if (redis) {
+      await saveSession(redis, sessionKey, session);
+    }
+
+    return res.status(200).json({
+      ok: true,
+      reply,
+      lead: session.lead,
+      latency_ms: Date.now() - started,
+    });
   } catch (err) {
-    console.error("Salesbot Error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("[Salesbot] Unhandled error:", err);
+    return res.status(500).json({
+      ok: false,
+      error: "Internal server error",
+      message: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
   }
 });
 

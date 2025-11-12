@@ -1,89 +1,149 @@
+// /routes/sendOtp.route.cjs
+const express = require("express");
 const crypto = require("crypto");
+const rateLimit = require("express-rate-limit");
 const getRedis = require("../lib/redis.cjs");
 const sendOtpEmail = require("../lib/mail.cjs");
-const express = require('express');
+
 const router = express.Router();
 
-// Generate a 6-digit OTP using crypto
-function genOtp() {
+// --- OTP utility ---
+function generateOtp() {
   return String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
 }
 
-// Validate email format
+// --- Email validation ---
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Verify Google reCAPTCHA token
+// --- Verify Google reCAPTCHA token ---
 async function verifyRecaptchaToken(token) {
   const secret = process.env.RECAPTCHA_SECRET_KEY;
-  if (!secret) {
-    throw new Error("Server misconfiguration: RECAPTCHA_SECRET_KEY not set");
+  if (!secret) throw new Error("Server misconfiguration: RECAPTCHA_SECRET_KEY not set");
+  if (!token) return false;
+
+  try {
+    const params = new URLSearchParams();
+    params.append("secret", secret);
+    params.append("response", token);
+
+    const resp = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+    });
+
+    if (!resp.ok) {
+      console.warn(`[send-otp] ⚠️ reCAPTCHA API returned ${resp.status}`);
+      return false;
+    }
+
+    const data = await resp.json();
+    return Boolean(data?.success && (data.score === undefined || data.score >= 0.5));
+  } catch (err) {
+    console.error("[send-otp] reCAPTCHA verification failed:", err.message);
+    return false;
   }
-
-  const params = new URLSearchParams();
-  params.append("secret", secret);
-  params.append("response", token);
-
-  const resp = await fetch("https://www.google.com/recaptcha/api/siteverify", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params.toString(),
-  });
-
-  const data = await resp.json();
-  return Boolean(data && data.success);
 }
 
-router.post("/otp/send", async (req, res) => {
+// --- Per-IP rate limiter (express-rate-limit safety layer) ---
+const otpLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 10, // 10 requests per 10 minutes per IP
+  message: { error: "Too many OTP requests. Please wait a few minutes." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// --- Main Route: POST /api/otp/send ---
+router.post("/otp/send", otpLimiter, async (req, res) => {
+  const start = Date.now();
   try {
     const { email, recaptchaToken } = req.body || {};
 
-    // ---- Validate Inputs ----
-    if (!email) return res.status(400).json({ error: "Email is required" });
-    const lower = String(email).trim().toLowerCase();
-    if (!emailRegex.test(lower)) return res.status(400).json({ error: "Invalid email format" });
+    // --- Validate input ---
+    if (!email) {
+      return res.status(400).json({ ok: false, error: "Email is required." });
+    }
+
+    const lowerEmail = String(email).trim().toLowerCase();
+    if (!emailRegex.test(lowerEmail)) {
+      return res.status(400).json({ ok: false, error: "Invalid email format." });
+    }
 
     if (!recaptchaToken) {
-      return res.status(400).json({ error: "Missing reCAPTCHA token" });
+      return res.status(400).json({ ok: false, error: "Missing reCAPTCHA token." });
     }
 
-    // ---- Verify reCAPTCHA ----
+    // --- Verify reCAPTCHA ---
     const captchaOk = await verifyRecaptchaToken(recaptchaToken);
     if (!captchaOk) {
-      return res.status(400).json({ error: "Failed reCAPTCHA verification." });
+      return res.status(400).json({ ok: false, error: "Failed reCAPTCHA verification." });
     }
 
-    const r = await getRedis();
-
-    // ---- Rate Limiting (Max 5 per hour) ----
-    const rateKey = `otp_rate:${lower}`;
-    const currentCount = await r.incr(rateKey);
-    if (currentCount === 1) {
-      await r.expire(rateKey, 3600); // 1 hour window
-    }
-    if (currentCount > 5) {
-      return res.status(429).json({ error: "Too many OTP requests. Try again later." });
+    // --- Connect to Redis ---
+    let redis;
+    try {
+      redis = await getRedis();
+    } catch (err) {
+      console.error("[send-otp] ❌ Redis connection error:", err.message);
+      return res.status(503).json({ ok: false, error: "Temporary server issue. Please retry." });
     }
 
-    // ---- Generate OTP and Store in Redis ----
-    const otp = genOtp();
-    const otpKey = `otp:${lower}`;
+    // --- Per-email rate limiting (5 OTPs/hour) ---
+    const rateKey = `otp_rate:${lowerEmail}`;
+    const count = await redis.incr(rateKey);
+    if (count === 1) await redis.expire(rateKey, 3600);
+    if (count > 5) {
+      return res
+        .status(429)
+        .json({ ok: false, error: "Too many OTP requests for this email. Try again in 1 hour." });
+    }
+
+    // --- Prevent multiple active OTPs per email ---
+    const otpKey = `otp:${lowerEmail}`;
+    const existing = await redis.get(otpKey);
+    if (existing) {
+      return res.status(429).json({
+        ok: false,
+        error: "An OTP is already active. Please check your email or wait a few minutes.",
+      });
+    }
+
+    // --- Generate & store OTP securely ---
+    const otp = generateOtp();
     const ttlSeconds = 300; // 5 minutes
-    await r.set(otpKey, otp, { EX: ttlSeconds });
+    await redis.set(otpKey, otp, { EX: ttlSeconds });
 
-    // ---- Send OTP Email ----
-    await sendOtpEmail({ to: lower, code: otp });
+    // --- Send OTP email ---
+    try {
+      await sendOtpEmail({ to: lowerEmail, code: otp });
+    } catch (mailErr) {
+      console.error("[send-otp] ❌ Failed to send email:", mailErr.message);
+      await redis.del(otpKey); // rollback OTP to prevent ghost code
+      return res.status(500).json({ ok: false, error: "Failed to send email. Please retry." });
+    }
 
-    // ---- Response ----
-    const response = { ok: true, message: "OTP sent successfully." };
+    // --- Success response ---
+    const response = {
+      ok: true,
+      message: "OTP sent successfully.",
+      expiresInSeconds: ttlSeconds,
+      latencyMs: Date.now() - start,
+    };
+
     if (process.env.NODE_ENV !== "production") {
-      response.devCode = otp; // Helpful for development/testing
-      console.log(`[send-otp] OTP for ${lower}: ${otp} (expires in ${ttlSeconds}s)`);
+      response.devCode = otp; // show OTP in dev for local testing
+      console.log(`[send-otp] OTP for ${lowerEmail}: ${otp} (expires ${ttlSeconds}s)`);
     }
 
     return res.status(200).json(response);
   } catch (err) {
-    console.error("[send-otp] error:", err);
-    return res.status(500).json({ error: "Failed to send OTP" });
+    console.error("[send-otp] ❌ Unhandled error:", err);
+    return res.status(500).json({
+      ok: false,
+      error: "Internal server error.",
+      message: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
   }
 });
 

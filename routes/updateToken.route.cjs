@@ -1,32 +1,78 @@
-const { getServerSession } = require('next-auth/next');
-const { authOptions } = require("../lib/authOptions.cjs"); // ✅ CommonJS-safe import
-const prisma = require('../lib/prisma.cjs'); // Adjust path if needed
-const express = require('express');
+// /routes/updateToken.route.cjs
+const express = require("express");
+const { getServerSession } = require("next-auth/next");
+const prisma = require("../lib/prisma.cjs");
+const { authOptions } = require("../lib/authOptions.cjs");
+
 const router = express.Router();
 
+/**
+ * POST /api/update-token
+ * Marks the current authenticated user as OTP verified.
+ */
 router.post("/update-token", async (req, res) => {
+  const start = Date.now();
   try {
-    // ✅ Get session using NextAuth (works in Express if req/res are passed)
-    const session = await getServerSession(req, res, authOptions);
-    if (!session?.user?.email) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    await prisma.user.upsert({
-      where:  { email: session.user.email },
-      update: { otpVerified: true },
-      create: {
-        email: session.user.email,
-        name:  session.user.name  ?? null,
-        image: session.user.image ?? null,
-        otpVerified: true,
-      },
+    // --- 1️⃣ Validate session ---
+    const session = await getServerSession(req, res, authOptions).catch((err) => {
+      console.error("[update-token] Session retrieval error:", err.message);
+      return null;
     });
 
-    return res.status(200).json({ success: true });
-  } catch (e) {
-    console.error("update-token failed:", e);
-    return res.status(500).json({ error: "DB update failed" });
+    if (!session?.user?.email) {
+      return res.status(401).json({
+        ok: false,
+        error: "Unauthorized — no valid session found.",
+      });
+    }
+
+    const email = String(session.user.email).trim().toLowerCase();
+    const name = session.user.name ? String(session.user.name).trim() : null;
+    const image = session.user.image ? String(session.user.image).trim() : null;
+
+    // --- 2️⃣ Update or create user record safely ---
+    let updated;
+    try {
+      updated = await prisma.user.upsert({
+        where: { email },
+        update: { otpVerified: true },
+        create: {
+          email,
+          name,
+          image,
+          otpVerified: true,
+          isAdmin: false,
+        },
+        select: { id: true, email: true, otpVerified: true, updatedAt: true },
+      });
+    } catch (dbErr) {
+      console.error("[update-token] Database upsert error:", dbErr);
+      return res.status(500).json({
+        ok: false,
+        error: "Failed to update user record.",
+        message:
+          process.env.NODE_ENV === "development" ? dbErr.message : undefined,
+      });
+    }
+
+    // --- 3️⃣ Response ---
+    console.info(
+      `[update-token] ✅ User ${email} verified OTP in ${Date.now() - start}ms`
+    );
+
+    return res.status(200).json({
+      ok: true,
+      message: "OTP verification updated successfully.",
+      user: updated,
+    });
+  } catch (err) {
+    console.error("[update-token] ❌ Unhandled error:", err);
+    return res.status(500).json({
+      ok: false,
+      error: "Internal server error.",
+      message:
+        process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
   }
 });
 
