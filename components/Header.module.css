@@ -1,0 +1,76 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #0a0a0a;
+  border-bottom: 1px solid #222;
+  color: #fff;
+  flex-wrap: wrap;
+}
+
+.leftSpacer {
+  flex: 1 1 100px;
+}
+
+.centeredHeading {
+  flex: 1 1 auto;
+  text-align: center;
+  font-size: 1.2rem;
+  margin: 0;
+  color: #fff;
+}
+
+.homeLink {
+  text-decoration: none;
+  color: #fff;
+  transition: color 0.2s;
+}
+
+.homeLink:hover,
+.homeLink:focus {
+  color: #00ffb3;
+}
+
+.rightControls {
+  flex: 1 1 150px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.button {
+  background-color: #00ffb3;
+  color: #000;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease-in-out;
+}
+
+.button:hover,
+.button:focus {
+  background-color: #0ffcc5;
+}
+
+.emailText {
+  color: #ccc;
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+.loadingText {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.headerFallback {
+  background: #111;
+  color: #f88;
+  text-align: center;
+  padding: 1rem;
+}

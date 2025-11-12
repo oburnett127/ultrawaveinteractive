@@ -97,15 +97,7 @@ export default function CreatePost() {
       <h1>Create Blog Post</h1>
 
       {error && (
-        <p
-          className="red-text"
-          style={{
-            backgroundColor: "#fee",
-            color: "#b00",
-            padding: "10px",
-            borderRadius: "6px",
-          }}
-        >
+        <p className="red-text">
           {error}
         </p>
       )}

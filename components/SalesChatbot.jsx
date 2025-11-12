@@ -1,77 +1,115 @@
 // components/SalesBot.jsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 
 export default function SalesChatbot() {
   const backendUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
-  
+
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hi 👋 How can I help grow your business today?" },
   ]);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const messagesEndRef = useRef(null);
+  const abortControllerRef = useRef(null);
 
-  // Auto-scroll when messages change
+  // Auto-scroll to bottom on new message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
+  // Gracefully cancel in-flight requests on unmount
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
-    const newMessage = { role: "user", content: input };
-    setMessages((prev) => [...prev, newMessage]);
+  const appendMessage = useCallback((role, content) => {
+    setMessages((prev) => [...prev, { role, content }]);
+  }, []);
+
+  const sendMessage = useCallback(async () => {
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = input.trim();
+    appendMessage("user", userMessage);
     setInput("");
+    setIsLoading(true);
+    setErrorMsg("");
+
+    abortControllerRef.current?.abort(); // cancel any prior pending request
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     try {
       const res = await fetch(`${backendUrl}/api/salesbot`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }),
+        body: JSON.stringify({ message: userMessage }),
+        signal: controller.signal,
       });
 
+      // Handle rate limit specifically
       if (res.status === 429) {
-        console.warn("Rate limited. Backing off.");
-        return; // don't retry immediately
+        appendMessage("assistant", "⚠️ Too many requests. Please wait a moment before trying again.");
+        return;
       }
-      
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      // Handle other non-OK responses gracefully
+      if (!res.ok) {
+        throw new Error(`Server responded with ${res.status}`);
+      }
 
       const data = await res.json();
 
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.reply || "⚠️ No response from bot" },
-      ]);
+      const reply = data?.reply?.trim();
+      appendMessage("assistant", reply || "🤔 I'm not sure how to respond to that right now.");
     } catch (error) {
+      if (error.name === "AbortError") {
+        console.warn("Fetch aborted (component unmounted or new request sent).");
+        return;
+      }
       console.error("Salesbot error:", error);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "⚠️ Something went wrong. Please try again later." },
-      ]);
+      setErrorMsg("Something went wrong. Please try again later.");
+      appendMessage(
+        "assistant",
+        "⚠️ I'm having trouble connecting right now. Please try again in a few seconds."
+      );
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [input, backendUrl, appendMessage, isLoading]);
 
-  // Send message on Enter key press
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      sendMessage();
-    }
+    if (e.key === "Enter") sendMessage();
   };
 
   return (
     <div className="chatbot-wrapper">
       {!isOpen && (
-        <button className="chatbot-fab" onClick={() => setIsOpen(true)}>
+        <button
+          className="chatbot-fab"
+          onClick={() => setIsOpen(true)}
+          aria-label="Open chat"
+        >
           💬
         </button>
       )}
+
       {isOpen && (
         <div className="chatbot-window">
           <div className="chatbot-header">
             <span>💡 Sales Assistant</span>
-            <button className="chatbot-close" onClick={() => setIsOpen(false)}>✕</button>
+            <button
+              className="chatbot-close"
+              onClick={() => setIsOpen(false)}
+              aria-label="Close chat"
+            >
+              ✕
+            </button>
           </div>
 
           <div className="chatbot-body">
@@ -80,6 +118,14 @@ export default function SalesChatbot() {
                 {msg.content}
               </div>
             ))}
+            {isLoading && (
+              <div className="chatbot-msg assistant typing">
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+              </div>
+            )}
+            {errorMsg && <div className="chatbot-error">{errorMsg}</div>}
             <div ref={messagesEndRef} />
           </div>
 
@@ -88,11 +134,16 @@ export default function SalesChatbot() {
               className="chatbot-input"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask me anything..."
+              placeholder={isLoading ? "Please wait..." : "Ask me anything..."}
               onKeyDown={handleKeyPress}
+              disabled={isLoading}
             />
-            <button className="chatbot-send" onClick={sendMessage}>
-              Send
+            <button
+              className="chatbot-send"
+              onClick={sendMessage}
+              disabled={isLoading || !input.trim()}
+            >
+              {isLoading ? "..." : "Send"}
             </button>
           </div>
         </div>
