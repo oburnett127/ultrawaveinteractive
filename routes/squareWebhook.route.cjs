@@ -1,52 +1,92 @@
 // /routes/squareWebhook.route.cjs
 const crypto = require("crypto");
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
-router.post("square/webhook/", async (req, res) => {
+// ✅ Square webhooks are POSTed as raw bytes — ensure express.raw() is applied in server setup:
+// app.use("/api/square/webhook", express.raw({ type: "*/*" }), squareWebhookRoute);
+
+router.post("/square/webhook", async (req, res) => {
+  const sigKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+  const sigHdr = req.headers["x-square-hmacsha256"];
+  const rawBody = req.body; // raw Buffer (not parsed JSON)
+
+  // --- Basic validation before crypto ---
+  if (!sigKey) {
+    console.error("[SquareWebhook] ❌ Missing SQUARE_WEBHOOK_SIGNATURE_KEY environment variable.");
+    return res.status(500).json({ error: "Server misconfiguration" });
+  }
+  if (!sigHdr) {
+    console.warn("[SquareWebhook] ⚠️ Missing x-square-hmacsha256 header.");
+    return res.status(401).json({ error: "Missing signature header" });
+  }
+  if (!Buffer.isBuffer(rawBody)) {
+    console.error("[SquareWebhook] ❌ Webhook body not received as Buffer. Ensure express.raw() middleware is used.");
+    return res.status(400).json({ error: "Invalid body type" });
+  }
+
+  // --- Compute and validate signature ---
+  let computedSig;
   try {
-    const sigKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
-    const sigHdr = req.headers["x-square-hmacsha256"];
-    const rawBody = req.body; // captured as raw Buffer by express.raw()
-
-    if (!sigKey) {
-      console.error("[Webhook] Missing SQUARE_WEBHOOK_SIGNATURE_KEY env");
-      return res.status(401).json({ error: "Missing signature key" });
-    }
-    if (!sigHdr) {
-      console.error("[Webhook] Missing x-square-hmacsha256 header");
-      return res.status(401).json({ error: "Missing signature header" });
-    }
-
-    // Compute HMAC SHA-256 Base64 signature
-    const computedSig = crypto
+    computedSig = crypto
       .createHmac("sha256", sigKey)
       .update(rawBody)
       .digest("base64");
 
-    const sigMatch = crypto.timingSafeEqual(
-      Buffer.from(computedSig, "utf8"),
-      Buffer.from(String(sigHdr), "utf8")
-    );
+    // Compare signatures in constant time
+    const match =
+      computedSig.length === String(sigHdr).length &&
+      crypto.timingSafeEqual(
+        Buffer.from(computedSig, "utf8"),
+        Buffer.from(String(sigHdr), "utf8")
+      );
 
-    if (!sigMatch) {
-      console.error("[Webhook] Signature mismatch", {
+    if (!match) {
+      console.error("[SquareWebhook] ❌ Signature mismatch.", {
         received: sigHdr,
         computed: computedSig,
       });
       return res.status(401).json({ error: "Invalid signature" });
     }
+  } catch (err) {
+    console.error("[SquareWebhook] ❌ Signature verification error:", err);
+    return res.status(500).json({ error: "Signature verification failed" });
+  }
 
-    // ✅ Verified: parse and handle the webhook data
-    const event = JSON.parse(rawBody.toString("utf8"));
-    console.log("[Webhook] Verified event type:", event?.type);
+  // --- Parse and validate JSON ---
+  let event;
+  try {
+    event = JSON.parse(rawBody.toString("utf8"));
+  } catch (err) {
+    console.error("[SquareWebhook] ❌ Failed to parse JSON:", err);
+    return res.status(400).json({ error: "Malformed JSON body" });
+  }
 
-    // TODO: Queue this event or process here...
+  // --- Sanity check event object ---
+  if (!event || typeof event !== "object" || !event.type) {
+    console.warn("[SquareWebhook] ⚠️ Missing event type or invalid payload:", event);
+    return res.status(400).json({ error: "Invalid event payload" });
+  }
 
+  console.log(`[SquareWebhook] ✅ Verified event type: ${event.type}`);
+
+  // --- Process event safely (decouple from request) ---
+  try {
+    // Example: queue for async background processing
+    // await queueWebhookEvent(event);
+
+    // Or handle directly (non-blocking)
+    if (event.type === "payment.updated") {
+      console.log("[SquareWebhook] 🧾 Payment updated:", event.data?.object?.payment?.id);
+      // You can handle it here or publish to message queue
+    }
+
+    // Always respond fast — Square retries if response > 10s or non-2xx
     return res.status(200).json({ ok: true });
   } catch (err) {
-    console.error("[Webhook] Handler error:", err);
-    return res.status(500).json({ error: "Internal webhook error" });
+    console.error("[SquareWebhook] ❌ Error while processing event:", err);
+    // Still return 200 to prevent retries if the webhook data itself was valid
+    return res.status(200).json({ ok: true, warning: "Processing failed internally" });
   }
 });
 

@@ -846,3 +846,174 @@ input {
 li {
   color: white;
 }
+
+.change-password-container {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+input[disabled],
+button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-msg {
+  color: #ff6b6b;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+.success-msg {
+  color: #4caf50;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+.signin-form {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.signin-label {
+  display: block;
+  margin-top: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.signin-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #555;
+  border-radius: 4px;
+}
+
+.signin-button {
+  margin-top: 1.5rem;
+  padding: 0.6rem 1rem;
+  background: #2b6cb0;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.signin-button[disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.signin-error {
+  color: #ff6b6b;
+  margin-top: 1rem;
+  font-weight: 500;
+}
+
+.blog-list-container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.blog-list {
+  list-style: none;
+  padding: 0;
+}
+
+.blog-list li {
+  margin-bottom: 0.75rem;
+}
+
+.blog-list a {
+  text-decoration: none;
+  color: #2b6cb0;
+}
+
+.blog-list a:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  color: #ff6b6b;
+  font-weight: 500;
+  margin-top: 1rem;
+}
+
+.no-posts-message {
+  color: #aaa;
+  margin-top: 1rem;
+}
+
+.red-text {
+  color: #ff6b6b;
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+
+.register-styling {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.register-styling input {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 4px;
+  margin-bottom: 12px;
+  border: 1px solid #555;
+  border-radius: 4px;
+}
+
+.register-styling button {
+  width: 100%;
+  padding: 0.6rem;
+  background: #2b6cb0;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.register-styling button[disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.square-payment-form {
+  max-width: 420px;
+  margin: 2rem auto;
+}
+
+.square-payment-form input {
+  width: 100%;
+  padding: 0.6rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #555;
+  border-radius: 4px;
+}
+
+.square-payment-form button {
+  width: 100%;
+  padding: 0.75rem;
+  background: #2b6cb0;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.square-payment-form button[disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.payment-message {
+  margin-top: 1rem;
+  font-weight: 500;
+}

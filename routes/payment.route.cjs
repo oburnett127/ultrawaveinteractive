@@ -1,14 +1,14 @@
 const crypto = require("crypto");
+const express = require("express");
+const rateLimit = require("express-rate-limit");
 const prisma = require("../lib/prisma.cjs");
-const express = require('express');
+
 const router = express.Router();
 
-// OPTIONAL: if you have a NextAuth session and exported authOptions from [...nextauth].js,
-// this will attach userId/email to the Payment row. If not, it will still work without it.
+// --- Helper: optional NextAuth session resolution ---
 async function tryGetSession(req, res) {
   try {
     const { getServerSession } = await import("next-auth/next");
-    // You need to export `authOptions` from your [...nextauth].js for this to work:
     const mod = await import("../pages/api/auth/[...nextauth].js");
     const authOptions = mod.authOptions || mod.default?.authOptions;
     if (!authOptions) return null;
@@ -18,7 +18,7 @@ async function tryGetSession(req, res) {
   }
 }
 
-// Strict amount parsing on the server
+// --- Helper: strict USD parser ---
 function parseUsdToCents(amountStr) {
   if (typeof amountStr !== "string") return null;
   const cleaned = amountStr.trim();
@@ -29,32 +29,70 @@ function parseUsdToCents(amountStr) {
   return Number.isFinite(result) ? result : null;
 }
 
-// Small helper
+// --- Helper: safe UUID generator ---
 function uuid() {
-  return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-router.post("/payment/charge", async (req, res) => {
+// --- Helper: timeout wrapper ---
+async function withTimeout(promise, ms, label) {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+  );
+  try {
+    const result = await Promise.race([promise, timeoutPromise]);
+    clearTimeout(timeoutId);
+    return result;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
+// --- Rate limiter: prevent abuse ---
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10, // 10 payments per 15 minutes per IP
+  message: { error: "Too many payment attempts. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// --- POST /api/payment/charge ---
+router.post("/payment/charge", paymentLimiter, async (req, res) => {
+  const startTime = Date.now();
+
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({ ok: false, error: "Method Not Allowed" });
   }
 
   try {
     const { sourceId, amount, currency, idempotencyKey } = req.body || {};
-    if (!sourceId) return res.status(400).json({ error: "Missing sourceId" });
 
-    const cents = parseUsdToCents(String(amount || ""));
-    if (cents === null) return res.status(400).json({ error: "Invalid amount format" });
-    if (cents <= 0) return res.status(400).json({ error: "Amount must be greater than 0" });
-    if (cents > 1_000_000) return res.status(400).json({ error: "Maximum allowed is $10,000.00" });
-
-    const accessToken = process.env.SQUARE_ACCESS_TOKEN;
-    if (!accessToken) {
-      console.error("SQUARE_ACCESS_TOKEN missing");
-      return res.status(500).json({ error: "Server misconfigured" });
+    // --- 1️⃣ Validate input ---
+    if (!sourceId || typeof sourceId !== "string" || sourceId.length < 5) {
+      return res.status(400).json({ ok: false, error: "Invalid or missing sourceId." });
     }
 
-    // Resolve optional userId from NextAuth session (if available)
+    const cents = parseUsdToCents(String(amount || ""));
+    if (cents === null || cents <= 0) {
+      return res.status(400).json({ ok: false, error: "Invalid amount format." });
+    }
+    if (cents > 1_000_000) {
+      return res.status(400).json({ ok: false, error: "Maximum allowed amount is $10,000.00." });
+    }
+
+    const accessToken = process.env.SQUARE_ACCESS_TOKEN;
+    const version = process.env.SQUARE_VERSION || "2025-01-01";
+    if (!accessToken) {
+      console.error("[PaymentRoute] ❌ Missing SQUARE_ACCESS_TOKEN.");
+      return res.status(500).json({ ok: false, error: "Payment service misconfigured." });
+    }
+
+    // --- 2️⃣ Try to resolve authenticated user (if available) ---
     let userId = null;
     try {
       const session = await tryGetSession(req, res);
@@ -66,67 +104,97 @@ router.post("/payment/charge", async (req, res) => {
         userId = user?.id || null;
       }
     } catch (e) {
-      // not fatal
-      console.warn("Unable to resolve user session for payment:", e?.message || e);
+      console.warn("[PaymentRoute] ⚠️ Unable to resolve user session:", e.message);
     }
 
+    // --- 3️⃣ Prepare Square API request ---
     const idem = idempotencyKey || uuid();
+    const payload = {
+      idempotency_key: idem,
+      amount_money: { amount: cents, currency: currency || "USD" },
+      source_id: sourceId,
+      location_id: process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID,
+    };
 
-    // Create payment with Square
-    const squareRes = await fetch("https://connect.squareup.com/v2/payments", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-        "Square-Version": process.env.SQUARE_VERSION, // keep reasonably current
-      },
-      body: JSON.stringify({
-        idempotency_key: idem,
-        amount_money: { amount: cents, currency: currency || "USD" },
-        source_id: sourceId,
-        // optional: location_id: process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID
-      }),
-    });
+    // --- 4️⃣ Perform payment request with timeout ---
+    let squareRes, squareJson;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 7000); // 7s timeout
+      squareRes = await fetch("https://connect.squareup.com/v2/payments", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          "Square-Version": version,
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      squareJson = await squareRes.json();
+    } catch (apiErr) {
+      console.error("[PaymentRoute] ❌ Square API network error:", apiErr);
+      return res.status(502).json({ ok: false, error: "Payment gateway unavailable." });
+    }
 
-    const squareJson = await squareRes.json();
-
+    // --- 5️⃣ Handle Square API errors ---
     if (!squareRes.ok) {
-      // Handle idempotency conflict gracefully if you want:
-      // 409 -> already processed with same idempotency key
-      console.error("Square /payments error:", squareJson);
       const detail =
         squareJson?.errors?.[0]?.detail ||
         squareJson?.errors?.[0]?.code ||
-        "Square charge failed";
-      return res.status(squareRes.status).json({ error: detail, raw: squareJson });
+        "Square charge failed.";
+      console.error("[PaymentRoute] ❌ Square error:", squareJson);
+      return res.status(squareRes.status).json({ ok: false, error: detail });
     }
 
-    const sqPayment = squareJson.payment;
-    // Persist the row in your DB
-    const saved = await prisma.payment.create({
-      data: {
-        userId,
-        amount: cents,
-        currency: sqPayment?.amount_money?.currency || (currency || "USD"),
-        squarePaymentId: sqPayment?.id,
-        idempotencyKey: idem,
-        status: sqPayment?.status || "COMPLETED",
-      },
-    });
+    const sqPayment = squareJson?.payment;
+    if (!sqPayment) {
+      console.error("[PaymentRoute] ❌ Square response missing payment field:", squareJson);
+      return res.status(502).json({ ok: false, error: "Malformed response from Square." });
+    }
+
+    // --- 6️⃣ Persist payment record in DB (gracefully) ---
+    let saved = null;
+    try {
+      saved = await prisma.payment.create({
+        data: {
+          userId,
+          amount: cents,
+          currency: sqPayment.amount_money?.currency || currency || "USD",
+          squarePaymentId: sqPayment.id,
+          idempotencyKey: idem,
+          status: sqPayment.status || "COMPLETED",
+        },
+      });
+    } catch (dbErr) {
+      console.error("[PaymentRoute] ❌ Failed to save payment:", dbErr);
+      // not fatal — the payment succeeded at Square
+    }
+
+    console.info(
+      `[PaymentRoute] ✅ Payment processed successfully: ${sqPayment.id} (${cents}¢ in ${
+        sqPayment.amount_money?.currency
+      }) [${Date.now() - startTime}ms]`
+    );
 
     return res.status(200).json({
       ok: true,
       payment: {
-        id: sqPayment?.id,
-        status: sqPayment?.status,
-        amount: sqPayment?.amount_money?.amount,
-        currency: sqPayment?.amount_money?.currency,
+        id: sqPayment.id,
+        status: sqPayment.status,
+        amount: sqPayment.amount_money?.amount,
+        currency: sqPayment.amount_money?.currency,
       },
-      savedId: saved.id,
+      savedId: saved?.id || null,
     });
   } catch (err) {
-    console.error("Square pay handler error:", err);
-    return res.status(500).json({ error: "Payment server error" });
+    console.error("[PaymentRoute] ❌ Unhandled payment error:", err);
+    return res.status(500).json({
+      ok: false,
+      error: "Payment server error.",
+      message: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
   }
 });
 

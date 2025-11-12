@@ -147,7 +147,8 @@ async function initBackend(app, handle) {
   });
 
   // Square webhook MUST use raw body
-  app.use("/api/square/webhook", express.raw({ type: "application/json" }));
+  // Must come before bodyParser.json()
+   app.use("/api/square/webhook", express.raw({ type: "*/*" }), squareWebhookRoute);
 
   // Standard body parsers
   app.use(bodyParser.json({ limit: "1mb" }));
@@ -231,7 +232,6 @@ async function initBackend(app, handle) {
   
   app.use("/api", waitForRedis, rateLimitMiddleware(sensitiveLimiter), registerRoute);
   app.use("/api", waitForRedis, rateLimitMiddleware(sensitiveLimiter), paymentRoute);
-  app.use("/api", waitForRedis, squareWebhookRoute);
   app.use("/api", waitForRedis, rateLimitMiddleware(sensitiveLimiter), contactRoute);
   app.use("/api", waitForRedis, rateLimitMiddleware(sensitiveLimiter), sendOtpRoute);
   app.use("/api", waitForRedis, rateLimitMiddleware(verifyLimiter), verifyOtpRoute);

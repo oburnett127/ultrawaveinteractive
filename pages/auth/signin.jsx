@@ -10,44 +10,83 @@ export default function SignIn() {
   const [err, setErr] = useState("");
   const [widgetId, setWidgetId] = useState(null);
   const [apiReady, setApiReady] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const containerRef = useRef(null);
+  const initializedRef = useRef(false);
 
+  // Initialize reCAPTCHA once when API is ready
   useEffect(() => {
-    if (!apiReady) return;
-    if (!containerRef.current) return;
-    if (!window.grecaptcha) return;
+    if (!apiReady || initializedRef.current) return;
+    if (!containerRef.current || !window.grecaptcha) return;
 
-    if (widgetId === null) {
+    try {
       const id = window.grecaptcha.render(containerRef.current, {
         sitekey: SITE_KEY,
+        theme: "light",
+        size: "normal",
+        callback: () => setErr(""), // clear error when user completes captcha
       });
       setWidgetId(id);
+      initializedRef.current = true;
+    } catch (error) {
+      console.error("Error initializing reCAPTCHA:", error);
+      setErr("Failed to load reCAPTCHA. Please refresh and try again.");
     }
-  }, [apiReady, widgetId]);
+  }, [apiReady]);
 
   async function onSubmit(e) {
     e.preventDefault();
     setErr("");
 
+    if (isSubmitting) return; // prevent double-click spam
+
     if (!window.grecaptcha || widgetId === null) {
-      setErr("reCAPTCHA not ready yet. Please wait a moment and try again.");
+      setErr("reCAPTCHA is still loading. Please wait a moment and try again.");
       return;
     }
 
     const recaptchaToken = window.grecaptcha.getResponse(widgetId);
     if (!recaptchaToken) {
-      setErr("Please complete the reCAPTCHA checkbox.");
+      setErr("Please complete the reCAPTCHA challenge.");
       return;
     }
 
-    const res = await signIn("credentials", {
-      redirect: true,
-      email,
-      password,
-      recaptchaToken,
-      callbackUrl: "/verifyotp",
-    });
+    // Basic frontend validation
+    if (!email.trim() || !password.trim()) {
+      setErr("Email and password are required.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const result = await signIn("credentials", {
+        redirect: false, // handle errors manually for better UX
+        email,
+        password,
+        recaptchaToken,
+        callbackUrl: "/verifyotp",
+      });
+
+      if (result.error) {
+        // Reset reCAPTCHA for another attempt
+        if (widgetId !== null && window.grecaptcha?.reset) {
+          window.grecaptcha.reset(widgetId);
+        }
+        setErr(result.error || "Invalid credentials. Please try again.");
+      } else if (result.ok) {
+        // Graceful redirect only after success
+        window.location.href = result.url || "/verifyotp";
+      } else {
+        setErr("Unexpected error. Please try again later.");
+      }
+    } catch (error) {
+      console.error("Sign-in error:", error);
+      setErr("Network or server error. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -62,13 +101,20 @@ export default function SignIn() {
             setApiReady(true);
           }
         }}
+        onError={() => {
+          console.error("Failed to load reCAPTCHA script.");
+          setErr("Failed to load reCAPTCHA. Please refresh and try again.");
+        }}
       />
 
-      <form onSubmit={onSubmit} className="signin-form">
+      <form onSubmit={onSubmit} className="signin-form" noValidate>
         <h1>Sign in</h1>
 
-        <label className="signin-label">Email</label>
+        <label htmlFor="email" className="signin-label">
+          Email
+        </label>
         <input
+          id="email"
           name="email"
           type="email"
           value={email}
@@ -76,10 +122,14 @@ export default function SignIn() {
           autoComplete="email"
           required
           className="signin-input"
+          disabled={isSubmitting}
         />
 
-        <label className="signin-label">Password</label>
+        <label htmlFor="password" className="signin-label">
+          Password
+        </label>
         <input
+          id="password"
           name="password"
           type="password"
           value={password}
@@ -87,14 +137,26 @@ export default function SignIn() {
           autoComplete="current-password"
           required
           className="signin-input"
+          disabled={isSubmitting}
         />
 
-        {/* reCAPTCHA area */}
-        <div ref={containerRef} className="recaptcha-container" aria-live="polite" />
+        {/* reCAPTCHA widget */}
+        <div
+          ref={containerRef}
+          className="recaptcha-container"
+          aria-live="polite"
+          style={{ marginTop: "1rem", marginBottom: "1rem" }}
+        />
 
-        <button type="submit" className="signin-button">Sign in</button>
+        <button
+          type="submit"
+          className="signin-button"
+          disabled={!apiReady || isSubmitting}
+        >
+          {isSubmitting ? "Signing in..." : "Sign in"}
+        </button>
 
-        {err ? <p className="signin-error">{err}</p> : null}
+        {err && <p className="signin-error">⚠️ {err}</p>}
       </form>
     </>
   );
