@@ -23,7 +23,7 @@ router.use(express.json({ limit: "100kb" })); // 100KB is more than enough for c
 router.post("/contact", contactLimiter, async (req, res) => {
   const startTime = Date.now();
   try {
-    const { email, name, phone, message, recaptchaToken } = req.body || {};
+    const { name, email, phone, message, recaptchaToken } = req.body || {};
 
     // --- 1️⃣ Basic validation ---
     if (!email || !message) {

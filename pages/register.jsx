@@ -123,7 +123,7 @@ export default function Register() {
     const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
     try {
-      const res = await fetch(`${backendUrl}/api/auth/register`, {
+      const res = await fetch(`/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

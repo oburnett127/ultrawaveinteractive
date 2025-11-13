@@ -23,7 +23,7 @@ export async function getServerSideProps() {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 7000); // 7s timeout safeguard
 
-    const res = await fetch(`${backendUrl}/api/blog/list`, {
+    const res = await fetch(`/api/blog/list`, {
       method: "GET",
       headers: { "Accept": "application/json" },
       signal: controller.signal,

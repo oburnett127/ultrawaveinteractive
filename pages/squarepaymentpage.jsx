@@ -105,7 +105,7 @@ export default function SquarePaymentPage() {
       abortControllerRef.current = controller;
 
       const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
-      const res = await fetch(`${backendUrl}/api/payments/charge`, {
+      const res = await fetch(`/api/payments/charge`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sourceId, amount: cleanedAmount, recaptchaToken }),

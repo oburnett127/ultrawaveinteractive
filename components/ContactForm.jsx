@@ -93,7 +93,7 @@ const ContactForm = () => {
       // Small retry for transient network failures
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
-          res = await fetch(`${backendUrl}/api/contact`, {
+          res = await fetch(`/api/contact`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),

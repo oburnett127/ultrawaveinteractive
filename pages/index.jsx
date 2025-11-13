@@ -66,7 +66,7 @@ function Home() {
 
       try {
         const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout
-        const res = await fetch(`${backendUrl}/api/blog/list`, {
+        const res = await fetch(`/api/blog/list`, {
           method: "GET",
           headers: { Accept: "application/json" },
           signal: controller.signal,
@@ -88,11 +88,11 @@ function Home() {
           throw new Error("Invalid JSON received from backend.");
         });
 
-        if (!Array.isArray(data)) {
+        if (!Array.isArray(data.posts)) {
           throw new Error("Unexpected data format — expected an array.");
         }
 
-        setPosts(data);
+        setPosts(data.posts);
         setFetchError("");
       } catch (err) {
         if (err.name === "AbortError") {

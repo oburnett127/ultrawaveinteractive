@@ -109,8 +109,8 @@ input, textarea {
   font-size: 1rem;
   padding: 10px;
   border: 1px solid #444;
-  background: #111;
-  color: #fff;
+  background: white;
+  color: black;
   border-radius: 5px;
   width: 100%;
   margin-bottom: 1rem;
@@ -452,7 +452,7 @@ label {
 }
 
 input, textarea {
-  color: #fff; /* or #fff if using dark background */
+  color: black; /* or #fff if using dark background */
 }
 
 .header-text {

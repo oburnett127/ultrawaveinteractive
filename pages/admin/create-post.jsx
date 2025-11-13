@@ -27,7 +27,7 @@ export default function CreatePost() {
     }
 
     try {
-      const res = await fetch(`${backendUrl}/api/blog/create`, {
+      const res = await fetch(`/api/blog/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, content }),

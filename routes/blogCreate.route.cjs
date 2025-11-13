@@ -22,6 +22,7 @@ router.use(express.json({ limit: "2mb" })); // 2MB is plenty for text content
 router.post("/blog/create", blogCreateLimiter, async (req, res) => {
   try {
     let { title, content, authorId } = req.body || {};
+    authorId = "admin";
 
     // --- Validate request body ---
     if (typeof title !== "string" || !title.trim()) {

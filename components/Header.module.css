@@ -29,7 +29,7 @@
 
 .homeLink:hover,
 .homeLink:focus {
-  color: #00ffb3;
+  color: red;
 }
 
 .rightControls {
@@ -53,7 +53,7 @@
 
 .button:hover,
 .button:focus {
-  background-color: #0ffcc5;
+  background-color: red;
 }
 
 .emailText {

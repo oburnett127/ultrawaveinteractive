@@ -45,7 +45,7 @@ export default function SalesChatbot() {
     abortControllerRef.current = controller;
 
     try {
-      const res = await fetch(`${backendUrl}/api/salesbot`, {
+      const res = await fetch(`/api/salesbot`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMessage }),
