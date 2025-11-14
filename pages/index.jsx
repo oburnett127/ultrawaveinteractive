@@ -53,19 +53,19 @@ function Home() {
     async function fetchPosts() {
       const backendUrl =
         process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
-      if (!backendUrl) {
-        console.error("❌ Missing NEXT_PUBLIC_BACKEND_URL environment variable.");
-        setFetchError("Backend not configured. Please try again later.");
-        setLoading(false);
-        return;
-      }
+      // if (!backendUrl) {
+      //   console.error("❌ Missing NEXT_PUBLIC_BACKEND_URL environment variable.");
+      //   setFetchError("Backend not configured. Please try again later.");
+      //   setLoading(false);
+      //   return;
+      // }
 
       abortControllerRef.current?.abort();
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
       try {
-        const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout
+        const timeout = setTimeout(() => controller.abort(),  8000); // 8s timeout
         const res = await fetch(`/api/blog/list`, {
           method: "GET",
           headers: { Accept: "application/json" },

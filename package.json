@@ -10,7 +10,7 @@
         "*.scss"
     ],
     "scripts": {
-        "dev": "next dev",
+        "dev": "NODE_ENV=development node server.cjs",
         "dev:backend": "node server.cjs",
         "build": "next build",
         "start": "node server.cjs",

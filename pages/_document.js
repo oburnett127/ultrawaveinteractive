@@ -5,13 +5,8 @@ export default class MyDocument extends Document {
   static async getInitialProps(ctx) {
     const initialProps = await Document.getInitialProps(ctx);
 
-    // ✅ Try to read from Express res.locals first
-    const nonceFromExpress = ctx?.res?.locals?.cspNonce;
-
-    // ✅ Fallback: read from the custom prop we passed in app.get('*')
-    const nonceFromRenderOpts = ctx?.renderPage?.options?.cspNonce;
-
-    const nonce = nonceFromExpress || nonceFromRenderOpts || "";
+    // Read nonce from Express
+    const nonce = ctx?.res?.locals?.cspNonce || "";
 
     return { ...initialProps, nonce };
   }
@@ -23,21 +18,7 @@ export default class MyDocument extends Document {
     return (
       <Html lang="en">
         <Head nonce={nonce}>
-          {/* ✅ Cookie Consent CSS */}
-          <link
-            rel="stylesheet"
-            href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css"
-          />
-
-          {/* ✅ Google reCAPTCHA */}
-          <script
-            src="https://www.google.com/recaptcha/api.js"
-            async
-            defer
-            nonce={nonce}
-          ></script>
-
-          {/* ✅ Square Payment SDK (auto switch for sandbox vs prod) */}
+          {/* ✅ Square Payment SDK */}
           <script
             src={
               isProduction
@@ -47,24 +28,46 @@ export default class MyDocument extends Document {
             async
             defer
             nonce={nonce}
-          ></script>
+          />
+
+          {/* ✅ Google reCAPTCHA (ONE script only) */}
+          <script
+            src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`}
+            async
+            defer
+            nonce={nonce}
+          />
+
+          {/* ✅ Cookie Consent CSS */}
+          <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css"
+          />
         </Head>
 
         <body>
           <Main />
 
-          {/* ✅ Nonced Next.js hydration scripts */}
-          <NextScript nonce={nonce} />
+          {/* 
+            ❗ DO NOT pass nonce to NextScript. 
+            It is ignored and breaks hydration.
+          */}
+          <NextScript />
 
-          {/* ✅ CookieConsent JS */}
+          {/* 
+            CookieConsent JS (external — allowed) 
+          */}
           <script
             src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js"
             async
             defer
             nonce={nonce}
-          ></script>
+          />
 
-          {/* ✅ CookieConsent Init (inline, nonced) */}
+          {/* 
+            CookieConsent init — inline must be nonced.
+            This is safe.
+          */}
           <script
             id="cookieconsent-init"
             nonce={nonce}
@@ -90,7 +93,7 @@ export default class MyDocument extends Document {
                 });
               `,
             }}
-          ></script>
+          />
         </body>
       </Html>
     );
