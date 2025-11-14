@@ -1,10 +1,14 @@
 // /ultrawaveinteractive/pages/api/auth/[...nextauth].js
-// This API Route requires a default export, which NextAuth provides when called.
-// Use the NextAuth function as the default export.
 
 const NextAuth = require("next-auth").default;
 const { authOptions } = require("../../../lib/authOptions.cjs");
 
-// Export the NextAuth handler function as the default export.
-// This is the common, official pattern for NextAuth in the Pages Router.
-module.exports = NextAuth(authOptions);
+// 1. Get the NextAuth handler function
+const authHandler = NextAuth(authOptions);
+
+// 2. Explicitly export the handler.
+module.exports = authHandler;
+
+// 3. CRITICAL: Explicitly set the 'default' property on the export
+//    to satisfy the Next.js ES-module-aware loader/bundler.
+module.exports.default = authHandler;

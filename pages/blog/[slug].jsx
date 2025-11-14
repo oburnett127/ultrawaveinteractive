@@ -69,7 +69,7 @@ export default function BlogPost({ post, error }) {
     return (
       <div className="blog-post-container">
         <h1 className="blog-title">Error Loading Post</h1>
-        <p style={{ color: "#b00", background: "#fee", padding: "10px" }}>
+        <p style={{ color: "#b00", background: "blue", padding: "10px" }}>
           {error}
         </p>
       </div>

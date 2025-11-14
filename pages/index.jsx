@@ -65,7 +65,7 @@ function Home() {
       abortControllerRef.current = controller;
 
       try {
-        const timeout = setTimeout(() => controller.abort(),  8000); // 8s timeout
+        const timeout = setTimeout(() => controller.abort(),  10000); // 8s timeout
         const res = await fetch(`/api/blog/list`, {
           method: "GET",
           headers: { Accept: "application/json" },
