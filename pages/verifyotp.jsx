@@ -1,40 +1,45 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
+import Script from "next/script";
+
+const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
 export default function VerifyOTP() {
   const { update } = useSession();
 
+  // UI state
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
   const [sending, setSending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const didSendRef = useRef(false);
-  const router = useRouter();
 
-  // -------------------------------------------
-  // 🔐 reCAPTCHA helper
-  // -------------------------------------------
-  async function getRecaptchaToken() {
-    return new Promise((resolve) => {
-      if (!window.grecaptcha) {
-        console.error("grecaptcha not loaded");
-        resolve(null);
-        return;
-      }
-      window.grecaptcha.ready(() => {
-        window.grecaptcha
-          .execute(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY, { action: "otp" })
-          .then(resolve);
-      });
-    });
+  const router = useRouter();
+  const didSendRef = useRef(false);
+  const recaptchaReadyRef = useRef(false);
+
+  // ----------------------------------------------------
+  // reCAPTCHA v3 — global helper
+  // ----------------------------------------------------
+  async function getRecaptchaToken(action) {
+    if (!window.grecaptcha || !recaptchaReadyRef.current) {
+      console.warn("⚠️ reCAPTCHA not ready yet");
+      return null;
+    }
+
+    try {
+      return await window.grecaptcha.execute(SITE_KEY, { action });
+    } catch (err) {
+      console.error("reCAPTCHA error:", err);
+      return null;
+    }
   }
 
-  // -------------------------------------------
-  // ⏱ Send OTP on component load
-  // -------------------------------------------
+  // ----------------------------------------------------
+  // Send OTP on component mount
+  // ----------------------------------------------------
   useEffect(() => {
     const email = (localStorage.getItem("otpEmail") || "").trim().toLowerCase();
 
@@ -53,7 +58,7 @@ export default function VerifyOTP() {
         setInfo("Sending code...");
         setError("");
 
-        const recaptchaToken = await getRecaptchaToken();
+        const recaptchaToken = await getRecaptchaToken("otp_send");
 
         const res = await fetch(`/api/otp/send`, {
           method: "POST",
@@ -84,21 +89,20 @@ export default function VerifyOTP() {
     })();
   }, [router]);
 
-  // -------------------------------------------
-  // ⏳ Cooldown Timer
-  // -------------------------------------------
+  // ----------------------------------------------------
+  // Cooldown timer
+  // ----------------------------------------------------
   useEffect(() => {
     if (!cooldown) return;
-    const timer = setInterval(
-      () => setCooldown((s) => (s > 0 ? s - 1 : 0)),
-      1000
-    );
+    const timer = setInterval(() => {
+      setCooldown((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
     return () => clearInterval(timer);
   }, [cooldown]);
 
-  // -------------------------------------------
-  // 🔐 Verify OTP
-  // -------------------------------------------
+  // ----------------------------------------------------
+  // Verify OTP
+  // ----------------------------------------------------
   async function handleVerify(e) {
     e.preventDefault();
     setError("");
@@ -109,7 +113,7 @@ export default function VerifyOTP() {
       const email = (localStorage.getItem("otpEmail") || "").trim().toLowerCase();
       if (!email) throw new Error("Missing email. Please sign in again.");
 
-      const recaptchaToken = await getRecaptchaToken();
+      const recaptchaToken = await getRecaptchaToken("otp_verify");
 
       const res = await fetch(`/api/otp/verify`, {
         method: "POST",
@@ -130,6 +134,7 @@ export default function VerifyOTP() {
 
       if (!res.ok) throw new Error(payload.error || "OTP verification failed");
 
+      // Update session to reflect OTP verified
       await update({ user: { otpVerified: true } });
 
       window.location.assign("/payment");
@@ -140,9 +145,9 @@ export default function VerifyOTP() {
     }
   }
 
-  // -------------------------------------------
-  // 🔁 Resend OTP
-  // -------------------------------------------
+  // ----------------------------------------------------
+  // Resend OTP
+  // ----------------------------------------------------
   async function handleResend() {
     const email = (localStorage.getItem("otpEmail") || "").trim().toLowerCase();
     if (!email) {
@@ -156,7 +161,7 @@ export default function VerifyOTP() {
       setInfo("Resending code...");
       setError("");
 
-      const recaptchaToken = await getRecaptchaToken();
+      const recaptchaToken = await getRecaptchaToken("otp_send");
 
       const res = await fetch(`/api/otp/send`, {
         method: "POST",
@@ -183,50 +188,62 @@ export default function VerifyOTP() {
     }
   }
 
-  // -------------------------------------------
-  // UI
-  // -------------------------------------------
   return (
-    <div className="verify-form">
-      <h1>Verify OTP</h1>
+    <>
+      {/* reCAPTCHA v3 script loader */}
+      <Script
+        src={`https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`}
+        strategy="afterInteractive"
+        onLoad={() => {
+          if (window.grecaptcha) {
+            window.grecaptcha.ready(() => {
+              recaptchaReadyRef.current = true;
+            });
+          }
+        }}
+      />
 
-      {info && <div className="info-box">{info}</div>}
-      {error && <div role="alert" className="error-box">{error}</div>}
+      <div className="verify-form">
+        <h1>Verify OTP</h1>
 
-      <form onSubmit={handleVerify} className="verify-form-inner">
-        <label>
-          6-digit code
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]{6}"
-            maxLength={6}
-            required
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            className="verify-input"
-            placeholder="123456"
-          />
-        </label>
+        {info && <div className="info-box">{info}</div>}
+        {error && <div role="alert" className="error-box">{error}</div>}
 
-        <button type="submit" disabled={busy} className="verify-button">
-          {busy ? "Verifying..." : "Verify"}
-        </button>
-      </form>
+        <form onSubmit={handleVerify} className="verify-form-inner">
+          <label>
+            6-digit code
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              required
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              className="verify-input"
+              placeholder="123456"
+            />
+          </label>
 
-      <div className="resend-container">
-        <button
-          onClick={handleResend}
-          disabled={sending || cooldown > 0}
-          className="resend-button"
-        >
-          {sending
-            ? "Sending..."
-            : cooldown > 0
-            ? `Resend in ${cooldown}s`
-            : "Resend code"}
-        </button>
+          <button type="submit" disabled={busy} className="verify-button">
+            {busy ? "Verifying..." : "Verify"}
+          </button>
+        </form>
+
+        <div className="resend-container">
+          <button
+            onClick={handleResend}
+            disabled={sending || cooldown > 0}
+            className="resend-button"
+          >
+            {sending
+              ? "Sending..."
+              : cooldown > 0
+              ? `Resend in ${cooldown}s`
+              : "Resend code"}
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

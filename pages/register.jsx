@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useState, useRef } from "react";
 import Script from "next/script";
 import { useRouter } from "next/router";
-
-const WIDGET_KEY = "__uwi_register_recaptcha_widget_id";
 
 export default function Register() {
   const router = useRouter();
@@ -12,92 +10,33 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [apiLoaded, setApiLoaded] = useState(false);
+  const recaptchaReady = useRef(false);
 
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-  const recaptchaRef = useRef(null);
-  const hasTriedRender = useRef(false);
-  const [widgetId, setWidgetId] = useState(null);
 
-  // --- Resilient reCAPTCHA initialization ---
-  const renderRecaptcha = () => {
-    if (typeof window === "undefined" || !recaptchaRef.current) return;
-    const w = window;
-
-    if (!w.grecaptcha) {
-      console.warn("reCAPTCHA API not ready yet");
-      return;
+  // ------------------------------------
+  // Load reCAPTCHA v3
+  // ------------------------------------
+  const getRecaptchaToken = async () => {
+    if (!window.grecaptcha || !recaptchaReady.current) {
+      setErrorMsg("reCAPTCHA is still loading. Please wait a moment.");
+      return null;
     }
-
-    // If we already rendered before (e.g. due to StrictMode double-mount)
-    if (typeof w[WIDGET_KEY] === "number") {
-      setWidgetId(w[WIDGET_KEY]);
-      return;
-    }
-
-    // Prevent double rendering in StrictMode
-    if (hasTriedRender.current) return;
-    hasTriedRender.current = true;
 
     try {
-      w.grecaptcha.ready(() => {
-        // Safety: check again inside ready (sometimes it fires multiple times)
-        if (typeof w[WIDGET_KEY] === "number") {
-          setWidgetId(w[WIDGET_KEY]);
-          return;
-        }
-        try {
-          const id = w.grecaptcha.render(recaptchaRef.current, {
-            sitekey: siteKey,
-            theme: "light",
-            callback: () => setErrorMsg(""), // clear error on completion
-          });
-          w[WIDGET_KEY] = id;
-          setWidgetId(id);
-        } catch (e) {
-          console.error("reCAPTCHA render error:", e);
-          setErrorMsg("Failed to load reCAPTCHA. Please refresh and try again.");
-        }
-      });
+      return await window.grecaptcha.execute(siteKey, { action: "register" });
     } catch (e) {
-      console.error("reCAPTCHA init failed:", e);
-      setErrorMsg("reCAPTCHA could not initialize. Try refreshing the page.");
+      console.error("reCAPTCHA execute error:", e);
+      return null;
     }
   };
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.grecaptcha) renderRecaptcha();
-  }, [apiLoaded, siteKey]);
-
-  // --- Handle registration submission ---
+  // ------------------------------------
+  // Handle Registration
+  // ------------------------------------
   const handleRegister = async (e) => {
     e.preventDefault();
     setErrorMsg("");
-
-    if (!siteKey) {
-      setErrorMsg("Site configuration missing. Please contact support.");
-      return;
-    }
-
-    const w = typeof window !== "undefined" ? window : {};
-    if (!w.grecaptcha) {
-      setErrorMsg("reCAPTCHA not loaded yet. Please wait a moment.");
-      return;
-    }
-
-    const id =
-      typeof w[WIDGET_KEY] === "number" ? w[WIDGET_KEY] : widgetId;
-
-    if (typeof id !== "number") {
-      setErrorMsg("reCAPTCHA not ready yet. Please try again shortly.");
-      return;
-    }
-
-    const token = w.grecaptcha.getResponse(id);
-    if (!token) {
-      setErrorMsg("Please complete the reCAPTCHA challenge.");
-      return;
-    }
 
     if (!emailText.trim() || !password.trim() || !name.trim()) {
       setErrorMsg("All fields are required.");
@@ -109,31 +48,31 @@ export default function Register() {
       return;
     }
 
-    setSubmitting(true);
-    const backendUrl =
-      process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
-
-    if (!backendUrl) {
-      setErrorMsg("Backend URL not configured.");
-      setSubmitting(false);
+    if (!siteKey) {
+      setErrorMsg("Site configuration missing. Please contact support.");
       return;
     }
 
+    const recaptchaToken = await getRecaptchaToken();
+    if (!recaptchaToken) return;
+
+    setSubmitting(true);
+
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const timeout = setTimeout(() => controller.abort(), 10000);
 
     try {
       const res = await fetch(`/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
+        signal: controller.signal,
         body: JSON.stringify({
           emailText,
           password,
           name,
-          recaptchaToken: token,
+          recaptchaToken,
         }),
-        signal: controller.signal,
       });
 
       clearTimeout(timeout);
@@ -143,27 +82,16 @@ export default function Register() {
         return;
       }
 
-      if (!res.ok) {
-        let errText;
-        try {
-          const data = await res.json();
-          errText = data?.error;
-        } catch (_) {
-          errText = `Server returned ${res.status}`;
-        }
-        throw new Error(errText || "Registration failed.");
-      }
-
       const data = await res.json().catch(() => ({}));
 
-      try {
-        w.grecaptcha.reset(id);
-      } catch (_) {}
+      if (!res.ok) {
+        throw new Error(data?.error || `Server returned ${res.status}`);
+      }
 
       if (data?.success) {
         router.push("/auth/signin");
       } else {
-        throw new Error(data?.error || "Unexpected response from server.");
+        throw new Error(data?.error || "Unexpected server response.");
       }
     } catch (err) {
       if (err.name === "AbortError") {
@@ -172,11 +100,7 @@ export default function Register() {
         console.error("Registration error:", err);
         setErrorMsg(err.message || "Registration failed. Please try again later.");
       }
-      try {
-        w.grecaptcha.reset(id);
-      } catch (_) {}
     } finally {
-      clearTimeout(timeout);
       setSubmitting(false);
     }
   };
@@ -184,16 +108,18 @@ export default function Register() {
   return (
     <div className="register-styling">
       <Script
-        id="recaptcha-v2-script"
-        src="https://www.google.com/recaptcha/api.js?render=explicit"
+        src={`https://www.google.com/recaptcha/api.js?render=${siteKey}`}
         strategy="afterInteractive"
         onLoad={() => {
-          setApiLoaded(true);
-          renderRecaptcha();
+          if (window.grecaptcha) {
+            window.grecaptcha.ready(() => {
+              recaptchaReady.current = true;
+            });
+          }
         }}
-        onError={() => {
-          setErrorMsg("Failed to load reCAPTCHA script. Please refresh and try again.");
-        }}
+        onError={() =>
+          setErrorMsg("Failed to load reCAPTCHA. Please refresh and try again.")
+        }
       />
 
       <h1>Create Account</h1>
@@ -213,8 +139,8 @@ export default function Register() {
             required
             type="text"
             name="name"
-            autoComplete="name"
             disabled={submitting}
+            autoComplete="name"
           />
         </label>
 
@@ -226,8 +152,9 @@ export default function Register() {
             required
             type="email"
             name="email"
-            autoComplete="email"
             disabled={submitting}
+            autoComplete="email"
+            placeholder="Email"
           />
         </label>
 
@@ -239,18 +166,12 @@ export default function Register() {
             required
             type="password"
             name="password"
-            autoComplete="new-password"
-            minLength={8}
             disabled={submitting}
+            minLength={8}
+            autoComplete="new-password"
+            placeholder="Password"
           />
         </label>
-
-        {/* reCAPTCHA render target */}
-        <div
-          ref={recaptchaRef}
-          className="space-above-below"
-          aria-label="reCAPTCHA widget"
-        />
 
         {errorMsg && <p className="red-text">⚠️ {errorMsg}</p>}
 

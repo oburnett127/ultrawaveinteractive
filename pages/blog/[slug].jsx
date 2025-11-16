@@ -14,7 +14,7 @@ export async function getServerSideProps(context) {
   let error = null;
 
   try {
-    const res = await fetch(`/api/blog/${slug}`);
+    const res = await fetch(`${backendUrl}/api/blog/${slug}`);
 
     // Handle rate limiting gracefully
     if (res.status === 429) {

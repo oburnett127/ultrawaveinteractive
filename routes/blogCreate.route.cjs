@@ -1,108 +1,161 @@
+// /routes/blogCreate.route.cjs
 const express = require("express");
 const prisma = require("../lib/prisma.cjs");
-const { generateSlug } = require("../utils/generateSlug");
 const sanitizeHtml = require("sanitize-html");
 const rateLimit = require("express-rate-limit");
+const { nextAuthMiddleware } = require("../middleware/nextAuthMiddleware.cjs");
+const { generateSlug } = require("../utils/generateSlug");
 
 const router = express.Router();
 
-// --- Rate limit to prevent abuse (5 blog posts per hour per IP) ---
+// -----------------------------------------
+// Rate limit: Protect blog-create endpoint
+// -----------------------------------------
 const blogCreateLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
+  windowMs: 60 * 60 * 1000, // 1 hour
   max: 5,
-  message: { error: "Too many blog posts created. Please wait before trying again." },
+  message: { error: "Too many blog posts created. Try again later." },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// --- Middleware to handle large payloads safely ---
-router.use(express.json({ limit: "2mb" })); // 2MB is plenty for text content
+// -----------------------------------------
+// JSON body limit (protects DB + server)
+// -----------------------------------------
+router.use(express.json({ limit: "2mb" }));
 
-// --- POST /api/blog/create ---
-router.post("/blog/create", blogCreateLimiter, async (req, res) => {
-  try {
-    let { title, content, authorId } = req.body || {};
-    authorId = "admin";
+// -----------------------------------------
+// POST /api/blog/create
+// Admin-only
+// -----------------------------------------
+router.post(
+  "/blog/create",
+  nextAuthMiddleware, // MUST be logged in
+  blogCreateLimiter,
+  async (req, res) => {
+    try {
+      // -------------------------------------
+      // 1) Auth check
+      // -------------------------------------
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: "Unauthorized." });
+      }
 
-    // --- Validate request body ---
-    if (typeof title !== "string" || !title.trim()) {
-      return res.status(400).json({ error: "Title is required." });
+      // Admin-only blog creation
+      if (!user.isAdmin) {
+        console.warn(
+          `[BlogCreate] Unauthorized attempt by user ${user.email || user.id}`
+        );
+        return res.status(403).json({ error: "Forbidden." });
+      }
+
+      // -------------------------------------
+      // 2) Validate body
+      // -------------------------------------
+      let { title, content } = req.body || {};
+
+      if (typeof title !== "string" || !title.trim()) {
+        return res.status(400).json({ error: "Title is required." });
+      }
+
+      if (typeof content !== "string" || !content.trim()) {
+        return res.status(400).json({ error: "Content is required." });
+      }
+
+      // Canonicalize inputs
+      title = title.trim();
+      content = content.trim();
+
+      // -------------------------------------
+      // 3) Sanitize content (HTML filtering)
+      // -------------------------------------
+      const cleanContent = sanitizeHtml(content, {
+        allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+          "img",
+          "h1",
+          "h2",
+          "h3",
+          "blockquote",
+        ]),
+        allowedAttributes: {
+          "*": ["href", "src", "alt", "title", "target"],
+        },
+        allowedSchemes: ["http", "https", "mailto"],
+        disallowedTagsMode: "discard",
+      });
+
+      // -------------------------------------
+      // 4) Generate safe slug
+      // -------------------------------------
+      const baseSlug = generateSlug(title); // ensures lowercase & safe chars
+      let slug = baseSlug;
+      let attempt = 1;
+      const MAX_SLUG_ATTEMPTS = 50;
+
+      while (attempt <= MAX_SLUG_ATTEMPTS) {
+        const exists = await prisma.blogPost.findUnique({ where: { slug } });
+        if (!exists) break;
+        slug = `${baseSlug}-${attempt}`;
+        attempt++;
+      }
+
+      if (attempt > MAX_SLUG_ATTEMPTS) {
+        console.error("[BlogCreate] ❌ Slug generation loop detected.");
+        return res.status(500).json({
+          error: "Could not generate a unique URL for this post.",
+        });
+      }
+
+      // -------------------------------------
+      // 5) Create post safely
+      // -------------------------------------
+      const newPost = await prisma.blogPost.create({
+        data: {
+          title,
+          slug,
+          content: cleanContent,
+          authorId: user.id, // always server-defined
+        },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          createdAt: true,
+          authorId: true,
+        },
+      });
+
+      console.info(
+        `[BlogCreate] ✅ Blog post created by admin (${user.email}): ${slug}`
+      );
+
+      // -------------------------------------
+      // 6) Return response
+      // -------------------------------------
+      return res.status(201).json({
+        message: "Blog post created successfully.",
+        post: newPost,
+      });
+    } catch (error) {
+      console.error("[BlogCreate] ❌ Error creating blog post:", error);
+
+      // Prisma: Unique constraint
+      if (error.code === "P2002") {
+        return res.status(409).json({ error: "A post with this slug already exists." });
+      }
+
+      // Prisma: Value too long
+      if (error.code === "P2000") {
+        return res.status(400).json({ error: "Content is too large for database column." });
+      }
+
+      return res.status(500).json({
+        error: "Internal server error while creating blog post.",
+        message: process.env.NODE_ENV === "development" ? error.message : undefined,
+      });
     }
-    if (typeof content !== "string" || !content.trim()) {
-      return res.status(400).json({ error: "Content is required." });
-    }
-
-    // Optional: sanitize content to prevent XSS if this HTML is ever rendered raw
-    const cleanContent = sanitizeHtml(content, {
-      allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "h1", "h2"]),
-      allowedAttributes: { "*": ["href", "src", "alt", "title"] },
-    });
-
-    // --- Assign default author ---
-    if (!authorId || typeof authorId !== "string") {
-      authorId = "admin";
-    }
-
-    // --- Generate unique slug with concurrency safety ---
-    const baseSlug = generateSlug(title);
-    let slug = baseSlug;
-    let attempt = 1;
-
-    // Avoid infinite loops (e.g. corrupted DB)
-    const MAX_SLUG_ATTEMPTS = 50;
-
-    while (attempt <= MAX_SLUG_ATTEMPTS) {
-      const existing = await prisma.blogPost.findUnique({ where: { slug } });
-      if (!existing) break;
-      slug = `${baseSlug}-${attempt}`;
-      attempt++;
-    }
-
-    if (attempt > MAX_SLUG_ATTEMPTS) {
-      console.error("[BlogCreate] Too many slug conflicts for title:", title);
-      return res.status(500).json({ error: "Unable to generate unique slug." });
-    }
-
-    // --- Create post in database ---
-    const newPost = await prisma.blogPost.create({
-      data: {
-        title: title.trim(),
-        slug,
-        content: cleanContent,
-        authorId,
-      },
-    });
-
-    console.info(`[BlogCreate] ✅ Blog post created: ${slug}`);
-    return res.status(201).json({
-      message: "Blog post created successfully.",
-      post: {
-        id: newPost.id,
-        title: newPost.title,
-        slug: newPost.slug,
-        createdAt: newPost.createdAt,
-        authorId: newPost.authorId,
-      },
-    });
-  } catch (error) {
-    console.error("[BlogCreate] ❌ Error creating blog post:", error);
-
-    // Prisma-specific error handling
-    if (error.code === "P2002") {
-      // Unique constraint violation
-      return res.status(409).json({ error: "A post with this slug already exists." });
-    }
-
-    if (error.code === "P2000") {
-      // Value too long for column
-      return res.status(400).json({ error: "Input too large for database column." });
-    }
-
-    return res.status(500).json({
-      error: "Internal server error while creating blog post.",
-      message: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
   }
-});
+);
 
 module.exports = router;

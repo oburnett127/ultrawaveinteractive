@@ -54,6 +54,7 @@ module.exports.initBackend = async function initBackend(app, handle) {
   const blogRoute = require("./routes/blog.route.cjs");
   const changePasswordRoute = require("./routes/changePassword.route.cjs");
   const healthRoute = require("./routes/health.route.cjs");
+  const otpRoute = require("./routes/otp.route.cjs");
 
   // Load env vars
   dotenv.config();
@@ -140,6 +141,8 @@ app.use((req, res, next) => {
       "'self'",
       "https://*",
       "https://ultrawaveinteractive.com",
+      "https://www.google.com/recaptcha",
+      "https://www.gstatic.com/recaptcha",
     ],
 
     "frame-src": [
@@ -340,6 +343,7 @@ app.use("/api", waitForRedis, leadsRoute);
 app.use("/api", waitForRedis, blogCreateRoute);
 app.use("/api", waitForRedis, listRoute);
 app.use("/api", waitForRedis, changePasswordRoute);
+app.use("/api/otp", waitForRedis, otpRoute);
 
 // These routes use the shared rateLimitMiddleware here
 app.use("/api", waitForRedis, rateLimitMiddleware(publicLimiter), blogRoute);
