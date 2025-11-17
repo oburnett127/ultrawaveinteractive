@@ -1,8 +1,10 @@
 const getRedis = require("../lib/redis.cjs");
 const express = require('express');
+const requireOtpVerified = require("../middleware/requireOtpVerified.cjs");
+
 const router = express.Router();
 
-router.get("/", async (req, res) => {
+router.get("/", requireOtpVerified, async (req, res) => {
   // Disable in production
   if (process.env.NODE_ENV === "production") {
     return res.status(404).json({ error: "Not found" });

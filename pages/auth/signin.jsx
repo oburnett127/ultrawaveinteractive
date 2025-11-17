@@ -40,6 +40,8 @@ export default function SignIn() {
         return;
       }
 
+      localStorage.setItem("otpEmail", email.trim().toLowerCase());
+
       const result = await signIn("credentials", {
         redirect: false,
         email,

@@ -3,12 +3,10 @@ import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import Script from "next/script";
 
-const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-
 export default function VerifyOTP() {
-  const { update } = useSession();
+  const { data: session, status, update } = useSession();
+  const router = useRouter();
 
-  // UI state
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
@@ -16,40 +14,71 @@ export default function VerifyOTP() {
   const [sending, setSending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
-  const router = useRouter();
   const didSendRef = useRef(false);
   const recaptchaReadyRef = useRef(false);
 
-  // ----------------------------------------------------
-  // reCAPTCHA v3 — global helper
-  // ----------------------------------------------------
-  async function getRecaptchaToken(action) {
+  const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+
+  // -----------------------------------------------------
+  // 🔐 AUTH CHECK — redirect if not logged in
+  // -----------------------------------------------------
+  useEffect(() => {
+    if (status === "loading") return;
+
+    // Not logged in → redirect to sign-in
+    if (status === "unauthenticated") {
+      router.replace("/api/auth/signin");
+      return;
+    }
+
+    // If logged in AND already verified → go to payment page
+    if (session?.user?.otpVerified === true) {
+      router.replace("/squarepaymentpage");
+    }
+  }, [status, session, router]);
+
+  // -----------------------------------------------------
+  // reCAPTCHA v3 token getter
+  // -----------------------------------------------------
+  async function getRecaptchaToken() {
     if (!window.grecaptcha || !recaptchaReadyRef.current) {
-      console.warn("⚠️ reCAPTCHA not ready yet");
+      console.warn("VerifyOTP: reCAPTCHA not ready");
       return null;
     }
 
     try {
-      return await window.grecaptcha.execute(SITE_KEY, { action });
+      return await window.grecaptcha.execute(SITE_KEY, { action: "otp" });
     } catch (err) {
-      console.error("reCAPTCHA error:", err);
+      console.error("VerifyOTP: grecaptcha.execute error:", err);
       return null;
     }
   }
 
-  // ----------------------------------------------------
-  // Send OTP on component mount
-  // ----------------------------------------------------
+  // -----------------------------------------------------
+  // Wait until reCAPTCHA is ready
+  // -----------------------------------------------------
+  async function waitForRecaptcha(maxWaitMs = 2000) {
+    const start = Date.now();
+    while (!recaptchaReadyRef.current && Date.now() - start < maxWaitMs) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
+  }
+
+  // -----------------------------------------------------
+  // Auto-send OTP after login confirmed
+  // -----------------------------------------------------
   useEffect(() => {
+    if (status !== "authenticated") return;
+
     const email = (localStorage.getItem("otpEmail") || "").trim().toLowerCase();
 
     if (!email) {
       setError("Missing email. Please sign in again.");
-      router.replace("/auth/signin");
+      router.replace("/api/auth/signin");
       return;
     }
 
-    if (didSendRef.current) return;
+    if (didSendRef.current) return; // prevent double send
     didSendRef.current = true;
 
     (async () => {
@@ -58,7 +87,14 @@ export default function VerifyOTP() {
         setInfo("Sending code...");
         setError("");
 
-        const recaptchaToken = await getRecaptchaToken("otp_send");
+        // Wait for reCAPTCHA
+        await waitForRecaptcha();
+
+        const recaptchaToken = await getRecaptchaToken();
+        if (!recaptchaToken) {
+          setError("Unable to load security verification. Please refresh.");
+          return;
+        }
 
         const res = await fetch(`/api/otp/send`, {
           method: "POST",
@@ -68,41 +104,41 @@ export default function VerifyOTP() {
         });
 
         if (res.status === 429) {
-          console.warn("Rate limited. Backing off.");
+          setError("Too many attempts. Please wait.");
           return;
         }
 
-        const contentType = res.headers.get("content-type") || "";
-        const data = contentType.includes("application/json")
-          ? await res.json()
-          : { raw: await res.text() };
+        const data = await res.json();
 
-        if (!res.ok) throw new Error(data.error || "Failed to send OTP");
+        if (!res.ok) throw new Error(data.error || "Failed to send OTP.");
 
         setInfo("We sent a 6-digit code to your email.");
         setCooldown(30);
-      } catch (error) {
-        setError(error.message || "Failed to send OTP");
+      } catch (err) {
+        console.error("Auto-send OTP error:", err);
+        setError(err.message || "Failed to send OTP.");
       } finally {
         setSending(false);
       }
     })();
-  }, [router]);
+  }, [status, router]);
 
-  // ----------------------------------------------------
+  // -----------------------------------------------------
   // Cooldown timer
-  // ----------------------------------------------------
+  // -----------------------------------------------------
   useEffect(() => {
     if (!cooldown) return;
+
     const timer = setInterval(() => {
-      setCooldown((s) => (s > 0 ? s - 1 : 0));
+      setCooldown((n) => (n > 0 ? n - 1 : 0));
     }, 1000);
+
     return () => clearInterval(timer);
   }, [cooldown]);
 
-  // ----------------------------------------------------
+  // -----------------------------------------------------
   // Verify OTP
-  // ----------------------------------------------------
+  // -----------------------------------------------------
   async function handleVerify(e) {
     e.preventDefault();
     setError("");
@@ -113,7 +149,11 @@ export default function VerifyOTP() {
       const email = (localStorage.getItem("otpEmail") || "").trim().toLowerCase();
       if (!email) throw new Error("Missing email. Please sign in again.");
 
-      const recaptchaToken = await getRecaptchaToken("otp_verify");
+      const recaptchaToken = await getRecaptchaToken();
+      if (!recaptchaToken) {
+        setError("Security verification failed. Please refresh.");
+        return;
+      }
 
       const res = await fetch(`/api/otp/verify`, {
         method: "POST",
@@ -122,37 +162,29 @@ export default function VerifyOTP() {
         body: JSON.stringify({ email, otp, recaptchaToken }),
       });
 
-      if (res.status === 429) {
-        console.warn("Rate limited. Backing off.");
-        return;
-      }
+      const data = await res.json();
 
-      const contentType = res.headers.get("content-type") || "";
-      const payload = contentType.includes("application/json")
-        ? await res.json()
-        : { raw: await res.text() };
+      if (!res.ok) throw new Error(data.error || "OTP verification failed.");
 
-      if (!res.ok) throw new Error(payload.error || "OTP verification failed");
-
-      // Update session to reflect OTP verified
+      // Patch user session to reflect OTP verification
       await update({ user: { otpVerified: true } });
 
-      window.location.assign("/payment");
+      window.location.assign("/squarepaymentpage");
     } catch (err) {
-      setError(err.message || "Failed to verify OTP");
+      setError(err.message || "Failed to verify OTP.");
     } finally {
       setBusy(false);
     }
   }
 
-  // ----------------------------------------------------
+  // -----------------------------------------------------
   // Resend OTP
-  // ----------------------------------------------------
+  // -----------------------------------------------------
   async function handleResend() {
     const email = (localStorage.getItem("otpEmail") || "").trim().toLowerCase();
     if (!email) {
       setError("Missing email. Please sign in again.");
-      router.replace("/auth/signin");
+      router.replace("/api/auth/signin");
       return;
     }
 
@@ -161,7 +193,12 @@ export default function VerifyOTP() {
       setInfo("Resending code...");
       setError("");
 
-      const recaptchaToken = await getRecaptchaToken("otp_send");
+      await waitForRecaptcha();
+      const recaptchaToken = await getRecaptchaToken();
+      if (!recaptchaToken) {
+        setError("Unable to load security verification. Please refresh.");
+        return;
+      }
 
       const res = await fetch(`/api/otp/send`, {
         method: "POST",
@@ -170,19 +207,14 @@ export default function VerifyOTP() {
         body: JSON.stringify({ email, recaptchaToken }),
       });
 
-      if (res.status === 429) {
-        console.warn("Rate limited. Backing off.");
-        return;
-      }
-
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error || "Failed to resend OTP");
+      if (!res.ok) throw new Error(data.error || "Failed to resend OTP.");
 
-      setInfo("New code sent.");
+      setInfo("A new code was sent.");
       setCooldown(30);
     } catch (e) {
-      setError(e.message || "Failed to resend OTP");
+      setError(e.message || "Failed to resend OTP.");
     } finally {
       setSending(false);
     }
@@ -190,7 +222,6 @@ export default function VerifyOTP() {
 
   return (
     <>
-      {/* reCAPTCHA v3 script loader */}
       <Script
         src={`https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`}
         strategy="afterInteractive"
@@ -198,8 +229,12 @@ export default function VerifyOTP() {
           if (window.grecaptcha) {
             window.grecaptcha.ready(() => {
               recaptchaReadyRef.current = true;
+              console.log("VerifyOTP: reCAPTCHA ready");
             });
           }
+        }}
+        onError={() => {
+          setError("Failed to load reCAPTCHA. Refresh the page.");
         }}
       />
 

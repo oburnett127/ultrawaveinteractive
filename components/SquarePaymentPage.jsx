@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
 
 export default function SquarePaymentPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   const paymentsRef = useRef(null);
   const cardRef = useRef(null);
   const initializedRef = useRef(false);
@@ -10,19 +15,41 @@ export default function SquarePaymentPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // --- Initialize Square only once ---
+  // --------------------------------------
+  // 🔐 ACCESS PROTECTION (Corrected)
+  // --------------------------------------
   useEffect(() => {
+    if (status === "loading") return;
+
+    if (status === "unauthenticated") {
+      router.replace("/api/auth/signin");
+      return;
+    }
+
+    if (session?.user && session.user.otpVerified !== true) {
+      router.replace("/verifyotp");
+      return;
+    }
+  }, [status, session]);
+
+  // --------------------------------------
+  // 🟦 INIT SQUARE WHEN OTP VERIFIED
+  // --------------------------------------
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    if (!session?.user?.otpVerified) return;
+
     let cancelled = false;
 
     async function initSquare() {
-      // SDK not loaded yet
+      if (cancelled) return;
+
+      // Wait for Square script
       if (!window.Square) {
-        console.warn("Square SDK not yet available — retrying...");
-        setTimeout(initSquare, 200); // retry until script loads
+        setTimeout(initSquare, 200);
         return;
       }
 
-      // Already initialized
       if (initializedRef.current) return;
 
       const appId = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID;
@@ -37,11 +64,9 @@ export default function SquarePaymentPage() {
         const payments = window.Square.payments(appId, locationId);
         paymentsRef.current = payments;
 
-        // --- If card already exists, do NOT reattach ---
         if (!cardRef.current) {
           const card = await payments.card();
 
-          // Ensure card-container exists and is empty
           const target = document.getElementById("card-container");
           if (!target) return;
 
@@ -57,9 +82,7 @@ export default function SquarePaymentPage() {
 
       } catch (err) {
         console.error("Square init error:", err);
-        if (!cancelled) {
-          setMessage("⚠️ Payment system unavailable.");
-        }
+        if (!cancelled) setMessage("⚠️ Payment system unavailable.");
       }
     }
 
@@ -68,27 +91,29 @@ export default function SquarePaymentPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [status, session]);
 
-  // --- reCAPTCHA ---
+  // --------------------------------------
+  // 🟩 reCAPTCHA (corrected — no state leaks)
+  // --------------------------------------
   async function executeRecaptcha() {
     return new Promise((resolve, reject) => {
-      if (!window.grecaptcha)
+      if (!window.grecaptcha) {
         return reject(new Error("reCAPTCHA not loaded"));
+      }
 
       window.grecaptcha.ready(() => {
         window.grecaptcha
-          .execute(
-            process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
-            { action: "payment" }
-          )
+          .execute(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY, { action: "payment" })
           .then(resolve)
           .catch(() => reject(new Error("reCAPTCHA failed")));
       });
     });
   }
 
-  // --- Handle Payment ---
+  // --------------------------------------
+  // 💳 HANDLE PAYMENT (cleaned + fixed)
+  // --------------------------------------
   async function handlePayment(e) {
     e.preventDefault();
     setLoading(true);
@@ -96,6 +121,7 @@ export default function SquarePaymentPage() {
 
     try {
       const cleanedAmount = amount.trim();
+
       if (!/^\d+(\.\d{1,2})?$/.test(cleanedAmount)) {
         throw new Error("Please enter a valid amount.");
       }
@@ -105,6 +131,7 @@ export default function SquarePaymentPage() {
         throw new Error("Card is not ready yet.");
       }
 
+      // Tokenize card
       const result = await card.tokenize();
       if (result.status !== "OK") {
         throw new Error("Card could not be processed.");
@@ -113,7 +140,7 @@ export default function SquarePaymentPage() {
       const recaptchaToken = await executeRecaptcha();
       const sourceId = result.token;
 
-      // Abort controller for timeout
+      // Abort controller fix
       abortControllerRef.current?.abort();
       const controller = new AbortController();
       abortControllerRef.current = controller;

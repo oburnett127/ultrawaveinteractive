@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const prisma = require("../lib/prisma.cjs");
+const requireOtpVerified = require("../middleware/requireOtpVerified.cjs");
 
 const router = express.Router();
 
@@ -36,33 +37,17 @@ function uuid() {
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-// --- Helper: timeout wrapper ---
-async function withTimeout(promise, ms, label) {
-  let timeoutId;
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
-  );
-  try {
-    const result = await Promise.race([promise, timeoutPromise]);
-    clearTimeout(timeoutId);
-    return result;
-  } catch (err) {
-    clearTimeout(timeoutId);
-    throw err;
-  }
-}
-
-// --- Rate limiter: prevent abuse ---
+// --- Rate limiter ---
 const paymentLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10, // 10 payments per 15 minutes per IP
+  max: 10,
   message: { error: "Too many payment attempts. Please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 // --- POST /api/payment/charge ---
-router.post("/payment/charge", paymentLimiter, async (req, res) => {
+router.post("/payment/charge", requireOtpVerified, paymentLimiter, async (req, res) => {
   const startTime = Date.now();
 
   if (req.method !== "POST") {
@@ -72,7 +57,7 @@ router.post("/payment/charge", paymentLimiter, async (req, res) => {
   try {
     const { sourceId, amount, currency, idempotencyKey } = req.body || {};
 
-    // --- 1️⃣ Validate input ---
+    // --- 1️⃣ Validate basic input ---
     if (!sourceId || typeof sourceId !== "string" || sourceId.length < 5) {
       return res.status(400).json({ ok: false, error: "Invalid or missing sourceId." });
     }
@@ -92,21 +77,6 @@ router.post("/payment/charge", paymentLimiter, async (req, res) => {
       return res.status(500).json({ ok: false, error: "Payment service misconfigured." });
     }
 
-    // --- 2️⃣ Try to resolve authenticated user (if available) ---
-    let userId = null;
-    try {
-      const session = await tryGetSession(req, res);
-      if (session?.user?.email) {
-        const user = await prisma.user.findUnique({
-          where: { email: session.user.email },
-          select: { id: true },
-        });
-        userId = user?.id || null;
-      }
-    } catch (e) {
-      console.warn("[PaymentRoute] ⚠️ Unable to resolve user session:", e.message);
-    }
-
     // --- 3️⃣ Prepare Square API request ---
     const idem = idempotencyKey || uuid();
     const payload = {
@@ -116,11 +86,12 @@ router.post("/payment/charge", paymentLimiter, async (req, res) => {
       location_id: process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID,
     };
 
-    // --- 4️⃣ Perform payment request with timeout ---
+    // --- 4️⃣ Call Square API with timeout ---
     let squareRes, squareJson;
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 7000); // 7s timeout
+      const timeout = setTimeout(() => controller.abort(), 7000);
+
       squareRes = await fetch("https://connect.squareup.com/v2/payments", {
         method: "POST",
         headers: {
@@ -131,6 +102,7 @@ router.post("/payment/charge", paymentLimiter, async (req, res) => {
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
+
       clearTimeout(timeout);
       squareJson = await squareRes.json();
     } catch (apiErr) {
@@ -154,7 +126,7 @@ router.post("/payment/charge", paymentLimiter, async (req, res) => {
       return res.status(502).json({ ok: false, error: "Malformed response from Square." });
     }
 
-    // --- 6️⃣ Persist payment record in DB (gracefully) ---
+    // --- 6️⃣ Save to DB ---
     let saved = null;
     try {
       saved = await prisma.payment.create({
@@ -169,13 +141,10 @@ router.post("/payment/charge", paymentLimiter, async (req, res) => {
       });
     } catch (dbErr) {
       console.error("[PaymentRoute] ❌ Failed to save payment:", dbErr);
-      // not fatal — the payment succeeded at Square
     }
 
     console.info(
-      `[PaymentRoute] ✅ Payment processed successfully: ${sqPayment.id} (${cents}¢ in ${
-        sqPayment.amount_money?.currency
-      }) [${Date.now() - startTime}ms]`
+      `[PaymentRoute] ✅ Payment processed: ${sqPayment.id} (${cents}¢ ${sqPayment.amount_money?.currency}) [${Date.now() - startTime}ms]`
     );
 
     return res.status(200).json({

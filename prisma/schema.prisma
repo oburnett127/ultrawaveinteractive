@@ -16,11 +16,12 @@ model User {
   emailVerified       DateTime?
   image               String?
   hashedPassword      String
-  otpCode       String?   // 6-digit OTP
-  otpExpiresAt  DateTime? // Null when unused
+  otpCode             String?   // 6-digit OTP
+  otpExpiresAt        DateTime? // Null when unused
   otpVerified         Boolean  @default(false)
   isAdmin             Boolean  @default(false) // ✅ NEW
   failedLoginAttempts Int      @default(0)
+  updatedAt           DateTime @updatedAt
 }
 
 model OtpToken {

@@ -75,10 +75,10 @@ module.exports.initBackend = async function initBackend(app, handle) {
   });
 
   // Simple request logger
-  app.use((req, res, next) => {
-    console.log("➡️ Incoming request:", req.method, req.url);
-    next();
-  });
+  // app.use((req, res, next) => {
+  //   console.log("➡️ Incoming request:", req.method, req.url);
+  //   next();
+  // });
 
   // -------------------------------------------------
   // 2) Helmet CSP (fixed for Next.js + Square + reCAPTCHA)
@@ -105,46 +105,52 @@ app.use((req, res, next) => {
     "default-src": ["'self'"],
     "base-uri": ["'self'"],
     "object-src": ["'none'"],
-
     "script-src": [
-      "'self'",
-      `'nonce-${nonce}'`,
-      "blob:",
-      "https://www.google.com",       // reCAPTCHA
-      "https://www.gstatic.com",
-      "https://sandbox.web.squarecdn.com",
-      "https://web.squarecdn.com",
-      "https://cdn.jsdelivr.net",
-      "https://ultrawaveinteractive.com",
-    ],
-
+  "'self'",
+  `'nonce-${nonce}'`,
+  "blob:",
+  "https://www.google.com",
+  "https://www.gstatic.com",
+  "https://www.gstatic.com/recaptcha",
+  "https://www.gstatic.com/recaptcha/releases",
+  "https://sandbox.web.squarecdn.com",
+  "https://web.squarecdn.com",
+  "https://cdn.jsdelivr.net",
+  "https://ultrawaveinteractive.com",
+],
+"script-src-elem": [
+  "'self'",
+  `'nonce-${nonce}'`,
+  "https://www.google.com",
+  "https://www.gstatic.com",
+  "https://www.gstatic.com/recaptcha",
+  "https://www.gstatic.com/recaptcha/releases",
+],
+"connect-src": [
+  "'self'",
+  "https://*",
+  "https://ultrawaveinteractive.com",
+  "https://www.google.com/recaptcha",
+  "https://www.gstatic.com/recaptcha",
+  "https://www.gstatic.com/recaptcha/",
+  "https://www.gstatic.com/recaptcha/releases/",
+],
     "style-src": [
       "'self'",
       "'unsafe-inline'",              // Next still needs this
       "https://fonts.googleapis.com",
       "https://cdn.jsdelivr.net",
     ],
-
     "img-src": [
       "'self'",
       "data:",
       "https://*",
     ],
-
     "font-src": [
       "'self'",
       "data:",
       "https://fonts.gstatic.com",
     ],
-
-    "connect-src": [
-      "'self'",
-      "https://*",
-      "https://ultrawaveinteractive.com",
-      "https://www.google.com/recaptcha",
-      "https://www.gstatic.com/recaptcha",
-    ],
-
     "frame-src": [
       "'self'",
       "https://www.google.com",
@@ -152,7 +158,6 @@ app.use((req, res, next) => {
       "https://web.squarecdn.com",
     ],
   };
-
   return helmet({
     contentSecurityPolicy: {
       useDefaults: false,

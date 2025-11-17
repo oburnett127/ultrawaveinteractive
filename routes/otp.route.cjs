@@ -5,7 +5,7 @@ const router = express.Router();
 const rateLimit = require("express-rate-limit");
 const prisma = require("../lib/prisma.cjs");
 const verifyRecaptchaToken = require("../lib/verifyRecaptchaToken.cjs");
-const { createTransporter } = require("../lib/email.cjs"); // Your email logic
+const { getTransporter } = require("../lib/mail.cjs"); // Your email logic
 
 // ---------------------------------------------
 // RATE LIMITERS
@@ -62,7 +62,7 @@ router.post("/send", otpLimiter, async (req, res) => {
     });
 
     // Send OTP via email
-    const transporter = await createTransporter();
+    const transporter = await getTransporter();
     await transporter.sendMail({
       to: user.email,
       from: process.env.EMAIL_FROM,

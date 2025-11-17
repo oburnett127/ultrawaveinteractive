@@ -1,6 +1,8 @@
 // pages/_document.js
 import Document, { Html, Head, Main, NextScript } from "next/document";
 
+const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+
 export default class MyDocument extends Document {
   static async getInitialProps(ctx) {
     const initialProps = await Document.getInitialProps(ctx);
@@ -32,7 +34,7 @@ export default class MyDocument extends Document {
 
           {/* ✅ Google reCAPTCHA (ONE script only) */}
           <script
-            src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`}
+            src={`https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`}
             async
             defer
             nonce={nonce}

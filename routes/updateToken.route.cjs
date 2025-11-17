@@ -3,6 +3,7 @@ const express = require("express");
 const { getServerSession } = require("next-auth/next");
 const prisma = require("../lib/prisma.cjs");
 const { authOptions } = require("../lib/authOptions.cjs");
+const requireOtpVerified = require("../middleware/requireOtpVerified.cjs");
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ const router = express.Router();
  * POST /api/update-token
  * Marks the current authenticated user as OTP verified.
  */
-router.post("/update-token", async (req, res) => {
+router.post("/update-token", requireOtpVerified, async (req, res) => {
   const start = Date.now();
   try {
     // --- 1️⃣ Validate session ---

@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import Script from "next/script";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
 
 export default function ChangePassword() {
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
@@ -8,8 +10,28 @@ export default function ChangePassword() {
   const [status, setStatus] = useState({ error: "", success: "" });
   const [isLoading, setIsLoading] = useState(false);
 
+  const { data: session, sessionStatus } = useSession();
+  const router = useRouter();
+
   const abortControllerRef = useRef(null);
   const recaptchaReadyRef = useRef(false);
+
+ // --------------------------------------
+  // 🔐 ACCESS PROTECTION (Corrected)
+  // --------------------------------------
+  useEffect(() => {
+    if (sessionStatus === "loading") return;
+
+    if (sessionStatus === "unauthenticated") {
+      router.replace("/api/auth/signin");
+      return;
+    }
+
+    if (session?.user && session.user.otpVerified !== true) {
+      router.replace("/verifyotp");
+      return;
+    }
+  }, [sessionStatus, session]);
 
   // Abort request on unmount
   useEffect(() => {

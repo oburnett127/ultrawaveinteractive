@@ -5,6 +5,7 @@ const sanitizeHtml = require("sanitize-html");
 const rateLimit = require("express-rate-limit");
 const { nextAuthMiddleware } = require("../middleware/nextAuthMiddleware.cjs");
 const { generateSlug } = require("../utils/generateSlug");
+const requireOtpVerified = require("../middleware/requireOtpVerified.cjs");
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ router.use(express.json({ limit: "2mb" }));
 // -----------------------------------------
 router.post(
   "/blog/create",
-  nextAuthMiddleware, // MUST be logged in
+  requireOtpVerified,
   blogCreateLimiter,
   async (req, res) => {
     try {

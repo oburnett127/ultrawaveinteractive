@@ -5,6 +5,7 @@ const rateLimit = require("express-rate-limit");
 const prisma = require("../lib/prisma.cjs");
 const verifyRecaptchaToken = require("../lib/verifyRecaptchaToken.cjs");
 const { nextAuthMiddleware } = require("../middleware/nextAuthMiddleware.cjs");
+const requireOtpVerified = require("../middleware/requireOtpVerified.cjs");
 
 const router = express.Router();
 
@@ -24,11 +25,7 @@ const changePasswordLimiter = rateLimit({
 // ---------------------------------------------
 // POST /api/auth/change-password
 // ---------------------------------------------
-router.post(
-  "/auth/change-password",
-  nextAuthMiddleware,
-  changePasswordLimiter,
-  async (req, res) => {
+router.post("/auth/change-password", requireOtpVerified, changePasswordLimiter, async (req, res) => {
     try {
       const userId = req.user?.id;
       const { currentPassword, newPassword, recaptchaToken } = req.body || {};
