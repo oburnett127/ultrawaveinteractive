@@ -4,7 +4,6 @@ const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
 const prisma = require("../lib/prisma.cjs");
 const verifyRecaptchaToken = require("../lib/verifyRecaptchaToken.cjs");
-const { nextAuthMiddleware } = require("../middleware/nextAuthMiddleware.cjs");
 const requireOtpVerified = require("../middleware/requireOtpVerified.cjs");
 
 const router = express.Router();

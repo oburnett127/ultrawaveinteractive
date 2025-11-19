@@ -44,8 +44,8 @@ module.exports.initBackend = async function initBackend(app, handle) {
   const registerRoute = require("./routes/register.route.cjs");
   const paymentRoute = require("./routes/payment.route.cjs");
   const contactRoute = require("./routes/contact.route.cjs");
-  const sendOtpRoute = require("./routes/sendOtp.route.cjs");
-  const verifyOtpRoute = require("./routes/verifyOtp.route.cjs");
+  // const sendOtpRoute = require("./routes/sendOtp.route.cjs");
+  // const verifyOtpRoute = require("./routes/verifyOtp.route.cjs");
   const updateTokenRoute = require("./routes/updateToken.route.cjs");
   const squareWebhookRoute = require("./routes/squareWebhook.route.cjs");
   const leadsRoute = require("./routes/leads.route.cjs");
@@ -330,9 +330,6 @@ app.use((req, res, next) => {
   // -------------------------------------------------
   // 7) API routes — group by whether they self-handle limiting
   // -------------------------------------------------
-
- 
-
 //-------------------------------------------------
 // EXPRESS BACKEND API ROUTES (SAFE NOW)
 //-------------------------------------------------
@@ -341,8 +338,8 @@ app.use((req, res, next) => {
 app.use("/api", waitForRedis, registerRoute);
 app.use("/api", waitForRedis, paymentRoute);
 app.use("/api", waitForRedis, contactRoute);
-app.use("/api", waitForRedis, sendOtpRoute);
-app.use("/api", waitForRedis, verifyOtpRoute);
+// app.use("/api", waitForRedis, sendOtpRoute);
+// app.use("/api", waitForRedis, verifyOtpRoute);
 app.use("/api", waitForRedis, salesbotRoute);
 app.use("/api", waitForRedis, leadsRoute);
 app.use("/api", waitForRedis, blogCreateRoute);
@@ -352,48 +349,14 @@ app.use("/api/otp", waitForRedis, otpRoute);
 
 // These routes use the shared rateLimitMiddleware here
 app.use("/api", waitForRedis, rateLimitMiddleware(publicLimiter), blogRoute);
-app.use(
-  "/api",
-  waitForRedis,
-  rateLimitMiddleware(updateTokenLimiter),
-  updateTokenRoute
-);
-app.use(
-  "/api",
-  waitForRedis,
-  rateLimitMiddleware(redisHealthLimiter),
-  healthRoute
-);
+app.use("/api", waitForRedis, rateLimitMiddleware(updateTokenLimiter), updateTokenRoute);
+app.use("/api", waitForRedis, rateLimitMiddleware(redisHealthLimiter), healthRoute);
 
 // //-------------------------------------------------
 // // 8) Sanitizer — MUST RUN AFTER API ROUTES
+//    DO NOT UNCOMMENT OR USE GLOBAL SANITIZATION - IT WILL BREAK FUNCTIONALITY
 // //-------------------------------------------------
 // app.use(makeSanitizer());
-
-// //-------------------------------------------------
-// // 9) Next.js handler — MUST BE LAST
-// //-------------------------------------------------
-// app.all("*", (req, res) => {
-//   return handle(req, res);
-// });
-
-//   // -------------------------------------------------
-//   // 10) Error handlers
-//   // -------------------------------------------------
-//   app.use((err, req, res, next) => {
-//     if (err.code === "EBADCSRFTOKEN") {
-//       return res.status(403).json({ error: "Invalid CSRF token" });
-//     }
-//     next(err);
-//   });
-
-//   app.use((err, req, res, next) => {
-//     console.error("Unhandled Error:", err);
-//     res.status(500).json({ error: "Something went wrong" });
-//   });
-
-//   return app;
-// }
 
   //
   // ⭐ LET NEXT.JS HANDLE EVERYTHING ELSE

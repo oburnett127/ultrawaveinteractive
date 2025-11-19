@@ -3,7 +3,6 @@ const express = require("express");
 const prisma = require("../lib/prisma.cjs");
 const sanitizeHtml = require("sanitize-html");
 const rateLimit = require("express-rate-limit");
-const { nextAuthMiddleware } = require("../middleware/nextAuthMiddleware.cjs");
 const { generateSlug } = require("../utils/generateSlug");
 const requireOtpVerified = require("../middleware/requireOtpVerified.cjs");
 

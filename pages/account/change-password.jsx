@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import Script from "next/script";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
+import Protected from "../../components/Protected.jsx";
 
 export default function ChangePassword() {
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
@@ -15,23 +16,6 @@ export default function ChangePassword() {
 
   const abortControllerRef = useRef(null);
   const recaptchaReadyRef = useRef(false);
-
- // --------------------------------------
-  // 🔐 ACCESS PROTECTION (Corrected)
-  // --------------------------------------
-  useEffect(() => {
-    if (sessionStatus === "loading") return;
-
-    if (sessionStatus === "unauthenticated") {
-      router.replace("/api/auth/signin");
-      return;
-    }
-
-    if (session?.user && session.user.otpVerified !== true) {
-      router.replace("/verifyotp");
-      return;
-    }
-  }, [sessionStatus, session]);
 
   // Abort request on unmount
   useEffect(() => {
@@ -150,7 +134,7 @@ export default function ChangePassword() {
   };
 
   return (
-    <>
+    <Protected otpRequired>
       {/* reCAPTCHA v3 Script */}
       <Script
         src={`https://www.google.com/recaptcha/api.js?render=${siteKey}`}
@@ -202,6 +186,6 @@ export default function ChangePassword() {
         {status.error && <p className="error-msg">⚠️ {status.error}</p>}
         {status.success && <p className="success-msg">✅ {status.success}</p>}
       </div>
-    </>
+    </Protected>
   );
 }

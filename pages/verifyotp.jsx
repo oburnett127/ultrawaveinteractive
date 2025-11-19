@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import Script from "next/script";
+import Protected from "../components/Protected.jsx";
 
 export default function VerifyOTP() {
   const { data: session, status, update } = useSession();
@@ -18,24 +19,6 @@ export default function VerifyOTP() {
   const recaptchaReadyRef = useRef(false);
 
   const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-
-  // -----------------------------------------------------
-  // 🔐 AUTH CHECK — redirect if not logged in
-  // -----------------------------------------------------
-  useEffect(() => {
-    if (status === "loading") return;
-
-    // Not logged in → redirect to sign-in
-    if (status === "unauthenticated") {
-      router.replace("/api/auth/signin");
-      return;
-    }
-
-    // If logged in AND already verified → go to payment page
-    if (session?.user?.otpVerified === true) {
-      router.replace("/squarepaymentpage");
-    }
-  }, [status, session, router]);
 
   // -----------------------------------------------------
   // reCAPTCHA v3 token getter
@@ -221,7 +204,7 @@ export default function VerifyOTP() {
   }
 
   return (
-    <>
+    <Protected>
       <Script
         src={`https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`}
         strategy="afterInteractive"
@@ -279,6 +262,6 @@ export default function VerifyOTP() {
           </button>
         </div>
       </div>
-    </>
+    </Protected>
   );
 }

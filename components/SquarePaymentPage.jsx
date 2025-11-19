@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
+import Protected from "./Protected.jsx";
 
 export default function SquarePaymentPage() {
   const { data: session, status } = useSession();
@@ -14,23 +15,6 @@ export default function SquarePaymentPage() {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-
-  // --------------------------------------
-  // 🔐 ACCESS PROTECTION (Corrected)
-  // --------------------------------------
-  useEffect(() => {
-    if (status === "loading") return;
-
-    if (status === "unauthenticated") {
-      router.replace("/api/auth/signin");
-      return;
-    }
-
-    if (session?.user && session.user.otpVerified !== true) {
-      router.replace("/verifyotp");
-      return;
-    }
-  }, [status, session]);
 
   // --------------------------------------
   // 🟦 INIT SQUARE WHEN OTP VERIFIED
@@ -177,33 +161,35 @@ export default function SquarePaymentPage() {
   }
 
   return (
-    <form onSubmit={handlePayment} className="square-payment-form" noValidate>
-      <h2>Make a Secure Payment</h2>
+    <Protected otpRequired>
+      <form onSubmit={handlePayment} className="square-payment-form" noValidate>
+        <h2>Make a Secure Payment</h2>
 
-      <label htmlFor="amount">Amount (USD):</label>
-      <input
-        id="amount"
-        type="text"
-        placeholder="Amount"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        required
-        disabled={loading}
-      />
+        <label htmlFor="amount">Amount (USD):</label>
+        <input
+          id="amount"
+          type="text"
+          placeholder="Amount"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          required
+          disabled={loading}
+        />
 
-      <div id="card-container" className="space-above"></div>
+        <div id="card-container" className="space-above"></div>
 
-      <div
-        className="g-recaptcha"
-        data-sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-        data-size="invisible"
-      ></div>
+        <div
+          className="g-recaptcha"
+          data-sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+          data-size="invisible"
+        ></div>
 
-      <button type="submit" disabled={loading || !cardRef.current}>
-        {loading ? "Processing..." : amount ? `Pay $${amount}` : "Pay"}
-      </button>
+        <button type="submit" disabled={loading || !cardRef.current}>
+          {loading ? "Processing..." : amount ? `Pay $${amount}` : "Pay"}
+        </button>
 
-      {message && <p className="payment-message">{message}</p>}
-    </form>
+        {message && <p className="payment-message">{message}</p>}
+      </form>
+    </Protected>
   );
 }

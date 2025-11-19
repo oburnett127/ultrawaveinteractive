@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
+import Protected from "../../components/Protected.jsx";
 
 export default function CreatePost() {
   const { data: session } = useSession();
@@ -93,37 +94,39 @@ export default function CreatePost() {
     return <p>You must be logged in to create a blog post.</p>;
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h1>Create Blog Post</h1>
+    <Protected otpRequired>
+      <form onSubmit={handleSubmit}>
+        <h1>Create Blog Post</h1>
 
-      {error && (
-        <p className="red-text">
-          {error}
-        </p>
-      )}
+        {error && (
+          <p className="red-text">
+            {error}
+          </p>
+        )}
 
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Title"
-        required
-        disabled={loading}
-      />
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Title"
+          required
+          disabled={loading}
+        />
 
-      <textarea
-        name="content"
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        rows={20}
-        className="width-100-percent"
-        placeholder="Write your blog content here in Markdown format..."
-        required
-        disabled={loading}
-      ></textarea>
+        <textarea
+          name="content"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          rows={20}
+          className="width-100-percent"
+          placeholder="Write your blog content here in Markdown format..."
+          required
+          disabled={loading}
+        ></textarea>
 
-      <button type="submit" disabled={loading}>
-        {loading ? "Publishing..." : "Publish"}
-      </button>
-    </form>
+        <button type="submit" disabled={loading}>
+          {loading ? "Publishing..." : "Publish"}
+        </button>
+      </form>
+    </Protected>
   );
 }
