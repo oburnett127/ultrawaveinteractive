@@ -1,9 +1,12 @@
 const express = require("express");
-const sanitizeHtml = require("sanitize-html");
 const validator = require("validator");
 const rateLimit = require("express-rate-limit");
 const verifyRecaptchaToken = require("../lib/verifyRecaptchaToken.cjs");
 const sendContactEmail = require("../lib/sendContactEmail.cjs");
+const sanitizeBasicText = require("../lib/sanitizers.cjs");
+const sanitizeEmail = require("../lib/sanitizers.cjs");
+const sanitizeContactMessage = require("../lib/sanitizers.cjs");
+const { sanitize } = require("dompurify");
 
 const router = express.Router();
 
@@ -33,24 +36,21 @@ router.post("/contact", contactLimiter, async (req, res) => {
       return res.status(400).json({ error: "Invalid email format." });
     }
 
-    const fromEmail = validator.normalizeEmail(email);
-    const fromName = name ? validator.escape(name.trim()) : "Anonymous";
+    const nameSanitized = sanitizeBasicText(name);
+    const emailSanitized = sanitizeBasicText(email);
+    const contactMessageSanitized = sanitizeContactMessage(message);
+
+    const fromEmail = validator.normalizeEmail(emailSanitized);
+    const fromName = nameSanitized ? validator.escape(nameSanitized.trim()) : "Anonymous";
     const fromPhone =
       phone && validator.isMobilePhone(phone, "any")
         ? validator.escape(phone.trim())
         : "Not provided";
 
-    // --- 2️⃣ Sanitize message content ---
-    const safeMessage = sanitizeHtml(message, {
-      allowedTags: ["b", "i", "em", "strong", "p", "br", "ul", "ol", "li"],
-      allowedAttributes: {},
-      disallowedTagsMode: "escape",
-    }).trim();
-
-    if (safeMessage.length < 5) {
+    if (contactMessageSanitized.length < 5) {
       return res.status(400).json({ error: "Message is too short." });
     }
-    if (safeMessage.length > 5000) {
+    if (contactMessageSanitized.length > 5000) {
       return res.status(400).json({ error: "Message exceeds maximum length (5000 chars)." });
     }
 
@@ -86,7 +86,7 @@ router.post("/contact", contactLimiter, async (req, res) => {
         fromEmail,
         name: fromName,
         phone: fromPhone,
-        message: safeMessage,
+        message: contactMessageSanitized,
       });
     } catch (emailErr) {
       console.error("[ContactRoute] ❌ Email send failure:", emailErr);

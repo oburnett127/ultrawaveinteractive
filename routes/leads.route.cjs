@@ -1,8 +1,15 @@
 const express = require("express");
 const prisma = require("../lib/prisma.cjs");
 const rateLimit = require("express-rate-limit");
-const validator = require("validator");
 const crypto = require("crypto");
+
+// --- Sanitizers ---
+const {
+  sanitizeEmail,
+  sanitizeNumberString,
+  sanitizeBasicText,
+  sanitizeSalesbotMessage,
+} = require("../lib/sanitizers.cjs");
 
 const router = express.Router();
 
@@ -56,7 +63,7 @@ router.post("/leads", leadsLimiter, async (req, res) => {
       }
     }
 
-    // --- 3️⃣ Extract and validate body ---
+    // --- 3️⃣ Extract and sanitize body ---
     const {
       email,
       phone,
@@ -68,7 +75,7 @@ router.post("/leads", leadsLimiter, async (req, res) => {
       source,
     } = req.body || {};
 
-    // Basic required fields
+    // --- Basic required fields ---
     if (!email && !phone && !name) {
       return res.status(400).json({
         success: false,
@@ -76,31 +83,38 @@ router.post("/leads", leadsLimiter, async (req, res) => {
       });
     }
 
-    // Validate email
-    const safeEmail = email && validator.isEmail(email) ? validator.normalizeEmail(email) : null;
+    // ---------------------------
+    // SANITIZATION
+    // ---------------------------
+
+    // Email (sanitize + validate)
+    const safeEmail = email ? sanitizeEmail(String(email)) : null;
     if (email && !safeEmail) {
       return res.status(400).json({ success: false, message: "Invalid email format." });
     }
 
-    // Sanitize strings
-    const safeName = name ? validator.escape(name.trim()) : null;
-    const safeCompany = company ? validator.escape(company.trim()) : null;
-    const safeProject = projectDetails ? validator.escape(projectDetails.trim()) : null;
-    const safeTimeline = timeline ? validator.escape(timeline.trim()) : null;
-    const safeSource = source ? validator.escape(source.trim()) : null;
+    // Phone number (sanitize + optional validation)
+    const safePhone = phone ? sanitizeNumberString(String(phone)) : null;
 
-    // Validate and normalize phone number (optional)
-    const safePhone =
-      phone && validator.isMobilePhone(phone, "any") ? phone.trim() : null;
+    // Name, company, timeline, source → basic text only
+    const safeName = name ? sanitizeBasicText(String(name)) : null;
+    const safeCompany = company ? sanitizeBasicText(String(company)) : null;
+    const safeTimeline = timeline ? sanitizeBasicText(String(timeline)) : null;
+    const safeSource = source ? sanitizeBasicText(String(source)) : null;
 
-    // Handle estimated budget
-    const budget =
-      typeof estimatedBudget === "number"
-        ? estimatedBudget
-        : parseInt(estimatedBudget, 10);
-    const safeBudget = !isNaN(budget) && budget > 0 ? budget : null;
+    // Long-form project details: allow punctuation, remove HTML
+    const safeProject = projectDetails
+      ? sanitizeSalesbotMessage(String(projectDetails))
+      : null;
 
-    // --- 4️⃣ Insert lead into database ---
+    // Budget → numeric only
+    const budgetNum = sanitizeNumberString(String(estimatedBudget || ""));
+    const safeBudget =
+      budgetNum && !isNaN(parseInt(budgetNum, 10)) && parseInt(budgetNum, 10) > 0
+        ? parseInt(budgetNum, 10)
+        : null;
+
+    // --- 4️⃣ Insert sanitized lead into database ---
     const lead = await prisma.lead.create({
       data: {
         email: safeEmail,
@@ -114,7 +128,9 @@ router.post("/leads", leadsLimiter, async (req, res) => {
       },
     });
 
-    console.info(`[LeadsRoute] ✅ New lead stored (ID: ${lead.id}) in ${Date.now() - startTime}ms`);
+    console.info(
+      `[LeadsRoute] ✅ New lead stored (ID: ${lead.id}) in ${Date.now() - startTime}ms`
+    );
 
     return res.status(201).json({
       success: true,

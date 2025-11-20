@@ -3,6 +3,7 @@ const express = require("express");
 const rateLimit = require("express-rate-limit");
 const prisma = require("../lib/prisma.cjs");
 const requireOtpVerified = require("../middleware/requireOtpVerified.cjs");
+const sanitizeNumberString = require("../lib/sanitizers.cjs");
 
 const router = express.Router();
 
@@ -62,7 +63,7 @@ router.post("/payment/charge", requireOtpVerified, paymentLimiter, async (req, r
       return res.status(400).json({ ok: false, error: "Invalid or missing sourceId." });
     }
 
-    const cents = parseUsdToCents(String(amount || ""));
+    const cents = parseUsdToCents(sanitizeNumberString(String(amount || "")));
     if (cents === null || cents <= 0) {
       return res.status(400).json({ ok: false, error: "Invalid amount format." });
     }

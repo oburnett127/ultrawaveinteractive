@@ -6,6 +6,11 @@ const prisma = require("../lib/prisma.cjs");
 const verifyRecaptchaToken = require("../lib/verifyRecaptchaToken.cjs");
 const requireOtpVerified = require("../middleware/requireOtpVerified.cjs");
 
+// --- Sanitizers (only light sanitization allowed here) ---
+const {
+  sanitizeBasicText
+} = require("../lib/sanitizers.cjs");
+
 const router = express.Router();
 
 // ---------------------------------------------
@@ -24,10 +29,23 @@ const changePasswordLimiter = rateLimit({
 // ---------------------------------------------
 // POST /api/auth/change-password
 // ---------------------------------------------
-router.post("/auth/change-password", requireOtpVerified, changePasswordLimiter, async (req, res) => {
+router.post(
+  "/auth/change-password",
+  requireOtpVerified,
+  changePasswordLimiter,
+  async (req, res) => {
     try {
       const userId = req.user?.id;
-      const { currentPassword, newPassword, recaptchaToken } = req.body || {};
+
+      // Passwords MUST NOT be sanitized
+      const currentPassword = req.body?.currentPassword;
+      const newPassword = req.body?.newPassword;
+
+      // Recaptcha token must not be HTML sanitized — only trim whitespace
+      const recaptchaToken =
+        typeof req.body?.recaptchaToken === "string"
+          ? req.body.recaptchaToken.trim()
+          : null;
 
       // --------------------------------------------------
       // 1) Validate reCAPTCHA v3 token
@@ -36,11 +54,16 @@ router.post("/auth/change-password", requireOtpVerified, changePasswordLimiter, 
         return res.status(400).json({ error: "Missing reCAPTCHA token." });
       }
 
-      const recaptcha = await verifyRecaptchaToken(recaptchaToken, "change_password");
+      const recaptcha = await verifyRecaptchaToken(
+        recaptchaToken,
+        "change_password"
+      );
 
       if (!recaptcha.success) {
         return res.status(400).json({
-          error: `Failed reCAPTCHA verification: ${recaptcha.error || "unknown"}`,
+          error: `Failed reCAPTCHA verification: ${
+            recaptcha.error || "unknown"
+          }`,
         });
       }
 
@@ -53,29 +76,41 @@ router.post("/auth/change-password", requireOtpVerified, changePasswordLimiter, 
       }
 
       // --------------------------------------------------
-      // 3) Validate request body
+      // 3) Validate request body (passwords cannot be sanitized)
       // --------------------------------------------------
-      if (typeof currentPassword !== "string" || typeof newPassword !== "string") {
-        return res.status(400).json({ error: "Invalid request format." });
+      if (
+        typeof currentPassword !== "string" ||
+        typeof newPassword !== "string"
+      ) {
+        return res
+          .status(400)
+          .json({ error: "Invalid request format." });
       }
 
       if (!currentPassword.trim() || !newPassword.trim()) {
-        return res.status(400).json({ error: "Both fields are required." });
+        return res.status(400).json({
+          error: "Both fields are required.",
+        });
       }
 
       // --- Strong password rule ---
       if (newPassword.length < 8) {
-        return res.status(400).json({ error: "New password must be at least 8 characters." });
+        return res.status(400).json({
+          error: "New password must be at least 8 characters.",
+        });
       }
+
       if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
         return res.status(400).json({
-          error: "Password must include at least one uppercase letter and one number.",
+          error:
+            "Password must include at least one uppercase letter and one number.",
         });
       }
 
       if (currentPassword === newPassword) {
         return res.status(400).json({
-          error: "New password cannot be the same as the current password.",
+          error:
+            "New password cannot be the same as the current password.",
         });
       }
 
@@ -88,17 +123,27 @@ router.post("/auth/change-password", requireOtpVerified, changePasswordLimiter, 
       });
 
       if (!user) {
-        console.warn(`[ChangePassword] No user found for ID: ${userId}`);
+        console.warn(
+          `[ChangePassword] No user found for ID: ${userId}`
+        );
         return res.status(404).json({ error: "User not found." });
       }
 
       // --------------------------------------------------
       // 5) Verify current password
       // --------------------------------------------------
-      const isMatch = await bcrypt.compare(currentPassword, user.hashedPassword);
+      const isMatch = await bcrypt.compare(
+        currentPassword,
+        user.hashedPassword
+      );
+
       if (!isMatch) {
-        console.warn(`[ChangePassword] Incorrect password for user ID: ${userId}`);
-        return res.status(401).json({ error: "Current password is incorrect." });
+        console.warn(
+          `[ChangePassword] Incorrect password for user ID: ${userId}`
+        );
+        return res
+          .status(401)
+          .json({ error: "Current password is incorrect." });
       }
 
       // --------------------------------------------------
@@ -108,8 +153,13 @@ router.post("/auth/change-password", requireOtpVerified, changePasswordLimiter, 
       try {
         hashedPassword = await bcrypt.hash(newPassword, 12);
       } catch (hashErr) {
-        console.error("[ChangePassword] Error hashing password:", hashErr);
-        return res.status(500).json({ error: "Password hashing failed." });
+        console.error(
+          "[ChangePassword] Error hashing password:",
+          hashErr
+        );
+        return res
+          .status(500)
+          .json({ error: "Password hashing failed." });
       }
 
       // --------------------------------------------------
@@ -120,20 +170,28 @@ router.post("/auth/change-password", requireOtpVerified, changePasswordLimiter, 
         data: { hashedPassword },
       });
 
-      console.info(`[ChangePassword] ✅ Password updated for user ID: ${userId}`);
-      return res.status(200).json({ message: "Password updated successfully!" });
+      console.info(
+        `[ChangePassword] ✅ Password updated for user ID: ${userId}`
+      );
+      return res
+        .status(200)
+        .json({ message: "Password updated successfully!" });
     } catch (error) {
       console.error("[ChangePassword] ❌ Unexpected error:", error);
 
       // Prisma known errors
       if (error.code === "P2025") {
-        return res.status(404).json({ error: "User not found or deleted." });
+        return res.status(404).json({
+          error: "User not found or deleted.",
+        });
       }
 
       return res.status(500).json({
         error: "Internal server error.",
         message:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development"
+            ? error.message
+            : undefined,
       });
     }
   }

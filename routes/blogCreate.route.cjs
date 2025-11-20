@@ -5,6 +5,7 @@ const sanitizeHtml = require("sanitize-html");
 const rateLimit = require("express-rate-limit");
 const { generateSlug } = require("../utils/generateSlug");
 const requireOtpVerified = require("../middleware/requireOtpVerified.cjs");
+const { sanitizeBlogTitle, sanitizeMarkdownContent } = require("../lib/sanitizers.cjs");
 
 const router = express.Router();
 
@@ -28,11 +29,7 @@ router.use(express.json({ limit: "2mb" }));
 // POST /api/blog/create
 // Admin-only
 // -----------------------------------------
-router.post(
-  "/blog/create",
-  requireOtpVerified,
-  blogCreateLimiter,
-  async (req, res) => {
+router.post("/blog/create", requireOtpVerified, blogCreateLimiter, async (req, res) => {
     try {
       // -------------------------------------
       // 1) Auth check
@@ -64,8 +61,8 @@ router.post(
       }
 
       // Canonicalize inputs
-      title = title.trim();
-      content = content.trim();
+      title = sanitizeBlogTitle(title.trim());
+      content = sanitizeMarkdownContent(content.trim());
 
       // -------------------------------------
       // 3) Sanitize content (HTML filtering)

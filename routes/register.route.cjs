@@ -5,6 +5,12 @@ const rateLimit = require("express-rate-limit");
 const prisma = require("../lib/prisma.cjs");
 const verifyRecaptchaToken = require("../lib/verifyRecaptchaToken.cjs");
 
+// --- Sanitizers ---
+const {
+  sanitizeEmail,
+  sanitizeBasicText
+} = require("../lib/sanitizers.cjs");
+
 const router = express.Router();
 
 // ---------------------------------------------
@@ -43,11 +49,14 @@ router.post("/auth/register", registerLimiter, async (req, res) => {
     // --------------------------------------------------
     // 1) reCAPTCHA v3 verification
     // --------------------------------------------------
-    if (!recaptchaToken) {
+    const safeRecaptchaToken =
+      typeof recaptchaToken === "string" ? recaptchaToken.trim() : null;
+
+    if (!safeRecaptchaToken) {
       return res.status(400).json({ ok: false, error: "Missing reCAPTCHA token." });
     }
 
-    const recaptcha = await verifyRecaptchaToken(recaptchaToken, "register");
+    const recaptcha = await verifyRecaptchaToken(safeRecaptchaToken, "register");
 
     if (!recaptcha.success) {
       return res.status(400).json({
@@ -57,17 +66,15 @@ router.post("/auth/register", registerLimiter, async (req, res) => {
     }
 
     // --------------------------------------------------
-    // 2) Email validation
+    // 2) Email sanitization + validation
     // --------------------------------------------------
-    const email = String(emailText || "").trim().toLowerCase();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!email || !emailRegex.test(email)) {
+    const safeEmail = sanitizeEmail(String(emailText || ""));
+    if (!safeEmail) {
       return res.status(400).json({ ok: false, error: "Invalid email format." });
     }
 
     // --------------------------------------------------
-    // 3) Password validation
+    // 3) Password validation (NOT sanitized)
     // --------------------------------------------------
     if (!validatePassword(password)) {
       return res.status(400).json({
@@ -81,7 +88,7 @@ router.post("/auth/register", registerLimiter, async (req, res) => {
     // 4) Check if user already exists
     // --------------------------------------------------
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: safeEmail },
       select: { id: true },
     });
 
@@ -90,17 +97,19 @@ router.post("/auth/register", registerLimiter, async (req, res) => {
     }
 
     // --------------------------------------------------
-    // 5) Hash password
+    // 5) Hash password (password must NOT be sanitized)
     // --------------------------------------------------
     const hashedPassword = await hash(password, 12);
 
     // --------------------------------------------------
     // 6) Create user in database
     // --------------------------------------------------
+    const safeName = name ? sanitizeBasicText(String(name)) : null;
+
     const user = await prisma.user.create({
       data: {
-        email,
-        name: name ? String(name).trim() : null,
+        email: safeEmail,
+        name: safeName,
         hashedPassword,
         otpVerified: false,
         isAdmin: false,
@@ -113,7 +122,7 @@ router.post("/auth/register", registerLimiter, async (req, res) => {
     });
 
     console.info(
-      `[Register] ✅ User created: ${email} (${Date.now() - start}ms)`
+      `[Register] ✅ User created: ${safeEmail} (${Date.now() - start}ms)`
     );
 
     return res.status(201).json({
