@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Script from "next/script";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
@@ -10,6 +12,7 @@ export default function SignIn() {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -47,13 +50,13 @@ export default function SignIn() {
         email,
         password,
         recaptchaToken: token,
-        callbackUrl: "/verifyotp",
+        callbackUrl: "/dashboard",
       });
 
       if (result.error) {
         setErr(result.error);
       } else {
-        window.location.href = result.url || "/verifyotp";
+        window.location.href = result.url || "/dashboard";
       }
     } catch (error) {
       console.error(error);
@@ -75,7 +78,6 @@ export default function SignIn() {
 
       <form onSubmit={handleSubmit} className="signin-form" noValidate>
         <h1>Sign in</h1>
-
         <label htmlFor="email">Email</label>
         <input
           id="email"
@@ -83,21 +85,30 @@ export default function SignIn() {
           disabled={loading}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          className="signin-input"
         />
-
         <label htmlFor="password">Password</label>
-        <input
-          id="password"
-          type="password"
-          disabled={loading}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <div className="inputWrapper">
+          <input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            disabled={loading}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="passwordInput"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="passwordEye"
+          >
+            {showPassword ? <VisibilityOff /> : <Visibility />}
+          </button>
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Signing in..." : "Sign in"}
-        </button>
-
+          <button type="submit" disabled={loading}>
+            {loading ? "Signing in..." : "Sign in"}
+          </button>
+        </div>
         {err && <p className="signin-error">⚠️ {err}</p>}
       </form>
     </>

@@ -4,12 +4,7 @@ const { hash } = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
 const prisma = require("../lib/prisma.cjs");
 const verifyRecaptchaToken = require("../lib/verifyRecaptchaToken.cjs");
-
-// --- Sanitizers ---
-const {
-  sanitizeEmail,
-  sanitizeBasicText
-} = require("../lib/sanitizers.cjs");
+const { sanitizeEmail, sanitizeBasicText } = require("../lib/sanitizers.cjs");
 
 const router = express.Router();
 

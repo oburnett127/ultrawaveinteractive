@@ -2,8 +2,6 @@ const express = require("express");
 const prisma = require("../lib/prisma.cjs");
 const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
-
-// --- Sanitizers ---
 const {
   sanitizeEmail,
   sanitizeNumberString,

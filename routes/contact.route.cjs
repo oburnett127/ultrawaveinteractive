@@ -3,10 +3,8 @@ const validator = require("validator");
 const rateLimit = require("express-rate-limit");
 const verifyRecaptchaToken = require("../lib/verifyRecaptchaToken.cjs");
 const sendContactEmail = require("../lib/sendContactEmail.cjs");
-const sanitizeBasicText = require("../lib/sanitizers.cjs");
-const sanitizeEmail = require("../lib/sanitizers.cjs");
-const sanitizeContactMessage = require("../lib/sanitizers.cjs");
-const { sanitize } = require("dompurify");
+const { sanitizeBasicText } = require("../lib/sanitizers.cjs");
+const { sanitizeContactMessage } = require("../lib/sanitizers.cjs");
 
 const router = express.Router();
 

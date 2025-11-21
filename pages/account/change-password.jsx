@@ -3,6 +3,8 @@ import Script from "next/script";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import Protected from "../../components/Protected.jsx";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
 export default function ChangePassword() {
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
@@ -10,6 +12,7 @@ export default function ChangePassword() {
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState({ error: "", success: "" });
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { data: session, sessionStatus } = useSession();
   const router = useRouter();
@@ -163,6 +166,7 @@ export default function ChangePassword() {
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
               disabled={isLoading}
+              className="passwordInput"
             />
           </div>
 
@@ -175,6 +179,7 @@ export default function ChangePassword() {
               onChange={(e) => setNewPassword(e.target.value)}
               required
               disabled={isLoading}
+              className="passwordInput"
             />
           </div>
 

@@ -42,6 +42,7 @@
         "googleapis": "^144.0.0",
         "helmet": "^8.0.0",
         "jwk-to-pem": "^2.0.7",
+        "marked": "^17.0.1",
         "next": "^15.3.3",
         "next-auth": "^4.24.11",
         "node-fetch": "^3.3.2",

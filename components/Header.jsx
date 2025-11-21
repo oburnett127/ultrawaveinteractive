@@ -64,6 +64,13 @@ export default function Header() {
             {session.user.email}
           </span>
           <button
+            onClick={() => window.location.href = "/dashboard"}
+            className={styles.button}
+            aria-label="Dashboard"
+          >
+            {"Dashboard"}
+          </button>
+          <button
             onClick={handleSignOut}
             className={styles.button}
             disabled={signingOut}

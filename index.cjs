@@ -4,7 +4,6 @@ const dotenv = require("dotenv");
 const crypto = require("crypto");
 const rateLimit = require("express-rate-limit");
 const bodyParser = require("body-parser");
-const sanitizeHtml = require("sanitize-html");
 const { createRedisClient, limiterFactory, disconnectRedisClient } = require("./lib/redisClient.cjs");
 
 function boolFromEnv(v, def = false) {
@@ -12,18 +11,18 @@ function boolFromEnv(v, def = false) {
   return /^(1|true|yes|on)$/i.test(String(v));
 }
 
-function makeSanitizer(options = {}) {
-  return function sanitizeBody(req, _res, next) {
-    if (req.body && typeof req.body === "object") {
-      for (const [k, v] of Object.entries(req.body)) {
-        if (typeof v === "string") {
-          req.body[k] = sanitizeHtml(v, { allowedTags: [], allowedAttributes: {}, ...options }).trim();
-        }
-      }
-    }
-    next();
-  };
-}
+// function makeSanitizer(options = {}) {
+//   return function sanitizeBody(req, _res, next) {
+//     if (req.body && typeof req.body === "object") {
+//       for (const [k, v] of Object.entries(req.body)) {
+//         if (typeof v === "string") {
+//           req.body[k] = sanitizeHtml(v, { allowedTags: [], allowedAttributes: {}, ...options }).trim();
+//         }
+//       }
+//     }
+//     next();
+//   };
+// }
 
 // index.cjs
 module.exports.initBackend = async function initBackend(app, handle) {

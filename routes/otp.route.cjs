@@ -6,8 +6,8 @@ const rateLimit = require("express-rate-limit");
 const prisma = require("../lib/prisma.cjs");
 const verifyRecaptchaToken = require("../lib/verifyRecaptchaToken.cjs");
 const { getTransporter } = require("../lib/mail.cjs"); // Your email logic
-const sanitizeEmail = require("../lib/sanitizers.cjs");
-const sanitizeNumberString = require("../lib/sanitizers.cjs");
+const { sanitizeEmail } = require("../lib/sanitizers.cjs");
+const { sanitizeNumberString } = require("../lib/sanitizers.cjs");
 
 // ---------------------------------------------
 // RATE LIMITERS
@@ -32,13 +32,13 @@ function generateOtp() {
 // ---------------------------------------------
 router.post("/send", otpLimiter, async (req, res) => {
   try {
-    const { email, recaptchaToken } = req.body;
+    let { email, recaptchaToken } = req.body;
 
     if (!email) {
       return res.status(400).json({ error: "Email is required." });
     }
 
-    let emailSanitized = sanitizeEmail(email);
+    email = sanitizeEmail(email);
 
     console.log("🔍 Received token from client:", req.body.recaptchaToken);
     console.log("🔍 req.body:", req.body);
@@ -50,7 +50,7 @@ router.post("/send", otpLimiter, async (req, res) => {
     }
 
     // Look up the user
-    const user = await prisma.user.findUnique({ where: { sanitizedEmail } });
+    const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
       return res.status(400).json({ error: "No user found with that email." });
@@ -60,7 +60,7 @@ router.post("/send", otpLimiter, async (req, res) => {
     const otp = generateOtp();
 
     await prisma.user.update({
-      where: { sanitizedEmail },
+      where: { email },
       data: {
         otpCode: otp,
         otpExpiresAt: new Date(Date.now() + 5 * 60 * 1000),
@@ -72,7 +72,7 @@ router.post("/send", otpLimiter, async (req, res) => {
     // Send OTP via email
     const transporter = await getTransporter();
     await transporter.sendMail({
-      to: user.sanitizedEmail,
+      to: user.email,
       from: process.env.EMAIL_FROM,
       subject: "Your Ultrawave Interactive OTP Code",
       text: `Your OTP code is: ${otp}\n\nIt expires in 5 minutes.`,
@@ -90,14 +90,14 @@ router.post("/send", otpLimiter, async (req, res) => {
 // ---------------------------------------------
 router.post("/verify", otpLimiter, async (req, res) => {
   try {
-    const { email, otp, recaptchaToken } = req.body;
+    let { email, otp, recaptchaToken } = req.body;
 
     if (!email || !otp) {
       return res.status(400).json({ error: "Missing email or OTP." });
     }
 
-    let emailSanitized = sanitizeEmail(email);
-    let otpSanitized = sanitizeNumberString(otp);
+    email = sanitizeEmail(email);
+    otp = sanitizeNumberString(otp);
 
     // 🔐 reCAPTCHA v3 Verification
     const recaptcha = await verifyRecaptchaToken(recaptchaToken, "otp");
@@ -110,7 +110,7 @@ router.post("/verify", otpLimiter, async (req, res) => {
 
     // Look up user
     const user = await prisma.user.findUnique({
-      where: { emailSanitized },
+      where: { email },
     });
 
     if (!user) {
@@ -128,13 +128,13 @@ router.post("/verify", otpLimiter, async (req, res) => {
     }
 
     // Check match
-    if (user.otpCode !== otpSanitized.trim()) {
+    if (user.otpCode !== otp.trim()) {
       return res.status(400).json({ error: "Invalid OTP code." });
     }
 
     // Mark OTP as verified
     await prisma.user.update({
-      where: { emailSanitized },
+      where: { email },
       data: {
         otpCode: null,
         otpExpiresAt: null,

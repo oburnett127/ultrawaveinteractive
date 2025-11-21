@@ -104,19 +104,6 @@ button:hover   { background-color: #0056b3; transform: scale(1.05); }
 button:active  { transform: scale(0.98); }
 @media (max-width: 768px) { button { font-size: 0.95rem; padding: 8px 16px; } }
 
-/* ---------- Forms ---------- */
-input, textarea {
-  font-size: 1rem;
-  padding: 10px;
-  border: 1px solid #444;
-  background: white;
-  color: black;
-  border-radius: 5px;
-  width: 100%;
-  margin-bottom: 1rem;
-}
-input:focus, textarea:focus { border-color: #007bff; outline: none; }
-
 /* ---------- Layout helpers ---------- */
 .container { padding: 20px; margin: 0 auto; max-width: 1200px; }
 @media (max-width: 768px) { .container { padding: 15px; } }
@@ -615,16 +602,6 @@ input, textarea {
   margin-bottom: 4px;
 }
 
-/* Input fields */
-.signin-input {
-  display: block;
-  width: 100%;
-  margin-bottom: 12px;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
 /* reCAPTCHA container */
 .recaptcha-container {
   margin: 12px 0;
@@ -818,7 +795,6 @@ input, textarea {
   text-align: center;
 }
 
-
 .container {
   max-width: 400px;
   margin: 2rem auto;
@@ -827,12 +803,6 @@ input, textarea {
 label {
   display: block;
   margin-bottom: 0.5rem;
-}
-
-input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 1rem;
 }
 
 .error {
@@ -883,13 +853,6 @@ button[disabled] {
   display: block;
   margin-top: 1rem;
   margin-bottom: 0.25rem;
-}
-
-.signin-input {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #555;
-  border-radius: 4px;
 }
 
 .signin-button {
@@ -1016,4 +979,72 @@ button[disabled] {
 .payment-message {
   margin-top: 1rem;
   font-weight: 500;
+}
+
+.inputWrapper {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.passwordEye {
+  position: absolute;
+  right: 6px;
+  top: 20%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+}
+
+.passwordInput {
+  width: 100%;
+  padding: 10px 40px 10px 10px;
+  font-size: 16px;
+  box-sizing: border-box;
+  border: 1px solid #444;
+  background: white;
+  color: black;
+  border-radius: 5px;
+}
+
+/* ---------- General Input Styles ---------- */
+input,
+textarea {
+  font-size: 1rem;
+  padding: 10px;
+  border: 1px solid #444;
+  background: white;
+  color: black;
+  border-radius: 5px;
+  width: 100%;
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+}
+
+input:focus,
+textarea:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* ---------- Optional Class for Non-Password Inputs ---------- */
+.signin-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.passwordDiv {
+  position: "relative";
+  margin-bottom: "16px";
 }

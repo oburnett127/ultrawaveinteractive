@@ -152,7 +152,7 @@ export default function VerifyOTP() {
       // Patch user session to reflect OTP verification
       await update({ user: { otpVerified: true } });
 
-      window.location.assign("/squarepaymentpage");
+      window.location.assign("/square-payment-page");
     } catch (err) {
       setError(err.message || "Failed to verify OTP.");
     } finally {
