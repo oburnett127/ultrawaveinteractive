@@ -65,7 +65,21 @@ router.post("/blog/create", requireOtpVerified, blogCreateLimiter, async (req, r
 
     // Canonicalize inputs
     title = sanitizeBlogTitle(title.trim());
-    const markdownSanitized = sanitizeMarkdownContent(content.trim());
+    const markdownSanitized = sanitizeMarkdownContent(content, {
+      allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+        "img",
+        "h1",
+        "h2",
+        "h3",
+        "blockquote",
+      ]),
+      allowedAttributes: {
+        "*": ["href", "src", "alt", "title", "target"],
+      },
+      allowedSchemes: ["http", "https", "mailto"],
+      disallowedTagsMode: "discard",
+    });
+
 
     // -------------------------------------
     // 3) Convert Markdown → HTML THEN sanitize HTML

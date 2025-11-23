@@ -8,4 +8,4 @@ function generateSlug(title) {
     .replace(/-+/g, '-');         // collapse multiple hyphens
 }
 
-module.exports = generateSlug;
+module.exports = { generateSlug };

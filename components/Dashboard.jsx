@@ -8,7 +8,7 @@ export default function Dashboard() {
       <div style={styles.buttonContainer}>
         <button
           style={styles.button}
-          onClick={() => window.location.href = "/square-payment-page"}
+          onClick={() => window.location.href = "/squarepaymentpage"}
         >
           Make Payment
         </button>

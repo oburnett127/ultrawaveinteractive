@@ -48,6 +48,22 @@ export default class MyDocument extends Document {
         </Head>
 
         <body>
+          {/* Prevent flash of wrong theme */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+              (function() {
+                try {
+                  var saved = localStorage.getItem('uw-theme');
+                  if (saved) {
+                    document.documentElement.setAttribute('data-theme', saved);
+                  }
+                } catch (e) {}
+              })();
+            `,
+            }}
+          />
+          
           <Main />
 
           {/* 

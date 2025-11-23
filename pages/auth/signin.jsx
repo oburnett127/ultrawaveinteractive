@@ -50,13 +50,13 @@ export default function SignIn() {
         email,
         password,
         recaptchaToken: token,
-        callbackUrl: "/dashboard",
+        callbackUrl: "/verifyotp",
       });
 
       if (result.error) {
         setErr(result.error);
       } else {
-        window.location.href = result.url || "/dashboard";
+        window.location.href = result.url || "/verifyotp";
       }
     } catch (error) {
       console.error(error);

@@ -1,76 +1,124 @@
+/* HEADER LAYOUT */
 .header {
+  position: relative;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
-  background-color: #0a0a0a;
+  justify-content: center;
+  background: #0a0a0a;
+  color: white;
+  padding: 1rem 1.5rem;
   border-bottom: 1px solid #222;
-  color: #fff;
-  flex-wrap: wrap;
+  z-index: 1000;
 }
 
-.leftSpacer {
-  flex: 1 1 100px;
+/* HAMBURGER BUTTON */
+.hamburger {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 1300; /* ensures always on top */
 }
 
-.centeredHeading {
-  flex: 1 1 auto;
-  text-align: center;
-  font-size: 1.2rem;
+.line {
+  width: 28px;
+  height: 3px;
+  background: white;
+  border-radius: 3px;
+}
+
+/* CENTER TITLE */
+.title {
+  font-size: 2.2rem;
   margin: 0;
-  color: #fff;
+  text-align: center;
+  width: 100%;
 }
 
 .homeLink {
+  color: white;
   text-decoration: none;
-  color: #fff;
-  transition: color 0.2s;
 }
 
-.homeLink:hover,
-.homeLink:focus {
+.homeLink:hover {
   color: red;
 }
 
-.rightControls {
-  flex: 1 1 150px;
+/* RIGHT SPACER TO BALANCE LAYOUT */
+.rightSpacer {
+  position: absolute;
+  right: 1rem;
+  width: 28px;
+  height: 3px;
+  opacity: 0;
+}
+
+/* MENU PANEL */
+.menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: #111;
+  border-bottom: 1px solid #333;
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  transform: translateY(-20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.25s ease-in-out;
+  z-index: 1200; /* appear ABOVE images */
 }
 
-.button {
-  background-color: blue;
+.menu.open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* MENU ITEMS */
+.menuItem {
+  padding: 1rem;
+  border-bottom: 1px solid #222;
   color: white;
-  border: none;
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
+  text-decoration: none;
+  font-size: 1.2rem;
+  background: none;
+  text-align: left;
   cursor: pointer;
-  font-weight: 600;
-  transition: background 0.2s ease-in-out;
 }
 
-.button:hover,
-.button:focus {
-  background-color: red;
+.menuItem:hover {
+  background: #333;
+}
+
+/* FALLBACK */
+.headerFallback {
+  padding: 1rem;
+  background: #111;
+  text-align: center;
+  color: #f88;
+}
+
+.rightSide {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  z-index: 1100; /* Above images, below menu */
 }
 
 .emailText {
   color: #ccc;
   font-size: 0.9rem;
-  margin-right: 0.5rem;
-  overflow-wrap: anywhere;
-}
-
-.loadingText {
-  color: #888;
-  font-size: 0.9rem;
-}
-
-.headerFallback {
-  background: #111;
-  color: #f88;
-  text-align: center;
-  padding: 1rem;
+  font-weight: 500;
 }

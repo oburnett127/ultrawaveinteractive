@@ -52,7 +52,7 @@
   background-color: #007BFF; /* Blue button */
   color: white; /* White text */
   font-size: 1rem; /* Responsive font size */
-  padding: 10px 20px;
+  padding: 30px 40px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -79,12 +79,12 @@
 
   .contactForm input,
   .contactForm textarea {
-    font-size: 0.9rem; /* Slightly smaller font size for mobile */
+    font-size: 17px; /* Slightly smaller font size for mobile */
     padding: 8px; /* Reduce padding */
   }
 
   .button {
-    font-size: 0.9rem;
+    font-size: 17px;
     padding: 8px 16px;
   }
 

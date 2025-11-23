@@ -5,6 +5,7 @@ const crypto = require("crypto");
 const rateLimit = require("express-rate-limit");
 const bodyParser = require("body-parser");
 const { createRedisClient, limiterFactory, disconnectRedisClient } = require("./lib/redisClient.cjs");
+const cookieParser = require("cookie-parser");
 
 function boolFromEnv(v, def = false) {
   if (v === undefined) return def;
@@ -325,6 +326,9 @@ app.use((req, res, next) => {
           }
         }
       : (req, res, next) => next(); // skip rate limiting in dev
+
+
+app.use(cookieParser());
 
   // -------------------------------------------------
   // 7) API routes — group by whether they self-handle limiting

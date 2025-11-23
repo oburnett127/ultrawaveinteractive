@@ -34,6 +34,9 @@ const handle = nextApp.getRequestHandler();
       return handle(req, res);
     });
 
+    const cookieParser = require("cookie-parser");
+    server.use(cookieParser());
+
     // ---------------------------
     // Mount your backend routes
     // ---------------------------

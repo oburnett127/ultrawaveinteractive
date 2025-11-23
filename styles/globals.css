@@ -4,14 +4,15 @@
 *::after { box-sizing: border-box; }
 
 html {
-  font-size: 16px;
+  font-size: 17px;
   scroll-behavior: smooth;
   /* Prevent iOS rubber-band background flashes under fixed bg */
   background: transparent;
+  color: #fff;
 }
 
-@media (max-width: 768px) { html { font-size: 15px; } }
-@media (max-width: 480px) { html { font-size: 14px; } }
+@media (max-width: 768px) { html { font-size: 17px; } }
+@media (max-width: 480px) { html { font-size: 17px; } }
 
 /* ---------- Body ---------- */
 html, body {
@@ -19,7 +20,6 @@ html, body {
   padding: 0;
   min-height: 100vh;
   background: transparent;     /* no gray/black default; bg image handles it */
-  color: #fff;
 }
 
 body {
@@ -28,7 +28,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
-  font-size: 1.2rem;
+  font-size: 17px;
+  color: var(--text-color);
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* ---------- Typography ---------- */
@@ -42,16 +44,16 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ---------- Headings ---------- */
 h1 {
-  font-size: clamp(32px, 5vw, 40px);
+  font-size: clamp(36px, 5vw, 40px);
   text-align: center;
   margin-top: 1rem;
 }
 h2 {
-  font-size: clamp(24px, 3.5vw, 32px);
+  font-size: clamp(28px, 3.5vw, 32px);
   text-align: center;
 }
 h3 {
-  font-size: clamp(20px, 3vw, 28px);
+  font-size: clamp(22px, 3vw, 28px);
 }
 
 p {
@@ -86,14 +88,20 @@ code {
 }
 
 /* ---------- Links ---------- */
-a { color: #1e90ff; text-decoration: none; }
-a:hover { text-decoration: underline; color: #00bfff; }
+a { 
+  color: var(--link-color); 
+  text-decoration: none; 
+}
+a:hover { 
+  text-decoration: underline; 
+  color: #00bfff; 
+}
 
 /* ---------- Buttons ---------- */
 button {
-  background-color: #007bff;
-  color: #fff;
-  padding: 10px 20px;
+  background: var(--button-bg);
+  color: var(--button-text);
+  padding: 30px 40px;
   border: 0;
   border-radius: 5px;
   cursor: pointer;
@@ -102,7 +110,7 @@ button {
 }
 button:hover   { background-color: #0056b3; transform: scale(1.05); }
 button:active  { transform: scale(0.98); }
-@media (max-width: 768px) { button { font-size: 0.95rem; padding: 8px 16px; } }
+@media (max-width: 768px) { button { font-size: 17px; padding: 8px 16px; } }
 
 /* ---------- Layout helpers ---------- */
 .container { padding: 20px; margin: 0 auto; max-width: 1200px; }
@@ -231,7 +239,8 @@ img {
 
 .card {
   text-align: center;
-  background: #111;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 1rem;
   width: 250px;        /* Fixed card width */
@@ -464,7 +473,7 @@ input, textarea {
 
 .email-text {
   color: white; 
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .centered-heading {
@@ -549,7 +558,7 @@ input, textarea {
 
 .verify-button {
   margin-top: 12px;
-  padding: 10px 14px;
+  padding: 30px 40px;
   background: #0070f3;
   color: white;
   border: none;
@@ -612,7 +621,7 @@ input, textarea {
   display: inline-block;
   background-color: #0070f3;
   color: white;
-  padding: 10px 14px;
+  padding: 30px 40px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -706,7 +715,7 @@ input, textarea {
   border-radius: 8px;
   margin-bottom: 10px;
   line-height: 1.4;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .chatbot-msg.bot {
@@ -790,7 +799,7 @@ input, textarea {
 
 .chatbot-error {
   color: #ff8080;
-  font-size: 0.85rem;
+  font-size: 1rem;
   margin-top: 4px;
   text-align: center;
 }
@@ -1019,12 +1028,13 @@ textarea {
   font-size: 1rem;
   padding: 10px;
   border: 1px solid #444;
-  background: white;
-  color: black;
+  background: var(--input-bg);
+  color: var(--input-text);
   border-radius: 5px;
   width: 100%;
   margin-bottom: 1rem;
   box-sizing: border-box;
+  border: 1px solid var(--input-border);
 }
 
 input:focus,
@@ -1047,4 +1057,85 @@ textarea:focus {
 .passwordDiv {
   position: "relative";
   margin-bottom: "16px";
+}
+
+/* ------------------------------------ */
+/* THEME: LIGHT (default)               */
+/* ------------------------------------ */
+:root {
+  --bg-color: #ffffff;
+  --text-color: #111111;
+  --card-bg: #f7f7f7;
+  --border-color: #e5e5e5;
+
+  --button-bg: blue;
+  --button-text: #ffffff;
+
+  --input-bg: #ffffff;
+  --input-text: #111111;
+  --input-border: #cccccc;
+
+  --link-color: #0066ff;
+}
+
+/* ------------------------------------ */
+/* THEME: DARK                          */
+/* Triggered when <html data-theme="dark"> */
+/* ------------------------------------ */
+html[data-theme="dark"] {
+   --bg-color: #ffffff;
+  --text-color: #111111;
+  --card-bg: #f7f7f7;
+  --border-color: #e5e5e5;
+
+  --button-bg: blue;
+  --button-text: #ffffff;
+
+  --input-bg: #ffffff;
+  --input-text: #111111;
+  --input-border: #cccccc;
+
+  --link-color: #0066ff;
+}
+
+.blog-content {
+  line-height: 1.7;
+  font-size: 1.1rem;
+}
+
+.blog-content h1,
+.blog-content h2,
+.blog-content h3 {
+  margin-top: 1.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.blog-content p {
+  margin-bottom: 1rem;
+}
+
+.blog-content img {
+  max-width: 100%;
+  height: auto;
+  margin: 1.5rem 0;
+  border-radius: 8px;
+}
+
+.blog-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+.blog-content th,
+.blog-content td {
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+}
+
+.blog-content blockquote {
+  border-left: 4px solid #888;
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  color: #666;
 }

@@ -4,30 +4,20 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import styles from "./Header.module.css";
 
-/**
- * Error boundary wrapper — keeps the header from crashing the app
- */
 class HeaderErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false };
   }
-
   static getDerivedStateFromError() {
     return { hasError: true };
   }
-
   componentDidCatch(error, info) {
-    console.error("Header rendering error:", error, info);
+    console.error("Header error:", error, info);
   }
-
   render() {
     if (this.state.hasError) {
-      return (
-        <header className={styles.headerFallback}>
-          <h1>Ultrawave Interactive</h1>
-        </header>
-      );
+      return <header className={styles.headerFallback}>Error loading header</header>;
     }
     return this.props.children;
   }
@@ -35,84 +25,109 @@ class HeaderErrorBoundary extends React.Component {
 
 export default function Header() {
   const { data: session, status } = useSession();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+
+  const closeMenu = () => setMenuOpen(false);
+
+  const toggleMenu = () => setMenuOpen((prev) => !prev);
 
   const handleSignOut = async () => {
     try {
       setSigningOut(true);
-      await signOut({ redirect: false });
+      await signOut({ redirect: true, callbackUrl: "/" });
     } catch (err) {
       console.error("Sign-out error:", err);
-      alert("Sign-out failed. Please try again.");
+      alert("Sign-out failed.");
     } finally {
       setSigningOut(false);
     }
   };
 
-  const renderControls = () => {
-    if (status === "loading") {
-      return <span className={styles.loadingText}>Loading session...</span>;
-    }
+  const menuItems = (
+  <nav className={`${styles.menu} ${menuOpen ? styles.open : ""}`}>
+    {/* Sign In / Sign Out */}
+    {session?.user ? (
+      <button
+        onClick={() => {
+          closeMenu();
+          handleSignOut();
+        }}
+        className={styles.menuItem}
+      >
+        {signingOut ? "Signing Out..." : "Sign Out"}
+      </button>
+    ) : (
+      <Link
+        href="/auth/signin"
+        className={styles.menuItem}
+        onClick={closeMenu}
+      >
+        Sign In
+      </Link>
+    )}
 
-    if (session?.user) {
-      return (
-        <>
-          <span
-            className={styles.emailText}
-            title={session.user.email || "Logged-in user"}
-          >
-            {session.user.email}
-          </span>
-          <button
-            onClick={() => window.location.href = "/dashboard"}
-            className={styles.button}
-            aria-label="Dashboard"
-          >
-            {"Dashboard"}
-          </button>
-          <button
-            onClick={handleSignOut}
-            className={styles.button}
-            disabled={signingOut}
-            aria-label="Sign out"
-          >
-            {signingOut ? "Signing Out..." : "Sign Out"}
-          </button>
-        </>
-      );
-    }
+    <Link
+        href="/"
+        className={styles.menuItem}
+        onClick={closeMenu}
+      >
+        Home
+      </Link>
 
-    return (
-      <>
-        <Link href="/auth/signin" className={styles.link}>
-          <button className={styles.button} aria-label="Sign in">
-            Sign In
-          </button>
-        </Link>
-        <Link href="/register" className={styles.link}>
-          <button className={styles.button} aria-label="Create an account">
-            Create Account
-          </button>
-        </Link>
-      </>
-    );
-  };
+    {/* Change Password */}
+    <Link
+      href="/account/change-password"
+      className={styles.menuItem}
+      onClick={closeMenu}
+    >
+      Change Password
+    </Link>
+
+    {/* Make Payment */}
+    <Link
+      href="/squarepaymentpage"
+      className={styles.menuItem}
+      onClick={closeMenu}
+    >
+      Make Payment
+    </Link>
+  </nav>
+);
+
 
   return (
     <HeaderErrorBoundary>
-      <header className={styles.header} role="banner" aria-label="Site header">
-        {/* Left spacer for layout symmetry */}
-        <div className={styles.leftSpacer}></div>
+      <header className={styles.header}>
+        {/* HAMBURGER ICON */}
+        <button
+          className={styles.hamburger}
+          onClick={toggleMenu}
+          aria-label="Open Menu"
+        >
+          <span className={styles.line}></span>
+          <span className={styles.line}></span>
+          <span className={styles.line}></span>
+        </button>
 
-        {/* Center heading */}
-        <h1 className={styles.centeredHeading}>
-          <Link href="/" className={styles.homeLink} aria-label="Home">
+        {/* Centered Title */}
+        <h1 className={styles.title}>
+          <Link href="/" className={styles.homeLink}>
             Ultrawave Interactive Web Design
           </Link>
         </h1>
 
-        {/* Right-aligned controls */}
-        <div className={styles.rightControls}>{renderControls()}</div>
+        {/* Right Spacer (keeps title centered) */}
+        {/* Right side: user email */}
+        <div className={styles.rightSide}>
+          {session?.user?.email && (
+            <span className={styles.emailText}>{session.user.email}</span>
+          )}
+        </div>
+
+
+        {/* Slide-down Menu */}
+        {menuItems}
       </header>
     </HeaderErrorBoundary>
   );
