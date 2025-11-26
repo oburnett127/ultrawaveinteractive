@@ -19,7 +19,6 @@ html, body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background: transparent;     /* no gray/black default; bg image handles it */
 }
 
 body {
@@ -31,6 +30,7 @@ body {
   font-size: 17px;
   color: var(--text-color);
   transition: background 0.3s ease, color 0.3s ease;
+  background-color: #4b0082 !important;
 }
 
 /* ---------- Typography ---------- */
