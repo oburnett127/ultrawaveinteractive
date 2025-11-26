@@ -23,6 +23,7 @@ model User {
   failedLoginAttempts Int      @default(0)
   lockoutUntil        DateTime?
   updatedAt           DateTime @updatedAt
+  payments            Payment[] //relation back to Payment
 }
 
 model OtpToken {
@@ -37,17 +38,19 @@ model OtpToken {
 
 model Payment {
   id               String   @id @default(cuid())
-  userId           String?           // links to your User table (optional)
-  amount           Int               // amount in cents
+  userId           String   @db.VarChar(191)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amount           Int
+  orderId          String?
   currency         String   @default("USD")
-  squarePaymentId  String   @unique  // returned by Square (e.g. "GQX2..."), unique
-  idempotencyKey   String   @unique  // what we used for the charge, prevents dupes
-  status           String            // e.g. "COMPLETED", "APPROVED", "CANCELED", etc.
+  squarePaymentId  String   @unique
+  idempotencyKey   String   @unique
+  status           String
+  squareCustomerId String?
+
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-
-  // If you want the relation:
-  // user             User?    @relation(fields: [userId], references: [id])
 }
 
 model BlogPost {
