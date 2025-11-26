@@ -40,8 +40,8 @@ router.post("/send", otpLimiter, async (req, res) => {
 
     email = sanitizeEmail(email);
 
-    console.log("🔍 Received token from client:", req.body.recaptchaToken);
-    console.log("🔍 req.body:", req.body);
+    //console.log("🔍 Received token from client:", req.body.recaptchaToken);
+    //console.log("🔍 req.body:", req.body);
 
     // 🔐 reCAPTCHA v3 Verification
     const recaptcha = await verifyRecaptchaToken(recaptchaToken, "otp");
@@ -102,7 +102,7 @@ router.post("/verify", otpLimiter, async (req, res) => {
     // 🔐 reCAPTCHA v3 Verification
     const recaptcha = await verifyRecaptchaToken(recaptchaToken, "otp");
     
-    console.log("🔎 recaptcha result:", recaptcha);
+    //console.log("🔎 recaptcha result:", recaptcha);
     
     if (!recaptcha.success) {
       return res.status(400).json({ error: "Failed reCAPTCHA." });

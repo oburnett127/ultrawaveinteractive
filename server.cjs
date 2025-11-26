@@ -30,7 +30,7 @@ const handle = nextApp.getRequestHandler();
     // while preserving the FULL path.
     // ---------------------------
     server.all("/api/auth/:nextauth*", (req, res) => {
-      console.log("🔥 Forwarding FULL NextAuth request:", req.method, req.url);
+      //console.log("🔥 Forwarding FULL NextAuth request:", req.method, req.url);
       return handle(req, res);
     });
 

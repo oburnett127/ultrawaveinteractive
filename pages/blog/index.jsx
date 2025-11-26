@@ -44,7 +44,7 @@ export async function getServerSideProps() {
     }
 
     posts = data;
-    console.log("✅ Blog list fetched successfully:", data.length, "posts");
+    //console.log("✅ Blog list fetched successfully:", data.length, "posts");
   } catch (err) {
     if (err.name === "AbortError") {
       error = "Request timed out. Please try again in a few seconds.";

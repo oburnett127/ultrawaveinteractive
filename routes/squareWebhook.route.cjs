@@ -68,7 +68,7 @@ router.post("/square/webhook", async (req, res) => {
     return res.status(400).json({ error: "Invalid event payload" });
   }
 
-  console.log(`[SquareWebhook] ✅ Verified event type: ${event.type}`);
+  //console.log(`[SquareWebhook] ✅ Verified event type: ${event.type}`);
 
   // --- Process event safely (decouple from request) ---
   try {
@@ -77,8 +77,42 @@ router.post("/square/webhook", async (req, res) => {
 
     // Or handle directly (non-blocking)
     if (event.type === "payment.updated") {
-      console.log("[SquareWebhook] 🧾 Payment updated:", event.data?.object?.payment?.id);
-      // You can handle it here or publish to message queue
+      const paymentData = event.data?.object?.payment;
+
+      if (!paymentData) {
+        console.warn("[SquareWebhook] Missing payment data in event.");
+        return;
+      }
+
+      const {
+        id: squarePaymentId,
+        status,
+        amount_money,
+        order_id,
+        customer_id,
+        updated_at
+      } = paymentData;
+
+      console.log(`[SquareWebhook] 🔔 Payment Update Event: ${squarePaymentId} → ${status}`);
+
+      try {
+        // Update a Payment row by its Square ID
+        const updated = await prisma.payment.update({
+          where: { squarePaymentId }, // Ensure this is in your Prisma Payment model
+          data: {
+            status,
+            orderId: order_id || null,
+            squareCustomerId: customer_id || null,
+            amount: amount_money?.amount ? amount_money.amount / 100 : undefined,
+            updatedAt: new Date(updated_at),
+          },
+        });
+
+        console.log("[SquareWebhook] 💾 Payment updated in DB:", updated);
+      } catch (err) {
+        console.error("[SquareWebhook] ❌ Failed to update payment record:", err);
+        // You can store failed updates for retrying later
+      }
     }
 
     // Always respond fast — Square retries if response > 10s or non-2xx

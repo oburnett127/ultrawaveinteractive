@@ -212,7 +212,7 @@ export default function VerifyOTP() {
           if (window.grecaptcha) {
             window.grecaptcha.ready(() => {
               recaptchaReadyRef.current = true;
-              console.log("VerifyOTP: reCAPTCHA ready");
+              //console.log("VerifyOTP: reCAPTCHA ready");
             });
           }
         }}

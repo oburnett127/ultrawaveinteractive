@@ -45,18 +45,37 @@ export default function SignIn() {
 
       localStorage.setItem("otpEmail", email.trim().toLowerCase());
 
-      const result = await signIn("credentials", {
-        redirect: false,
-        email,
-        password,
-        recaptchaToken: token,
-        callbackUrl: "/verifyotp",
-      });
+      setErr(""); // clear previous errors
 
-      if (result.error) {
-        setErr(result.error);
-      } else {
-        window.location.href = result.url || "/verifyotp";
+      try {
+        const result = await signIn("credentials", {
+          redirect: false,
+          email,
+          password,
+          recaptchaToken: token,
+          callbackUrl: "/verifyotp",
+        });
+
+        // ❌ If no result or no OK response → fallback error
+        if (!result) {
+          setErr("Something went wrong. Please try again.");
+          return;
+        }
+
+        // 🚫 Login failed (invalid password, reCAPTCHA, LOCKOUT, etc.)
+        if (result.error) {
+          console.warn("[Login] Authentication error:", result.error);
+          setErr(result.error); // Show actual message from authorize()
+          return;
+        }
+
+        // 🎉 Success — move to callback URL
+        const redirectUrl = result.url || "/verifyotp";
+        window.location.href = redirectUrl;
+
+      } catch (err) {
+        console.error("[Login] Unexpected error:", err);
+        setErr("Login failed. Please try again.");
       }
     } catch (error) {
       console.error(error);

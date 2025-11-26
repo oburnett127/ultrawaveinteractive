@@ -33,7 +33,7 @@ module.exports.initBackend = async function initBackend(app, handle) {
   // ⭐ Next.js must handle it entirely
   //
   app.all("/api/auth/:nextauth*", (req, res) => {
-    console.log("🔥 NextAuth route →", req.method, req.url);
+    //console.log("🔥 NextAuth route →", req.method, req.url);
     return handle(req, res);
   });
 
@@ -222,7 +222,7 @@ app.use((req, res, next) => {
 
   try {
     redis = await createRedisClient();
-    console.log("🔍 REDIS_URL:", process.env.REDIS_URL);
+    //console.log("🔍 REDIS_URL:", process.env.REDIS_URL);
 
     sensitiveLimiter = limiterFactory({
       redisClient: redis,
