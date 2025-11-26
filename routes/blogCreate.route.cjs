@@ -8,7 +8,11 @@ const requireOtpVerified = require("../middleware/requireOtpVerified.cjs");
 const { sanitizeBlogTitle, sanitizeMarkdownContent } = require("../lib/sanitizers.cjs");
 
 // Markdown → HTML converter
-const { marked } = require("marked");
+let marked;
+(async () => {
+  marked = (await import("marked")).marked;
+})();
+
 
 const router = express.Router();
 
