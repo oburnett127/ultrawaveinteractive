@@ -19,8 +19,9 @@ model User {
   otpCode             String?   // 6-digit OTP
   otpExpiresAt        DateTime? // Null when unused
   otpVerified         Boolean  @default(false)
-  isAdmin             Boolean  @default(false) // ✅ NEW
+  isAdmin             Boolean  @default(false)
   failedLoginAttempts Int      @default(0)
+  lockoutUntil        DateTime?
   updatedAt           DateTime @updatedAt
 }
 
