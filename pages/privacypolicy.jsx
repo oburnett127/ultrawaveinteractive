@@ -38,9 +38,10 @@ const PrivacyPolicy = () => {
           content="Explore our Privacy Policy to understand how Ultrawave Interactive Web Design collects, uses, and protects your personal data to ensure your privacy and trust."
         />
       </Head>
-
-      <h1 className="white-text">Privacy Policy</h1>
-      <pre className="white-text">{policyText}</pre>
+      <main id="main-content">
+        <h1 className="white-text">Privacy Policy</h1>
+        <pre className="white-text">{policyText}</pre>
+      </main>
     </div>
   );
 };

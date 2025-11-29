@@ -37,10 +37,12 @@ const CookiePolicy = () => {
         <meta name="description" content="Read the Cookie Policy for Ultrawave Interactive Web Design to learn about how we use cookies on our website." />
       </Head>
 
-      <h1 className="white-text">Cookie Policy</h1>
-      <div className="markdown">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{cookiePolicyText}</ReactMarkdown>
-      </div>
+      <main id="main-content">
+        <h1 className="white-text">Cookie Policy</h1>
+        <div className="markdown">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{cookiePolicyText}</ReactMarkdown>
+        </div>
+      </main>
     </div>
   );
 };

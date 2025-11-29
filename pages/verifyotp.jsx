@@ -205,63 +205,65 @@ export default function VerifyOTP() {
 
   return (
     <Protected>
-      <Script
-        src={`https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`}
-        strategy="afterInteractive"
-        onLoad={() => {
-          if (window.grecaptcha) {
-            window.grecaptcha.ready(() => {
-              recaptchaReadyRef.current = true;
-              //console.log("VerifyOTP: reCAPTCHA ready");
-            });
-          }
-        }}
-        onError={() => {
-          setError("Failed to load reCAPTCHA. Refresh the page.");
-        }}
-      />
+      <main id="main-content">
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`}
+          strategy="afterInteractive"
+          onLoad={() => {
+            if (window.grecaptcha) {
+              window.grecaptcha.ready(() => {
+                recaptchaReadyRef.current = true;
+                //console.log("VerifyOTP: reCAPTCHA ready");
+              });
+            }
+          }}
+          onError={() => {
+            setError("Failed to load reCAPTCHA. Refresh the page.");
+          }}
+        />
 
-      <div className="verify-form">
-        <h1>Verify OTP</h1>
+        <div className="verify-form">
+          <h1>Verify OTP</h1>
 
-        {info && <div className="info-box">{info}</div>}
-        {error && <div role="alert" className="error-box">{error}</div>}
+          {info && <div className="info-box">{info}</div>}
+          {error && <div role="alert" className="error-box">{error}</div>}
 
-        <form onSubmit={handleVerify} className="verify-form-inner">
-          <label>
-            6-digit code
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]{6}"
-              maxLength={6}
-              required
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              className="verify-input"
-              placeholder="123456"
-            />
-          </label>
+          <form onSubmit={handleVerify} className="verify-form-inner">
+            <label>
+              6-digit code
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                required
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                className="verify-input"
+                placeholder="123456"
+              />
+            </label>
 
-          <button type="submit" disabled={busy} className="verify-button">
-            {busy ? "Verifying..." : "Verify"}
-          </button>
-        </form>
+            <button type="submit" disabled={busy} className="verify-button">
+              {busy ? "Verifying..." : "Verify"}
+            </button>
+          </form>
 
-        <div className="resend-container">
-          <button
-            onClick={handleResend}
-            disabled={sending || cooldown > 0}
-            className="resend-button"
-          >
-            {sending
-              ? "Sending..."
-              : cooldown > 0
-              ? `Resend in ${cooldown}s`
-              : "Resend code"}
-          </button>
+          <div className="resend-container">
+            <button
+              onClick={handleResend}
+              disabled={sending || cooldown > 0}
+              className="resend-button"
+            >
+              {sending
+                ? "Sending..."
+                : cooldown > 0
+                ? `Resend in ${cooldown}s`
+                : "Resend code"}
+            </button>
+          </div>
         </div>
-      </div>
+      </main>
     </Protected>
   );
 }

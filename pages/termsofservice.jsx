@@ -35,9 +35,10 @@ const TermsOfService = () => {
         <title>Ultrawave Interactive Web Design | Terms of Service</title>
         <meta name="description" content="Read the Terms of Service for Ultrawave Interactive Web Design to learn about the guidelines, responsibilities, and rights that apply to our website and services." />
       </Head>
-
-      <h1 className="white-text">Terms of Service</h1>
-      <pre className="white-text">{termsOfServiceText}</pre>
+      <main id="main-content">
+        <h1 className="white-text">Terms of Service</h1>
+        <pre className="white-text">{termsOfServiceText}</pre>
+      </main>
     </div>
   );
 };

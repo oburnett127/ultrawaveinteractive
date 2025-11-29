@@ -1037,11 +1037,11 @@ textarea {
   border: 1px solid var(--input-border);
 }
 
-input:focus,
-textarea:focus {
-  border-color: #007bff;
-  outline: none;
+:focus {
+  outline: 2px solid blue; /* visible purple outline */
+  outline-offset: 3px;
 }
+
 
 /* ---------- Optional Class for Non-Password Inputs ---------- */
 .signin-input {
@@ -1138,4 +1138,19 @@ html[data-theme="dark"] {
   padding-left: 1rem;
   margin: 1.5rem 0;
   color: #666;
+}
+
+/* Skip Link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #000;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  z-index: 99999;
+  transition: top 0.2s ease;
+}
+.skip-link:focus {
+  top: 0;
 }

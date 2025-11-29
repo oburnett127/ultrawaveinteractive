@@ -126,7 +126,7 @@ function Home() {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       </Head>
 
-      <div className={styles.content}>
+      <main id="main-content" className={styles.content}>
         <p className="centered-text margin-top">
           I replace slow website builders with high-performance custom websites!
         </p>
@@ -194,86 +194,86 @@ function Home() {
             <button className={styles.button}>Read our privacy policy</button>
           </Link>
         </div>
-      </div>
 
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="20vh">
-        <Stack direction="row" spacing={6}>
-          <FeatureItem icon={<StarIcon />} label="Quality Work" />
-          <FeatureItem icon={<AttachMoneyIcon />} label="Affordable Prices" />
-          <FeatureItem icon={<TimerIcon />} label="Timely Service" />
-        </Stack>
-      </Box>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="20vh">
+          <Stack direction="row" spacing={6}>
+            <FeatureItem icon={<StarIcon />} label="Quality Work" />
+            <FeatureItem icon={<AttachMoneyIcon />} label="Affordable Prices" />
+            <FeatureItem icon={<TimerIcon />} label="Timely Service" />
+          </Stack>
+        </Box>
 
-      <p className="centered-text">
-        I believe in maintaining excellent relationships with my clients. When doing business with
-        me, you are entering into a partnership. I am dedicated to your success.
-      </p>
+        <p className="centered-text">
+          I believe in maintaining excellent relationships with my clients. When doing business with
+          me, you are entering into a partnership. I am dedicated to your success.
+        </p>
 
-      <p className="centered-text">I work with a wide variety of businesses:</p>
+        <p className="centered-text">I work with a wide variety of businesses:</p>
 
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="30vh">
-        <List>
-          {items.map((item, index) => (
-            <ListItem key={index}>
-              <ListItemIcon>
-                <CheckIcon color="success" />
-              </ListItemIcon>
-              <ListItemText
-                primary={
-                  <Typography variant="body1" fontSize="20px" fontWeight="500">
-                    {item}
-                  </Typography>
-                }
-              />
-            </ListItem>
-          ))}
-        </List>
-      </Box>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="30vh">
+          <List>
+            {items.map((item, index) => (
+              <ListItem key={index}>
+                <ListItemIcon>
+                  <CheckIcon color="success" />
+                </ListItemIcon>
+                <ListItemText
+                  primary={
+                    <Typography variant="body1" fontSize="20px" fontWeight="500">
+                      {item}
+                    </Typography>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Box>
 
-      <p className="centered-text">Let me help increase your business revenue!</p>
+        <p className="centered-text">Let me help increase your business revenue!</p>
 
-      <p className="centered-text">
-        Contact me using the form below or call 405-519-8318 to schedule a free consultation!
-      </p>
+        <p className="centered-text">
+          Contact me using the form below or call 405-519-8318 to schedule a free consultation!
+        </p>
 
-      <hr />
+        <hr />
 
-      <div id="contact-form">
-        <ContactForm />
-      </div>
+        <div id="contact-form">
+          <ContactForm />
+        </div>
 
-      <div className={styles.businessGrid}>
-        <BusinessCard
-          src="/images/petcare.jpg"
-          alt="Dog having fur groomed."
-          text="We would love to work on a website for your pet care business!"
-        />
-        <BusinessCard
-          src="/images/dentalhygienist.jpg"
-          alt="Dental hygienist at work."
-          text="We work with dentists and medical practices!"
-        />
-        <BusinessCard
-          src="/images/peopleingym.jpg"
-          alt="People in a gym."
-          text="Your gym or fitness business could really benefit from our expertise!"
-        />
-        <BusinessCard
-          src="/images/plumberlookingatpipe.jpg"
-          alt="Plumber looking at a pipe."
-          text="Increasing the revenue of your plumbing business sounds like a good idea to us!"
-        />
-        <BusinessCard
-          src="/images/hvacmenu.jpg"
-          alt="Technician touches HVAC menu."
-          text="Your HVAC business deserves expert care!"
-        />
-        <BusinessCard
-          src="/images/electricalreadingdevice.jpg"
-          alt="Technician takes electrical reading using a device."
-          text="We have something special in store for your electrical business!"
-        />
-      </div>
+        <div className={styles.businessGrid}>
+          <BusinessCard
+            src="/images/petcare.jpg"
+            alt="Dog having fur groomed."
+            text="We would love to work on a website for your pet care business!"
+          />
+          <BusinessCard
+            src="/images/dentalhygienist.jpg"
+            alt="Dental hygienist at work."
+            text="We work with dentists and medical practices!"
+          />
+          <BusinessCard
+            src="/images/peopleingym.jpg"
+            alt="People in a gym."
+            text="Your gym or fitness business could really benefit from our expertise!"
+          />
+          <BusinessCard
+            src="/images/plumberlookingatpipe.jpg"
+            alt="Plumber looking at a pipe."
+            text="Increasing the revenue of your plumbing business sounds like a good idea to us!"
+          />
+          <BusinessCard
+            src="/images/hvacmenu.jpg"
+            alt="Technician touches HVAC menu."
+            text="Your HVAC business deserves expert care!"
+          />
+          <BusinessCard
+            src="/images/electricalreadingdevice.jpg"
+            alt="Technician takes electrical reading using a device."
+            text="We have something special in store for your electrical business!"
+          />
+        </div>
+      </main>
     </>
   );
 }

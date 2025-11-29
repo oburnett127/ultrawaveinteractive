@@ -28,6 +28,10 @@ function MyApp({ Component, pageProps }) {
         }
         strategy="beforeInteractive"
       />
+      {/* 👇 Skip nav appears first for keyboard users */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <Header /> {/* ✅ now it’s safely inside the provider */}
       <Component {...pageProps} />
       <SalesChatbot />

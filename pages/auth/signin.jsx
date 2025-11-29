@@ -95,41 +95,43 @@ export default function SignIn() {
         }}
       />
 
-      <form onSubmit={handleSubmit} className="signin-form" noValidate>
-        <h1>Sign in</h1>
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          disabled={loading}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="signin-input"
-        />
-        <label htmlFor="password">Password</label>
-        <div className="inputWrapper">
+      <main id="main-content">
+        <form onSubmit={handleSubmit} className="signin-form" noValidate>
+          <h1>Sign in</h1>
+          <label htmlFor="email">Email</label>
           <input
-            id="password"
-            type={showPassword ? "text" : "password"}
+            id="email"
+            type="email"
             disabled={loading}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="passwordInput"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="signin-input"
           />
-          <button
-            type="button"
-            onClick={() => setShowPassword((prev) => !prev)}
-            className="passwordEye"
-          >
-            {showPassword ? <VisibilityOff /> : <Visibility />}
-          </button>
+          <label htmlFor="password">Password</label>
+          <div className="inputWrapper">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              disabled={loading}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="passwordInput"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="passwordEye"
+            >
+              {showPassword ? <VisibilityOff /> : <Visibility />}
+            </button>
 
-          <button type="submit" disabled={loading}>
-            {loading ? "Signing in..." : "Sign in"}
-          </button>
-        </div>
-        {err && <p className="signin-error">⚠️ {err}</p>}
-      </form>
+            <button type="submit" disabled={loading}>
+              {loading ? "Signing in..." : "Sign in"}
+            </button>
+          </div>
+          {err && <p className="signin-error">⚠️ {err}</p>}
+        </form>
+      </main>
     </>
   );
 }

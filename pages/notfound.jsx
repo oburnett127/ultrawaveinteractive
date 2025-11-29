@@ -10,10 +10,12 @@ function NotFound() {
         <meta name="description" content="The page you're looking for can't be found. Contact us for assistance if needed at Ultrawave Interactive Web Design." />
       </Head>
 
+      <main id="main-content">
         <h1>Not Found - 404</h1>
         <p>The page you are looking for was not found.</p>
+      </main>
     </>
-);
+  );
 }
 
 export default NotFound;

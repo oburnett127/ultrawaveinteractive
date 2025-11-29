@@ -154,7 +154,7 @@ export default function ChangePassword() {
         }
       />
 
-      <div className="change-password-container">
+      <main id="main-content" className="change-password-container">
         <h2>Change Password</h2>
         <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
@@ -190,7 +190,7 @@ export default function ChangePassword() {
 
         {status.error && <p className="error-msg">⚠️ {status.error}</p>}
         {status.success && <p className="success-msg">✅ {status.success}</p>}
-      </div>
+      </main>
     </Protected>
   );
 }

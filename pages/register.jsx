@@ -106,79 +106,89 @@ export default function Register() {
   };
 
   return (
-    <div className="register-styling">
-      <Script
-        src={`https://www.google.com/recaptcha/api.js?render=${siteKey}`}
-        strategy="afterInteractive"
-        onLoad={() => {
-          if (window.grecaptcha) {
-            window.grecaptcha.ready(() => {
-              recaptchaReady.current = true;
-            });
+    <>
+      <Head>
+        <title>Create Account | Ultrawave Interactive</title>
+        <meta
+          name="description"
+          content="Create a secure account with Ultrawave Interactive Web Design."
+        />
+      </Head>
+
+      <main id="main-content" className="register-styling">
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${siteKey}`}
+          strategy="afterInteractive"
+          onLoad={() => {
+            if (window.grecaptcha) {
+              window.grecaptcha.ready(() => {
+                recaptchaReady.current = true;
+              });
+            }
+          }}
+          onError={() =>
+            setErrorMsg("Failed to load reCAPTCHA. Please refresh and try again.")
           }
-        }}
-        onError={() =>
-          setErrorMsg("Failed to load reCAPTCHA. Please refresh and try again.")
-        }
-      />
+        />
 
-      <h1>Create Account</h1>
+        <h1>Create Account</h1>
 
-      {!siteKey && (
-        <p className="red-text">
-          Missing NEXT_PUBLIC_RECAPTCHA_SITE_KEY — reCAPTCHA will not load.
-        </p>
-      )}
+        {!siteKey && (
+          <p className="red-text">
+            Missing NEXT_PUBLIC_RECAPTCHA_SITE_KEY — reCAPTCHA will not load.
+          </p>
+        )}
 
-      <form onSubmit={handleRegister} noValidate>
-        <label>
-          Name
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            type="text"
-            name="name"
-            disabled={submitting}
-            autoComplete="name"
-          />
-        </label>
+        <form onSubmit={handleRegister} noValidate>
+          <label>
+            Name
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              type="text"
+              name="name"
+              disabled={submitting}
+              autoComplete="name"
+            />
+          </label>
 
-        <label>
-          Email
-          <input
-            value={emailText}
-            onChange={(e) => setEmailText(e.target.value)}
-            required
-            type="email"
-            name="email"
-            disabled={submitting}
-            autoComplete="email"
-            placeholder="Email"
-          />
-        </label>
+          <label>
+            Email
+            <input
+              value={emailText}
+              onChange={(e) => setEmailText(e.target.value)}
+              required
+              type="email"
+              name="email"
+              disabled={submitting}
+              autoComplete="email"
+              placeholder="Email"
+            />
+          </label>
 
-        <label>
-          Password
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            type="password"
-            name="password"
-            disabled={submitting}
-            minLength={8}
-            autoComplete="new-password"
-            placeholder="Password"
-          />
-        </label>
+          <label>
+            Password
+            <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              type="password"
+              name="password"
+              disabled={submitting}
+              minLength={8}
+              autoComplete="new-password"
+              placeholder="Password"
+            />
+          </label>
 
-        {errorMsg && <p className="red-text">⚠️ {errorMsg}</p>}
+          {errorMsg && <p className="red-text">⚠️ {errorMsg}</p>}
 
-        <button type="submit" disabled={submitting}>
-          {submitting ? "Creating..." : "Create Account"}
-        </button>
-      </form>
-    </div>
+          <button type="submit" disabled={submitting}>
+            {submitting ? "Creating..." : "Create Account"}
+          </button>
+        </form>
+      </main>
+    </>
   );
 }

@@ -9,13 +9,13 @@ export default function SignOutPage() {
   };
 
   return (
-    <div style={{ padding: "2rem", textAlign: "center" }}>
+    <main id="main-content" style={{ padding: "2rem", textAlign: "center" }}>
       <h1>Are you sure you want to sign out?</h1>
       <button
         onClick={handleSignOut}
       >
         Sign Out
       </button>
-    </div>
+    </main>
   );
 }

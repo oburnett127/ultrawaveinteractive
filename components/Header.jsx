@@ -1,5 +1,5 @@
 // components/Header.jsx
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import styles from "./Header.module.css";
@@ -28,6 +28,9 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
+  const menuRef = useRef(null);
+  const buttonRef = useRef(null);
+
   const closeMenu = () => setMenuOpen(false);
 
   const toggleMenu = () => setMenuOpen((prev) => !prev);
@@ -44,90 +47,106 @@ export default function Header() {
     }
   };
 
-  const menuItems = (
-  <nav className={`${styles.menu} ${menuOpen ? styles.open : ""}`}>
-    {/* Sign In / Sign Out */}
-    {session?.user ? (
-      <button
-        onClick={() => {
-          closeMenu();
-          handleSignOut();
-        }}
-        className={styles.menuItem}
-      >
-        {signingOut ? "Signing Out..." : "Sign Out"}
-      </button>
-    ) : (
-      <Link
-        href="/auth/signin"
-        className={styles.menuItem}
-        onClick={closeMenu}
-      >
-        Sign In
-      </Link>
-    )}
+  // Close menu if user clicks outside it
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-    <Link
-        href="/"
-        className={styles.menuItem}
-        onClick={closeMenu}
-      >
-        Home
-      </Link>
+  // Close menu with escape key
+  useEffect(() => {
+    function handleEscape(e) {
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+        buttonRef.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, []);
 
-    {/* Change Password */}
-    <Link
-      href="/account/change-password"
-      className={styles.menuItem}
-      onClick={closeMenu}
-    >
-      Change Password
-    </Link>
-
-    {/* Make Payment */}
-    <Link
-      href="/squarepaymentpage"
-      className={styles.menuItem}
-      onClick={closeMenu}
-    >
-      Make Payment
-    </Link>
-  </nav>
-);
-
+  function itemClickAction() {
+    setMenuOpen(false);
+    buttonRef.current?.focus();
+  }
 
   return (
     <HeaderErrorBoundary>
       <header className={styles.header}>
-        {/* HAMBURGER ICON */}
-        <button
-          className={styles.hamburger}
-          onClick={toggleMenu}
-          aria-label="Open Menu"
-        >
-          <span className={styles.line}></span>
-          <span className={styles.line}></span>
-          <span className={styles.line}></span>
-        </button>
+         <nav className={styles.nav} aria-label="Main">
+            {/* HAMBURGER ICON */}
+            <button
+              ref={buttonRef}
+              className={styles.hamburger}
+              aria-expanded={menuOpen}
+              aria-controls="main-menu"
+              aria-label="Menu"
+              onClick={toggleMenu}
+            >
+              <span className={styles.line}></span>
+              <span className={styles.line}></span>
+              <span className={styles.line}></span>
+            </button>
 
-        {/* Centered Title */}
-        <h1 className={styles.title}>
-          <Link href="/" className={styles.homeLink}>
-            Ultrawave Interactive Web Design
-          </Link>
-        </h1>
+            <div className={styles.brand}>
+              Ultrawave Interactive Web Design
+              {session?.user?.email && (
+                <span className={styles.userEmail}>
+                  {session.user.email}
+                </span>
+              )}
+            </div>
+            <ul
+              ref={menuRef}
+              id="main-menu"
+              className={`${styles.menu} ${menuOpen ? styles.open : ""}`}
+              role="menu"
+            >
+              <li role="none">
+                  <Link role="menuitem" href="/" onClick={itemClickAction}>
+                    Home
+                  </Link>
+              </li>
+              {!session && (
+                <li role="none">
+                  <Link role="menuitem" href="/auth/signin" onClick={itemClickAction}>
+                    Sign In
+                  </Link>
+                </li>
+              )}
 
-        {/* Right Spacer (keeps title centered) */}
-        {/* Right side: user email */}
-        <div className={styles.rightSide}>
-          {session?.user?.email && (
-            <span className={styles.emailText}>{session.user.email}</span>
-          )}
-        </div>
-
-
-        {/* Slide-down Menu */}
-        {menuItems}
+              {session && (
+                <>
+                  <li role="none">
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        itemClickAction();
+                        signOut();
+                      }}
+                    >
+                      Sign Out
+                    </button>
+                  </li>
+                  <li role="none">
+                    <Link role="menuitem" href="/account/change-password" onClick={itemClickAction}>
+                      Change Password
+                    </Link>
+                  </li>
+                  <li role="none">
+                    <Link role="menuitem" href="/squarepaymentpage" onClick={itemClickAction}>
+                      Make Payment
+                    </Link>
+                  </li>
+                </>
+              )}
+          </ul>
+        </nav>
       </header>
     </HeaderErrorBoundary>
   );

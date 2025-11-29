@@ -209,15 +209,16 @@ export default function BlogPost({ post, error, seo }) {
           />
         )}
       </Head>
+      <main id="main-content">
+        <div className="blog-post-container">
+          <h1 className="blog-title">{post.title || "Untitled Post"}</h1>
 
-      <div className="blog-post-container">
-        <h1 className="blog-title">{post.title || "Untitled Post"}</h1>
-
-        <div
-          className="blog-content"
-          dangerouslySetInnerHTML={{ __html: post.content }}
-        />
-      </div>
+          <div
+            className="blog-content"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+        </div>
+      </main>
     </>
   );
 }

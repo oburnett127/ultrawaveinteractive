@@ -4,7 +4,9 @@ import Dashboard from "../components/Dashboard";
 export default function DashboardPage() {
   return (
     <Protected>
-      <Dashboard />
+      <main id="main-content">
+        <Dashboard />
+      </main>
     </Protected>
   );
 }

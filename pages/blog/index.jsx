@@ -60,7 +60,7 @@ export async function getServerSideProps() {
 
 export default function BlogList({ posts, error }) {
   return (
-    <div className="blog-list-container">
+    <main id="main-content" className="blog-list-container">
       <h1>Blog</h1>
 
       {error && (
@@ -84,6 +84,6 @@ export default function BlogList({ posts, error }) {
           ))}
         </ul>
       )}
-    </div>
+    </main>
   );
 }

@@ -60,43 +60,66 @@
   opacity: 0;
 }
 
-/* MENU PANEL */
-.menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
+.header {
   width: 100%;
   background: #111;
-  border-bottom: 1px solid #333;
+  color: #fff;
+  padding: 1rem;
+  position: relative;
+  z-index: 5000;
+}
+
+.nav {
   display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* brand label */
+.brand {
+  font-weight: bold;
+  font-size: 1rem;
+  margin-left: 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.userEmail {
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.menu {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  background: #111;
+  padding: 1rem;
+  gap: 1rem;
+  display: none;
   flex-direction: column;
-  transform: translateY(-20px);
-  opacity: 0;
-  pointer-events: none;
-  transition: 0.25s ease-in-out;
-  z-index: 1200; /* appear ABOVE images */
+  width: 100%;
+  z-index: 6000;
 }
 
 .menu.open {
-  transform: translateY(0);
-  opacity: 1;
-  pointer-events: auto;
+  display: flex;
 }
 
-/* MENU ITEMS */
-.menuItem {
-  padding: 1rem;
-  border-bottom: 1px solid #222;
-  color: white;
+.menu a, .menu button {
+  color: #fff;
   text-decoration: none;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   background: none;
-  text-align: left;
+  border: none;
   cursor: pointer;
+  text-align: left;
 }
 
-.menuItem:hover {
-  background: #333;
+.menu a:hover, .menu button:hover,
+.menu a:focus, .menu button:focus {
+  color: #4B0082;
 }
 
 /* FALLBACK */
