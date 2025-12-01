@@ -23,12 +23,17 @@ model User {
   failedLoginAttempts Int      @default(0)
   lockoutUntil        DateTime?
   updatedAt           DateTime @updatedAt
-  payments            Payment[] //relation back to Payment
+  payments            Payment[]
+
+  // Speed up lookup during login validations
+  @@index([emailVerified])
+  @@index([otpVerified])
+  @@index([lockoutUntil])
 }
 
 model OtpToken {
   id        String   @id @default(cuid())
-  email     String   
+  email     String
   code      String
   expiresAt DateTime
   createdAt DateTime @default(now())
@@ -51,6 +56,12 @@ model Payment {
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  // Optimize listing payments + filtering
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status])
+  @@index([squareCustomerId])
 }
 
 model BlogPost {
@@ -62,7 +73,8 @@ model BlogPost {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([slug])
+  // Improve sorting & blog list performance
+  @@index([createdAt])
 }
 
 model Lead {
@@ -75,4 +87,8 @@ model Lead {
   estimatedBudget String
   timeline        String?
   createdAt       DateTime @default(now())
+
+  // Optimize lists + search + duplicate detection
+  @@index([createdAt])
+  @@index([email])
 }

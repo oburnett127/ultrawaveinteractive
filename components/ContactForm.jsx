@@ -157,58 +157,82 @@ const ContactForm = () => {
         noValidate
         aria-busy={status.sending}
       >
-        <input
-          type="text"
-          id="name"
-          name="name"
-          placeholder="Name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-          autoComplete="name"
-          disabled={status.sending}
-        />
 
-        <input
-          type="email"
-          id="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-          autoComplete="email"
-          disabled={status.sending}
-        />
+        <div className={styles.formGroup}>
+          <label htmlFor="name">
+            Name <span aria-hidden="true">*</span>
+          </label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+            autoComplete="name"
+            aria-required="true"
+            disabled={status.sending}
+          />
+        </div>
 
-        <input
-          type="tel"
-          id="phone"
-          name="phone"
-          placeholder="Phone (Optional)"
-          value={formData.phone}
-          onChange={handleChange}
-          autoComplete="tel"
-          disabled={status.sending}
-        />
+        <div className={styles.formGroup}>
+          <label htmlFor="email">
+            Email <span aria-hidden="true">*</span>
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            autoComplete="email"
+            aria-required="true"
+            disabled={status.sending}
+          />
+        </div>
 
-        <textarea
-          id="message"
-          name="message"
-          placeholder="Your Message"
-          value={formData.message}
-          onChange={handleChange}
-          required
-          rows={6}
-          disabled={status.sending}
-        />
+        <div className={styles.formGroup}>
+          <label htmlFor="phone">Phone (optional)</label>
+          <input
+            type="tel"
+            id="phone"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            autoComplete="tel"
+            disabled={status.sending}
+          />
+        </div>
 
-        <ReCAPTCHA
-          ref={recaptchaRef}
-          sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
-          size="compact"
-        />
-        {recaptchaError && <p className={styles.error}>{recaptchaError}</p>}
+        <div className={styles.formGroup}>
+          <label htmlFor="message">
+            Your Message <span aria-hidden="true">*</span>
+          </label>
+          <textarea
+            id="message"
+            name="message"
+            value={formData.message}
+            onChange={handleChange}
+            required
+            rows={6}
+            aria-required="true"
+            disabled={status.sending}
+          ></textarea>
+        </div>
+
+        <div className={styles.recaptchaWrapper}>
+          <ReCAPTCHA
+            ref={recaptchaRef}
+            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
+            size="compact"
+          />
+          {recaptchaError && (
+            <p className={styles.error} role="alert">
+              {recaptchaError}
+            </p>
+          )}
+        </div>
 
         <button
           className={styles.button}
@@ -223,16 +247,18 @@ const ContactForm = () => {
         <div
           className={styles.responseMessage}
           aria-live="polite"
-          role={status.err ? "alert" : "status"}
         >
           {status.msg && (
-            <p className={styles.success || ""}>{status.msg}</p>
+            <p className={styles.success}>{status.msg}</p>
           )}
-          {status.err && <p className={styles.error}>{status.err}</p>}
+          {status.err && (
+            <p className={styles.error} role="alert">{status.err}</p>
+          )}
         </div>
       )}
     </div>
   );
+
 };
 
 export default ContactForm;

@@ -92,3 +92,99 @@
       font-size: 1.2rem; /* Smaller font size for response message */
   }
 }
+
+/* Wrapper for each input/textarea */
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+/* Labels remain visible + readable */
+.formGroup label {
+  font-size: 0.95rem;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  color: black;
+}
+
+/* Required star positioning */
+.formGroup label span {
+  color: #ff4444;
+  margin-left: 4px;
+}
+
+/* Text Inputs + Textarea shared styles */
+.formGroup input,
+.formGroup textarea {
+  width: 100%;
+  background: #171717;
+  border: 2px solid #333;
+  color: #fff;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 1rem;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Placeholder should not be mistaken for a label */
+.formGroup input::placeholder,
+.formGroup textarea::placeholder {
+  color: #888;
+  opacity: 0.7;
+}
+
+/* Focus ring — WCAG AA compliant */
+.formGroup input:focus,
+.formGroup textarea:focus {
+  border-color: #4B0082; /* Indigo */
+  box-shadow: 0 0 0 3px rgba(75, 0, 130, 0.4);
+  outline: none;
+}
+
+/* Disabled State */
+.formGroup input:disabled,
+.formGroup textarea:disabled {
+  background: #2a2a2a;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Error Text */
+.error {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+/* Success Message */
+.success {
+  color: #4caf50;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Response Message Box */
+.responseMessage {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  background: #111;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus {
+  transform: scale(1.01);
+}
+
+@media (max-width: 480px) {
+  .formGroup input,
+  .formGroup textarea {
+    padding: 14px 16px;
+    font-size: 1.05rem;
+  }
+
+  .formGroup label {
+    font-size: 1rem;
+  }
+}

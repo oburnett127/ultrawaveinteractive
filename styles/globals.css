@@ -1068,14 +1068,14 @@ textarea {
   --card-bg: #f7f7f7;
   --border-color: #e5e5e5;
 
-  --button-bg: blue;
+  --button-bg: green;
   --button-text: #ffffff;
 
   --input-bg: #ffffff;
   --input-text: #111111;
   --input-border: #cccccc;
 
-  --link-color: #0066ff;
+  --link-color: white;
 }
 
 /* ------------------------------------ */
@@ -1088,14 +1088,14 @@ html[data-theme="dark"] {
   --card-bg: #f7f7f7;
   --border-color: #e5e5e5;
 
-  --button-bg: blue;
+  --button-bg: green;
   --button-text: #ffffff;
 
   --input-bg: #ffffff;
   --input-text: #111111;
   --input-border: #cccccc;
 
-  --link-color: #0066ff;
+  --link-color: green;
 }
 
 .blog-content {

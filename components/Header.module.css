@@ -1,147 +1,128 @@
-/* HEADER LAYOUT */
+/* ----- HEADER WRAPPER ----- */
 .header {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
   background: #0a0a0a;
-  color: white;
+  color: #fff;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #222;
-  z-index: 1000;
-}
-
-/* HAMBURGER BUTTON */
-.hamburger {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  z-index: 1300; /* ensures always on top */
+  z-index: 5000;
 }
 
 .line {
   width: 28px;
   height: 3px;
-  background: white;
+  background-color: #ffffff !important; /* ALWAYS visible */
   border-radius: 3px;
+  transition: 0.25s ease;
+  background: #ffffff;
 }
 
-/* CENTER TITLE */
-.title {
-  font-size: 2.2rem;
-  margin: 0;
-  text-align: center;
-  width: 100%;
+/* Animate hamburger to "X" */
+.open .line:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 5px);
 }
-
-.homeLink {
-  color: white;
-  text-decoration: none;
-}
-
-.homeLink:hover {
-  color: red;
-}
-
-/* RIGHT SPACER TO BALANCE LAYOUT */
-.rightSpacer {
-  position: absolute;
-  right: 1rem;
-  width: 28px;
-  height: 3px;
+.open .line:nth-child(2) {
   opacity: 0;
 }
-
-.header {
-  width: 100%;
-  background: #111;
-  color: #fff;
-  padding: 1rem;
-  position: relative;
-  z-index: 5000;
+.open .line:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -5px);
 }
 
-.nav {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
+.brand:hover {
+  color: #4B0082;
 }
 
-/* brand label */
-.brand {
-  font-weight: bold;
-  font-size: 1rem;
-  margin-left: 0.75rem;
-  display: flex;
-  align-items: center;
-}
-
-.userEmail {
-  margin-left: 0.5rem;
-  font-size: 0.85rem;
-  opacity: 0.85;
-}
-
+/* ----- DROPDOWN MENU (OVERLAYS HEADER CONTENT) ----- */
 .menu {
   position: absolute;
-  top: 60px;
+  top: 100%;
   left: 0;
   background: #111;
   padding: 1rem;
-  gap: 1rem;
+  width: 100%;
+  gap: 1.2rem;
+  list-style: none;
   display: none;
   flex-direction: column;
-  width: 100%;
-  z-index: 6000;
+  z-index: 7000;
+  border-bottom: 1px solid #222;
 }
 
 .menu.open {
   display: flex;
 }
 
-.menu a, .menu button {
+.menu a,
+.menu button {
   color: #fff;
-  text-decoration: none;
   font-size: 1.1rem;
+  text-decoration: none;
   background: none;
   border: none;
   cursor: pointer;
-  text-align: left;
 }
 
-.menu a:hover, .menu button:hover,
-.menu a:focus, .menu button:focus {
+.menu a:hover,
+.menu button:hover,
+.menu a:focus,
+.menu button:focus {
   color: #4B0082;
 }
 
-/* FALLBACK */
-.headerFallback {
-  padding: 1rem;
-  background: #111;
-  text-align: center;
-  color: #f88;
+/* ----- RESPONSIVE SUPPORT ----- */
+@media (max-width: 600px) {
+  .userEmail {
+    font-size: 0.8rem;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
-.rightSide {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
+.nav {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto; /* left, center, right */
   align-items: center;
-  z-index: 1100; /* Above images, below menu */
+  width: 100%;
 }
 
-.emailText {
-  color: #ccc;
-  font-size: 0.9rem;
-  font-weight: 500;
+/* Perfect centered brand */
+.brand {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-weight: bold;
+  font-size: 2.3rem;
+  text-decoration: none;
+  color: #fff;
+  z-index: 2;
+}
+
+/* Hamburger stays left aligned */
+.hamburger {
+  justify-self: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 30px;
+  height: 22px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 1;
+}
+
+/* Right side holds user email */
+.userEmail {
+  justify-self: end;
+  white-space: nowrap;
+  font-size: 1rem;
+  opacity: 0.85;
+  z-index: 2;
 }

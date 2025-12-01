@@ -33,7 +33,7 @@ export default function Header() {
 
   const closeMenu = () => setMenuOpen(false);
 
-  const toggleMenu = () => setMenuOpen((prev) => !prev);
+  const toggleMenu = () => setMenuOpen((menuOpen) => !menuOpen);
 
   const handleSignOut = async () => {
     try {
@@ -93,14 +93,14 @@ export default function Header() {
               <span className={styles.line}></span>
             </button>
 
-            <div className={styles.brand}>
+            <Link className={styles.brand} href="/">
               Ultrawave Interactive Web Design
-              {session?.user?.email && (
+            </Link>
+            {session?.user?.email && (
                 <span className={styles.userEmail}>
                   {session.user.email}
                 </span>
-              )}
-            </div>
+            )}
             <ul
               ref={menuRef}
               id="main-menu"
@@ -124,14 +124,13 @@ export default function Header() {
                 <>
                   <li role="none">
                     <button
+                      className={styles.btnNoPadding}
                       role="menuitem"
                       onClick={() => {
                         itemClickAction();
                         signOut();
                       }}
-                    >
-                      Sign Out
-                    </button>
+                    >Sign Out</button>
                   </li>
                   <li role="none">
                     <Link role="menuitem" href="/account/change-password" onClick={itemClickAction}>
