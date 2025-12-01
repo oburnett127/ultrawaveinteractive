@@ -29,4 +29,4 @@ CREATE INDEX `User_otpVerified_idx` ON `User`(`otpVerified`);
 CREATE INDEX `User_lockoutUntil_idx` ON `User`(`lockoutUntil`);
 
 -- RenameIndex
-ALTER TABLE `Payment` RENAME INDEX `Payment_userId_fkey` TO `Payment_userId_idx`;
+CREATE INDEX `Payment_userId_idx` ON `Payment`(`userId`);
