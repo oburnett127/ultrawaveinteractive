@@ -1,6 +1,3 @@
--- DropIndex
-DROP INDEX IF NOT EXISTS `BlogPost_slug_idx` ON `BlogPost`;
-
 -- CreateIndex
 CREATE INDEX `BlogPost_createdAt_idx` ON `BlogPost`(`createdAt`);
 
