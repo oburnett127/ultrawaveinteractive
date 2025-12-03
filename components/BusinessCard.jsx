@@ -1,7 +1,9 @@
+import Image from 'next/image';
+
 function BusinessCard({ src, alt, text }) {
   return (
     <div className="card">
-      <img src={src} alt={alt} loading="lazy" />
+      <Image src={src} alt={alt} loading="lazy" width="32" height="16" />
       <p className="centered-text">{text}</p>
     </div>
   );

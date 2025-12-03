@@ -72,6 +72,7 @@ router.post("/blog/create", requireOtpVerified, blogCreateLimiter, async (req, r
     const markdownSanitized = sanitizeMarkdownContent(content, {
       allowedTags: sanitizeHtml.defaults.allowedTags.concat([
         "img",
+        "Image",
         "h1",
         "h2",
         "h3",
@@ -93,6 +94,7 @@ router.post("/blog/create", requireOtpVerified, blogCreateLimiter, async (req, r
     const cleanContent = sanitizeHtml(htmlConverted, {
       allowedTags: sanitizeHtml.defaults.allowedTags.concat([
         "img",
+        "Image",
         "h1",
         "h2",
         "h3",

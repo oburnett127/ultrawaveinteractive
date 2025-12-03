@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import BusinessCard from "../components/BusinessCard.jsx";
 import FeatureItem from "../components/FeatureItem.jsx";
+import Image from 'next/image';
 
 function Home() {
   const [posts, setPosts] = useState([]);
@@ -129,11 +130,18 @@ function Home() {
       </Head>
 
       <main id="main-content" className={styles.content}>
-        <img src="images/rocketclock.jpg" alt="Rocket clock flying." loading="lazy" />
+        <Image src="images/rocketclock.jpg" alt="Flying rocket clock." loading="lazy" width="32" height="16" />
         
         <p className="centered-text margin-top">
           I replace slow website builders with high-performance custom websites!
         </p>
+        <p className="centered-text margin-top">
+          Web design services in The USA! Anywhere in the USA!
+        </p>
+        <p className="centered-text margin-top">
+          Web design services in Oklahoma City, OK!
+        </p>
+
 
         <section>
           <h2>Blog</h2>
@@ -162,17 +170,19 @@ function Home() {
 
         <div className={styles.businessGrid}>
           <div className={styles.card}>
-            <img
+            <Image
               src="/images/meeting.jpg"
               alt="Business people in a meeting smiling."
               loading="lazy"
+              width="32"
+              height="16"
             />
           </div>
         </div>
 
         <div className={styles.blockContainer}>
           <a className={styles.flexCenter} href="#contact-form">
-            <button className={styles.button}>Schedule a Free Consultation</button>
+            <button className={styles.button}>Schedule a Free Consultation and Website Audit - Contact Us</button>
           </a>
 
           <a
