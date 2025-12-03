@@ -1014,7 +1014,7 @@ button[disabled] {
 .passwordInput {
   width: 100%;
   padding: 10px 40px 10px 10px;
-  font-size: 16px;
+  font-size: 17px;
   box-sizing: border-box;
   border: 1px solid #444;
   background: white;
@@ -1153,4 +1153,8 @@ html[data-theme="dark"] {
 }
 .skip-link:focus {
   top: 0;
+}
+
+.displayFlex {
+  display: flex;
 }

@@ -60,30 +60,39 @@ export async function getServerSideProps() {
 
 export default function BlogList({ posts, error }) {
   return (
-    <main id="main-content" className="blog-list-container">
-      <h1>Blog</h1>
+    <>
+      <Head>
+        <title>Blog — Ultrawave Interactive</title>
+        <meta
+          name="description"
+          content="Articles on web design, SEO, performance optimization, and growing your online presence."
+        />
+      </Head>
+      <main id="main-content" className="blog-list-container">
+        <h1>Blog</h1>
 
-      {error && (
-        <p className="error-message">
-          ⚠️ {error}
-        </p>
-      )}
+        {error && (
+          <p className="error-message">
+            ⚠️ {error}
+          </p>
+        )}
 
-      {!error && posts.length === 0 && (
-        <p className="no-posts-message">
-          No blog posts found. Please check back soon.
-        </p>
-      )}
+        {!error && posts.length === 0 && (
+          <p className="no-posts-message">
+            No blog posts found. Please check back soon.
+          </p>
+        )}
 
-      {!error && posts.length > 0 && (
-        <ul className="blog-list">
-          {posts.map((post) => (
-            <li key={post.id}>
-              <Link href={`/blog/${post.slug}`}>{post.title || "Untitled Post"}</Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
+        {!error && posts.length > 0 && (
+          <ul className="blog-list">
+            {posts.map((post) => (
+              <li key={post.id}>
+                <Link href={`/blog/${post.slug}`}>{post.title || "Untitled Post"}</Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </main>
+    </>
   );
 }

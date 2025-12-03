@@ -8,6 +8,8 @@ import ContactForm from "../components/ContactForm";
 import Head from "next/head";
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
+import BusinessCard from "../components/BusinessCard.jsx";
+import FeatureItem from "../components/FeatureItem.jsx";
 
 function Home() {
   const [posts, setPosts] = useState([]);
@@ -127,6 +129,8 @@ function Home() {
       </Head>
 
       <main id="main-content" className={styles.content}>
+        <img src="images/rocketclock.jpg" alt="Rocket clock flying." loading="lazy" />
+        
         <p className="centered-text margin-top">
           I replace slow website builders with high-performance custom websites!
         </p>
@@ -275,33 +279,6 @@ function Home() {
         </div>
       </main>
     </>
-  );
-}
-
-// Reusable feature item for icons
-function FeatureItem({ icon, label }) {
-  return (
-    <Box display="flex" flexDirection="column" alignItems="center">
-      {icon}
-      <Typography
-        variant="subtitle1"
-        textAlign="center"
-        fontSize={{ xs: "16px", sm: "18px", md: "20px" }}
-        fontWeight={500}
-      >
-        {label}
-      </Typography>
-    </Box>
-  );
-}
-
-// Reusable business card
-function BusinessCard({ src, alt, text }) {
-  return (
-    <div className={styles.card}>
-      <img src={src} alt={alt} loading="lazy" />
-      <p className="centered-text">{text}</p>
-    </div>
   );
 }
 

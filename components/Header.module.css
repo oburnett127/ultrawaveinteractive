@@ -126,3 +126,7 @@
   opacity: 0.85;
   z-index: 2;
 }
+
+.btnNoPadding {
+  padding: 0 0;
+}
