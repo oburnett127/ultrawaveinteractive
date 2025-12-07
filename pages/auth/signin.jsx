@@ -3,6 +3,7 @@ import { signIn } from "next-auth/react";
 import Script from "next/script";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { getSession } from "next-auth/react";
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
@@ -135,3 +136,34 @@ export default function SignIn() {
     </>
   );
 }
+
+export async function getServerSideProps(context) {
+  const session = await getSession(context);
+
+  // Not logged in → redirect to signin
+  if (!session) {
+    return {
+      redirect: {
+        destination: "/signin",
+        permanent: false,
+      },
+    };
+  }
+
+  // Logged in but OTP not verified → redirect to OTP step
+  if (!session.user?.otpVerified) {
+    return {
+      redirect: {
+        destination: "/verifyotp",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {
+      session,
+    },
+  };
+}
+

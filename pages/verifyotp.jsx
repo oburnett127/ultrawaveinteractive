@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import Script from "next/script";
 import Protected from "../components/Protected.jsx";
+import { getSession } from "next-auth/react";
 
 export default function VerifyOTP() {
   const { data: session, status, update } = useSession();
@@ -266,4 +267,36 @@ export default function VerifyOTP() {
       </main>
     </Protected>
   );
+}
+
+import { getSession } from "next-auth/react";
+
+export async function getServerSideProps(context) {
+  const session = await getSession(context);
+
+  // Not logged in → redirect to signin
+  if (!session) {
+    return {
+      redirect: {
+        destination: "/signin",
+        permanent: false,
+      },
+    };
+  }
+
+  // Logged in but OTP not verified → redirect to OTP step
+  if (!session.user?.otpVerified) {
+    return {
+      redirect: {
+        destination: "/verifyotp",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {
+      session,
+    },
+  };
 }

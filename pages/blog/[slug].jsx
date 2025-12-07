@@ -15,12 +15,8 @@ function buildDescriptionFromHtml(html, maxLength = 160) {
   return text.slice(0, maxLength).trimEnd() + "…";
 }
 
-/**
- * Server-side data fetching for a blog post.
- * Provides graceful fallbacks and clear diagnostics for rate limits, network errors, and server issues.
- */
-export async function getServerSideProps(context) {
-  const slug = context.params?.slug;
+export async function getStaticProps({ params }) {
+  const slug = params.slug;
   const backendUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
 
@@ -31,38 +27,22 @@ export async function getServerSideProps(context) {
   try {
     const res = await fetch(`${backendUrl}/api/blog/${slug}`);
 
-    // Handle rate limiting gracefully
-    if (res.status === 429) {
-      console.warn("Rate limited when fetching blog post:", slug);
-      error =
-        "Too many requests. Please wait a moment before reloading the page.";
-      return { props: { post: null, error, seo: null } };
-    }
-
-    // Handle missing posts
     if (res.status === 404) {
-      return { notFound: true }; // show Next.js 404 page
+      return { notFound: true }; // shows 404 page
     }
 
-    // Handle other errors
     if (!res.ok) {
-      const message = `Failed to fetch post (HTTP ${res.status})`;
-      console.error(message);
-      error =
-        res.status >= 500
-          ? "Server error. Please try again later."
-          : "Unable to load this post. Please check the URL.";
-      return { props: { post: null, error, seo: null } };
+      return {
+        props: {
+          post: null,
+          error: "Unable to load this post. Please try again later.",
+          seo: null,
+        },
+        revalidate: 60, // ISR fallback refresh
+      };
     }
 
-    // Parse JSON safely
-    try {
-      post = await res.json();
-    } catch (jsonErr) {
-      console.error("Invalid JSON response for blog post:", jsonErr);
-      error = "Invalid response from server.";
-      return { props: { post: null, error, seo: null } };
-    }
+    post = await res.json();
 
     if (post) {
       const siteUrl =
@@ -75,8 +55,6 @@ export async function getServerSideProps(context) {
       const description = buildDescriptionFromHtml(post.content || "");
       const publishedTime = post.createdAt || null;
       const modifiedTime = post.updatedAt || post.createdAt || null;
-
-      // You can later add a specific OG image per post; for now use a default
       const ogImage = `${siteUrl}/images/og-default.jpg`;
 
       seo = {
@@ -89,22 +67,48 @@ export async function getServerSideProps(context) {
       };
     }
   } catch (err) {
-    // Network / fetch-level errors
     console.error("Network error fetching blog post:", err);
     error = "Network error. Please check your connection and try again.";
-    return { props: { post: null, error, seo: null } };
   }
 
-  // Return either the post or an error
   return {
     props: { post, error, seo },
+    revalidate: 60, // <-- ISR: regenerate every 60 seconds
   };
 }
 
-/**
- * Client-side render of a blog post.
- * Displays loading/fallback/error states gracefully.
- */
+export async function getStaticPaths() {
+  const backendUrl =
+    process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
+
+  try {
+    const res = await fetch(`${backendUrl}/api/blog/list`);
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch blog list");
+    }
+
+    const data = await res.json();
+    const posts = Array.isArray(data.posts) ? data.posts : [];
+
+    const paths = posts.map((post) => ({
+      params: { slug: post.slug },
+    }));
+
+    return {
+      paths,
+      fallback: "blocking", // <-- enables ISR for new posts post-deployment
+    };
+  } catch (err) {
+    console.error("Error in getStaticPaths:", err);
+
+    return {
+      paths: [],
+      fallback: "blocking",
+    };
+  }
+}
+
 export default function BlogPost({ post, error, seo }) {
   // Basic fallback SEO if we hit an error
   const fallbackTitle = "Blog | Ultrawave Interactive Web Design";

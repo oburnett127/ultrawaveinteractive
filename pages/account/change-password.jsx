@@ -3,8 +3,7 @@ import Script from "next/script";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import Protected from "../../components/Protected.jsx";
-import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { getSession } from "next-auth/react";
 
 export default function ChangePassword() {
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
@@ -193,4 +192,37 @@ export default function ChangePassword() {
       </main>
     </Protected>
   );
+}
+
+// 🚨 Server-side route protection
+export async function getServerSideProps(context) {
+  const session = await getSession(context);
+
+  // User not logged in → redirect to signin
+  if (!session) {
+    return {
+      redirect: {
+        destination: "/signin",
+        permanent: false,
+      },
+    };
+  }
+
+  // Logged in but OTP not verified → redirect to OTP verification
+  if (!session.user?.otpVerified) {
+    return {
+      redirect: {
+        destination: "/verifyotp",
+        permanent: false,
+      },
+    };
+  }
+
+  // ✔ Authenticated & OTP verified — proceed normally
+  return {
+    props: {
+      // If you ever want to use session details on page load:
+      session,
+    },
+  };
 }

@@ -1,35 +1,8 @@
 import Head from "next/head";
-import React, { useState, useEffect } from "react";
 import remarkGfm from 'remark-gfm';
 import ReactMarkdown from 'react-markdown';
 
-const CookiePolicy = () => {
-  const [cookiePolicyText, setCookiePolicyText] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/cookie-policy.txt")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch the cookie policy.");
-        }
-        return response.text();
-      })
-      .then((text) => {
-        setCookiePolicyText(text);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error loading cookie policy:", error);
-        setTermsOfServiceText("Sorry, we couldn't load the cookie policy at this time.");
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading) {
-    return <p>Loading cookie policy...</p>;
-  }
-
+export default function CookiePolicy({ cookiePolicyText }) {
   return (
     <div>
       <Head>
@@ -47,4 +20,25 @@ const CookiePolicy = () => {
   );
 };
 
-export default CookiePolicy;
+// 🧊 SSG — built once at deployment
+export async function getStaticProps() {
+  const fs = require("fs");
+  const path = require("path");
+
+  const filePath = path.join(process.cwd(), "public", "cookie-policy.txt");
+
+  let termsOfServiceText = "";
+
+  try {
+    termsOfServiceText = fs.readFileSync(filePath, "utf8");
+  } catch (err) {
+    console.error("Error reading terms of service file:", err.message);
+    termsOfServiceText = "Cookie Policy could not be loaded.";
+  }
+
+  return {
+    props: {
+      termsOfServiceText,
+    },
+  };
+}

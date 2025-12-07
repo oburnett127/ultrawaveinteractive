@@ -7,17 +7,11 @@ import { List, ListItem, ListItemIcon, ListItemText, Box, Stack, Typography } fr
 import ContactForm from "../components/ContactForm";
 import Head from "next/head";
 import Link from "next/link";
-import { useEffect, useState, useRef } from "react";
 import BusinessCard from "../components/BusinessCard.jsx";
 import FeatureItem from "../components/FeatureItem.jsx";
-import Image from 'next/image';
+import Image from "next/image";
 
-function Home() {
-  const [posts, setPosts] = useState([]);
-  const [fetchError, setFetchError] = useState("");
-  const [loading, setLoading] = useState(true);
-  const abortControllerRef = useRef(null);
-
+function Home({ posts }) {
   const items = [
     "Marketing",
     "Landscaping",
@@ -51,106 +45,34 @@ function Home() {
     "openingHours": "Su-Sa 08:00-20:00"
   }`;
 
-  // Fetch blog posts with resilience
-  useEffect(() => {
-    async function fetchPosts() {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
-      // if (!backendUrl) {
-      //   console.error("❌ Missing NEXT_PUBLIC_BACKEND_URL environment variable.");
-      //   setFetchError("Backend not configured. Please try again later.");
-      //   setLoading(false);
-      //   return;
-      // }
-
-      abortControllerRef.current?.abort();
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
-
-      try {
-        const timeout = setTimeout(() => controller.abort(),  10000); // 8s timeout
-        const res = await fetch(`/api/blog/list`, {
-          method: "GET",
-          headers: { Accept: "application/json" },
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
-
-        if (res.status === 429) {
-          console.warn("⚠️ Rate limited — not retrying immediately.");
-          setFetchError("Too many requests. Please wait a moment and refresh.");
-          setLoading(false);
-          return;
-        }
-
-        if (!res.ok) {
-          throw new Error(`Backend responded with HTTP ${res.status}`);
-        }
-
-        const data = await res.json().catch(() => {
-          throw new Error("Invalid JSON received from backend.");
-        });
-
-        if (!Array.isArray(data.posts)) {
-          throw new Error("Unexpected data format — expected an array.");
-        }
-
-        setPosts(data.posts);
-        setFetchError("");
-      } catch (err) {
-        if (err.name === "AbortError") {
-          console.warn("⏱️ Blog fetch aborted (timeout or unmount).");
-        } else {
-          console.error("❌ Error fetching blog posts:", err);
-          setFetchError("Unable to load blog posts. Please try again later.");
-        }
-        setPosts([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchPosts();
-
-    // Cleanup on unmount
-    return () => {
-      abortControllerRef.current?.abort();
-    };
-  }, []);
-
   return (
     <>
       <Head>
         <title>Ultrawave Interactive Web Design | Home</title>
         <meta
           name="description"
-          content="Ultrawave Interactive provides custom web design and technology solutions tailored to your unique business needs. Based in the USA, we offer affordable and quality services nationwide."
+          content="Ultrawave Interactive provides custom web design/development and technology solutions tailored to your unique business needs. Based in the USA, we offer affordable and quality services nationwide."
         />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       </Head>
 
       <main id="main-content" className={styles.content}>
-        <Image src="images/rocketclock.jpg" alt="Flying rocket clock." loading="lazy" width="32" height="16" />
-        
+        <Image src="/images/rocketclock.jpg" alt="Flying rocket clock." loading="lazy" width="32" height="16" />
+
         <p className="centered-text margin-top">
           I replace slow website builders with high-performance custom websites!
         </p>
         <p className="centered-text margin-top">
-          Web design services in The USA! Anywhere in the USA!
+          Web design and development services for any business in the USA!
         </p>
         <p className="centered-text margin-top">
-          Web design services in Oklahoma City, OK!
+          Web design and development services in Oklahoma City, OK!
         </p>
-
 
         <section>
           <h2>Blog</h2>
 
-          {loading ? (
-            <p>Loading posts...</p>
-          ) : fetchError ? (
-            <p className="error-text">⚠️ {fetchError}</p>
-          ) : posts.length === 0 ? (
+          {posts.length === 0 ? (
             <p>No posts found.</p>
           ) : (
             <ul className="large-text">
@@ -182,7 +104,9 @@ function Home() {
 
         <div className={styles.blockContainer}>
           <a className={styles.flexCenter} href="#contact-form">
-            <button className={styles.button}>Schedule a Free Consultation and Website Audit - Contact Us</button>
+            <button className={styles.button}>
+              Schedule a Free Consultation and Website Audit - Contact Us
+            </button>
           </a>
 
           <a
@@ -218,8 +142,7 @@ function Home() {
         </Box>
 
         <p className="centered-text">
-          I believe in maintaining excellent relationships with my clients. When doing business with
-          me, you are entering into a partnership. I am dedicated to your success.
+          I believe in maintaining excellent relationships with my clients. When doing business with me, you are entering into a partnership. I am dedicated to your success.
         </p>
 
         <p className="centered-text">I work with a wide variety of businesses:</p>
@@ -293,3 +216,25 @@ function Home() {
 }
 
 export default Home;
+
+// 🧊 SSG Fetch — runs at build time only
+export async function getStaticProps() {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/blog/list`);
+    const data = await res.json();
+
+    return {
+      props: {
+        posts: Array.isArray(data.posts) ? data.posts : []
+      }
+    };
+  } catch (err) {
+    console.error("❌ Failed to fetch posts during build:", err.message);
+
+    return {
+      props: {
+        posts: []
+      }
+    };
+  }
+}
