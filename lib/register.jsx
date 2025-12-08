@@ -90,7 +90,7 @@
 //       }
 
 //       if (data?.success) {
-//         router.push("/auth/signin");
+//         router.push("/signin");
 //       } else {
 //         throw new Error(data?.error || "Unexpected server response.");
 //       }

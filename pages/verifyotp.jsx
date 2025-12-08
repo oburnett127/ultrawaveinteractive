@@ -58,7 +58,7 @@ export default function VerifyOTP() {
 
     if (!email) {
       setError("Missing email. Please sign in again.");
-      router.replace("/api/auth/signin");
+      router.replace("/signin");
       return;
     }
 
@@ -168,7 +168,7 @@ export default function VerifyOTP() {
     const email = (localStorage.getItem("otpEmail") || "").trim().toLowerCase();
     if (!email) {
       setError("Missing email. Please sign in again.");
-      router.replace("/api/auth/signin");
+      router.replace("/signin");
       return;
     }
 
@@ -269,13 +269,11 @@ export default function VerifyOTP() {
   );
 }
 
-import { getSession } from "next-auth/react";
-
 export async function getServerSideProps(context) {
   const session = await getSession(context);
 
   // Not logged in → redirect to signin
-  if (!session) {
+  if (!session?.user) {
     return {
       redirect: {
         destination: "/signin",
@@ -284,19 +282,18 @@ export async function getServerSideProps(context) {
     };
   }
 
-  // Logged in but OTP not verified → redirect to OTP step
-  if (!session.user?.otpVerified) {
+  // Logged in and OTP verified → they should NOT be here anymore!
+  if (session.user?.otpVerified) {
     return {
       redirect: {
-        destination: "/verifyotp",
+        destination: "/dashboard", // or /dashboard if you prefer
         permanent: false,
       },
     };
   }
 
+  // Logged in but OTP not verified → show OTP page
   return {
-    props: {
-      session,
-    },
+    props: { session },
   };
 }

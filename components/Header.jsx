@@ -115,7 +115,7 @@ export default function Header() {
               {!session && (
                 <>
                   <li role="none">
-                    <Link role="menuitem" href="/auth/signin" onClick={itemClickAction}>
+                    <Link role="menuitem" href="/signin" onClick={itemClickAction}>
                       Sign In
                     </Link>
                   </li>

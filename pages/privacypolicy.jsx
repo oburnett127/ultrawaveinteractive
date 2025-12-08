@@ -12,7 +12,7 @@ export default function PrivacyPolicy({ privacyPolicyText }) {
       </Head>
       <main id="main-content">
         <h1 className="white-text">Privacy Policy</h1>
-        <pre className="white-text">{policyText}</pre>
+        <pre className="white-text">{privacyPolicyText}</pre>
       </main>
     </div>
   );

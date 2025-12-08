@@ -28,17 +28,7 @@ export async function getServerSideProps(context) {
   if (!session) {
     return {
       redirect: {
-        destination: "/signin",
-        permanent: false,
-      },
-    };
-  }
-
-  // Logged in but OTP not verified → redirect to OTP step
-  if (!session.user?.otpVerified) {
-    return {
-      redirect: {
-        destination: "/verifyotp",
+        destination: "/",
         permanent: false,
       },
     };

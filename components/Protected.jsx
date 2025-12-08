@@ -21,7 +21,7 @@ export default function Protected({ children, otpRequired = false }) {
 
     // 1) Not logged in → redirect to sign-in
     if (status === "unauthenticated") {
-      router.replace("/api/auth/signin");
+      router.replace("/signin");
       return;
     }
 

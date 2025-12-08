@@ -140,30 +140,19 @@ export default function SignIn() {
 export async function getServerSideProps(context) {
   const session = await getSession(context);
 
-  // Not logged in → redirect to signin
-  if (!session) {
+  // User is logged in → go to dashboard
+  if (session?.user) {
     return {
       redirect: {
-        destination: "/signin",
+        destination: "/dashboard", // or / if you prefer
         permanent: false,
       },
     };
   }
 
-  // Logged in but OTP not verified → redirect to OTP step
-  if (!session.user?.otpVerified) {
-    return {
-      redirect: {
-        destination: "/verifyotp",
-        permanent: false,
-      },
-    };
-  }
-
+  // Not logged in OR OTP not verified → render signin page
+  // (no redirect here!)
   return {
-    props: {
-      session,
-    },
+    props: {}
   };
 }
-
