@@ -29,10 +29,28 @@ const handle = nextApp.getRequestHandler();
     // Forward ALL NextAuth requests to Next.js
     // while preserving the FULL path.
     // ---------------------------
-    server.all("/api/auth/:nextauth*", (req, res) => {
-      //console.log("🔥 Forwarding FULL NextAuth request:", req.method, req.url);
-      return handle(req, res);
-    });
+    // server.all("/api/auth/:nextauth*", (req, res) => {
+    //   //console.log("🔥 Forwarding FULL NextAuth request:", req.method, req.url);
+    //   return handle(req, res);
+    // });
+
+    // 🔥 Ensure ALL NextAuth requests bypass backend middleware entirely
+   
+ // --------------------------------------------------
+// ABSOLUTE RULE:
+// LET NEXTAUTH HANDLE EVERYTHING UNDER /api/auth
+// --------------------------------------------------
+server.all("/api/auth*", (req, res) => {
+  return handle(req, res);
+});
+server.all("/api/auth/*", (req, res) => {
+  return handle(req, res);
+});
+server.all("/api/auth", (req, res) => {
+  return handle(req, res);
+});
+
+
 
     const cookieParser = require("cookie-parser");
     server.use(cookieParser());
@@ -41,6 +59,11 @@ const handle = nextApp.getRequestHandler();
     // Mount your backend routes
     // ---------------------------
     await initBackend(server, handle);
+
+    // Ensure Next handles all NextAuth routes
+    // server.all("/api/auth/*", (req, res) => {
+    //   return handle(req, res);
+    // });
 
     // ---------------------------
     // Let Next.js handle everything else

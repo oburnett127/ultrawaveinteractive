@@ -17,16 +17,16 @@ export default function Protected({ children, otpRequired = false }) {
 
   // Redirect logic
   useEffect(() => {
-    if (status === "loading") return;
+    if (status === "loading") return; // still loading session... DO NOT redirect!
 
     // 1) Not logged in → redirect to sign-in
-    if (status === "unauthenticated") {
+    if (status === "unauthenticated" && !router.asPath.startsWith("/verifyotp")) {
       router.replace("/signin");
       return;
     }
 
     // 2) OTP required & not verified → redirect to /verifyotp
-    if (otpRequired && session?.user?.otpVerified !== true) {
+    if (otpRequired && status === "authenticated" && session?.user?.otpVerified !== true) {
       router.replace("/verifyotp");
       return;
     }
@@ -39,11 +39,10 @@ export default function Protected({ children, otpRequired = false }) {
   // Not ready yet → show nothing
   if (status === "loading") return null;
 
-  // Not logged in → show nothing (redirect runs)
-  if (status === "unauthenticated") return null;
+  if (status === "unauthenticated" && !router.asPath.startsWith("/verifyotp")) return null;
 
   // OTP required but not verified → show nothing (redirect runs)
-  if (otpRequired && session?.user?.otpVerified !== true) return null;
+  if (otpRequired && status === "authenticated" && session?.user?.otpVerified !== true) return null;
 
   // Authorized — render content
   return <>{children}</>;

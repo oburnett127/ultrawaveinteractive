@@ -28,13 +28,15 @@ function boolFromEnv(v, def = false) {
 // index.cjs
 module.exports.initBackend = async function initBackend(app, handle) {
 
-  //
-  // ⭐ DO NOT mount anything under /api/auth
-  // ⭐ Next.js must handle it entirely
-  //
-  app.all("/api/auth/:nextauth*", (req, res) => {
-    //console.log("🔥 NextAuth route →", req.method, req.url);
-    return handle(req, res);
+  // ======================================================
+  // 🔥 Full protection: bypass ALL backend middleware for
+  // ANY NextAuth route (they MUST be handled only by Next)
+  // ======================================================
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api/auth/")) {
+      return handle(req, res);   // send immediately to Next.js
+    }
+    next();
   });
 
   //

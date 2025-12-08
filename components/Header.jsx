@@ -108,11 +108,11 @@ export default function Header() {
               role="menu"
             >
               <li role="none">
-                  <Link role="menuitem" href="/" onClick={itemClickAction}>
-                    Home
-                  </Link>
+                <Link role="menuitem" href="/" onClick={itemClickAction}>
+                  Home
+                </Link>
               </li>
-              {!session && (
+            {status === "unauthenticated" && (
                 <>
                   <li role="none">
                     <Link role="menuitem" href="/signin" onClick={itemClickAction}>
@@ -121,8 +121,7 @@ export default function Header() {
                   </li>
                 </>
               )}
-
-              {session && (
+            {status === "authenticated" && (
                 <>
                   <li role="none">
                     <button
