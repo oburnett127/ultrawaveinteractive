@@ -151,8 +151,9 @@ export default function VerifyOTP() {
       if (!res.ok) throw new Error(data.error || "OTP verification failed.");
 
       // Patch user session to reflect OTP verification
-      await update({ user: { otpVerified: true } });
-
+      //await update({ user: { otpVerified: true } });
+      
+      // DB flag is now true; backend middleware enforces OTP
       window.location.assign("/squarepaymentpage");
     } catch (err) {
       setError(err.message || "Failed to verify OTP.");

@@ -6,7 +6,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 // Load initBackend exported from index.cjs
-const { initBackend } = require("./index.cjs");
+const { initBackend } = require("../frontend/index.cjs");
 
 const dev = process.env.NODE_ENV !== "production";
 const port = process.env.PORT || 3000;
@@ -22,6 +22,11 @@ const handle = nextApp.getRequestHandler();
 
     // Create Express server
     const server = express();
+
+    // server.use((req, res, next) => {
+    //   console.log("REQ:", req.method, req.url);
+    //   next();
+    // });
 
     // ---------------------------
     // 🔥 VERY IMPORTANT
@@ -50,6 +55,8 @@ server.all("/api/auth", (req, res) => {
   return handle(req, res);
 });
 
+server.all("/session", (req, res) => handle(req, res));
+server.all("/session*", (req, res) => handle(req, res));
 
 
     const cookieParser = require("cookie-parser");

@@ -1,14 +1,39 @@
-// /ultrawaveinteractive/pages/api/auth/[...nextauth].js
+// pages/api/auth/[...nextauth].js
+import NextAuth from "next-auth";
+import { getToken } from "next-auth/jwt";
+import { authOptions } from "../../../lib/authOptions.cjs";
 
-const NextAuth = require("next-auth").default;
-const { authOptions } = require("../../../lib/authOptions.cjs");
+export default async function handler(req, res) {
+  // 🛠 Fix: NextAuth dev server incorrectly rejects this request
+  if (
+    req.method === "POST" &&
+    Array.isArray(req.query.nextauth) &&
+    req.query.nextauth[0] === "session"
+  ) {
+    try {
+      const token = await getToken({
+        req,
+        secret: process.env.NEXTAUTH_SECRET,
+      });
 
-// 1. Get the NextAuth handler function
-const authHandler = NextAuth(authOptions);
+      return res.status(200).json({
+        user: token
+          ? {
+              id: token.id,
+              email: token.email,
+              otpVerified: !!token.otpVerified,
+            }
+          : null,
+        expires: token?.exp
+          ? new Date(token.exp * 1000).toISOString()
+          : null,
+      });
+    } catch (e) {
+      console.error("POST /api/auth/session error", e);
+      return res.status(200).json({ user: null, expires: null });
+    }
+  }
 
-// 2. Explicitly export the handler.
-module.exports = authHandler;
-
-// 3. CRITICAL: Explicitly set the 'default' property on the export
-//    to satisfy the Next.js ES-module-aware loader/bundler.
-module.exports.default = authHandler;
+  // All other auth routes → NextAuth
+  return await NextAuth(req, res, authOptions);
+}

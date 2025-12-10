@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 const crypto = require("crypto");
 const rateLimit = require("express-rate-limit");
 const bodyParser = require("body-parser");
-const { createRedisClient, limiterFactory, disconnectRedisClient } = require("./lib/redisClient.cjs");
+const { createRedisClient, limiterFactory, disconnectRedisClient } = require("../lib/redisClient.cjs");
 const cookieParser = require("cookie-parser");
 
 function boolFromEnv(v, def = false) {
@@ -362,11 +362,6 @@ app.use("/api", waitForRedis, rateLimitMiddleware(redisHealthLimiter), healthRou
 //    DO NOT UNCOMMENT OR USE GLOBAL SANITIZATION - IT WILL BREAK FUNCTIONALITY
 // //-------------------------------------------------
 // app.use(makeSanitizer());
-
-  //
-  // ⭐ LET NEXT.JS HANDLE EVERYTHING ELSE
-  //
-  app.all("*", (req, res) => handle(req, res));
 
   return app;
 };
