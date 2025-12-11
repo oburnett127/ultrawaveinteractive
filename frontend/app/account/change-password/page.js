@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useRef, useEffect } from "react";
 import Script from "next/script";
 import { useSession } from "next-auth/react";

@@ -1,3 +1,5 @@
+"use client";
+
 import { getSession } from "next-auth/react";
 import SquarePaymentPage from "../components/SquarePaymentPage";
 
