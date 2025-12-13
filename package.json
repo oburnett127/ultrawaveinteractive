@@ -1,0 +1,23 @@
+{
+  "name": "ultrawaveinteractive-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "author": "Owen Burnett",
+  "description": "Ultrawave Interactive website and backend monorepo",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w frontend & npm run dev -w backend",
+    "dev:frontend": "npm run dev -w frontend",
+    "dev:backend": "npm run dev -w backend",
+    "build": "npm run build -w frontend",
+    "start": "npm run start -w backend",
+    "lint": "npm run lint -w frontend"
+  },
+  "engines": {
+    "node": ">=18.18.0",
+    "npm": ">=10.0.0"
+  }
+}

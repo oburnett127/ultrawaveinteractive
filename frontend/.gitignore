@@ -118,3 +118,5 @@ coverage/
 
 backend/dist/
 /generated/prisma
+
+out/
