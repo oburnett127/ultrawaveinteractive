@@ -159,11 +159,18 @@ app.use((req, res, next) => {
       "https://*.squareup.com",
       "https://web.squarecdn.com",
     ],
+      "trusted-types": [
+      "nextjs",
+      "next-script",
+      "uw-inline"
+    ],
+    "require-trusted-types-for": ["'script'"],
   };
   return helmet({
     contentSecurityPolicy: {
       useDefaults: false,
       directives,
+      reportOnly: true,
     },
     referrerPolicy: { policy: "no-referrer-when-downgrade" },
     noSniff: true,
