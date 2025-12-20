@@ -19,10 +19,14 @@ async function incrementFailedLogin(email) {
       select: { id: true, failedLoginAttempts: true },
     });
 
-    console.warn(`[authOptions] Failed login attempt for ${normalizedEmail}. Total: ${user.failedLoginAttempts}`);
+    console.warn(
+      `[authOptions] Failed login attempt for ${normalizedEmail}. Total: ${user.failedLoginAttempts}`
+    );
     return user;
   } catch (err) {
-    if (err.code !== "P2025") console.error("[incrementFailedLogin] ERROR:", err);
+    if (err.code !== "P2025") {
+      console.error("[incrementFailedLogin] ERROR:", err);
+    }
     return null;
   }
 }
@@ -30,6 +34,7 @@ async function incrementFailedLogin(email) {
 async function resetFailedLogin(email) {
   const normalizedEmail = String(email || "").trim().toLowerCase();
   if (!normalizedEmail) return null;
+
   try {
     return await prisma.user.update({
       where: { email: normalizedEmail },
@@ -51,11 +56,14 @@ async function verifyRecaptcha(token) {
       response: token,
     });
 
-    const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params.toString(),
-    });
+    const res = await fetch(
+      "https://www.google.com/recaptcha/api/siteverify",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params.toString(),
+      }
+    );
 
     if (!res.ok) return false;
     const data = await res.json();
@@ -67,6 +75,7 @@ async function verifyRecaptcha(token) {
 
 const authOptions = {
   session: { strategy: "jwt" },
+
   providers: [
     CredentialsProvider({
       name: "Email and Password",
@@ -98,7 +107,7 @@ const authOptions = {
           throw new Error("Invalid login attempt.");
         }
 
-        if (user.lockoutUntil > new Date()) {
+        if (user.lockoutUntil && user.lockoutUntil > new Date()) {
           throw new Error("Too many failed attempts. Try again later.");
         }
 
@@ -111,7 +120,9 @@ const authOptions = {
               where: { id: user.id },
               data: {
                 failedLoginAttempts: attempts,
-                lockoutUntil: new Date(Date.now() + LOCKOUT_MINUTES * 60000),
+                lockoutUntil: new Date(
+                  Date.now() + LOCKOUT_MINUTES * 60000
+                ),
               },
             });
             throw new Error("Account locked for 15 minutes.");
@@ -139,9 +150,14 @@ const authOptions = {
         token.email = user.email;
         token.otpVerified = user.otpVerified;
       }
-      if (trigger === "update" && session?.user?.otpVerified !== undefined) {
+
+      if (
+        trigger === "update" &&
+        session?.user?.otpVerified !== undefined
+      ) {
         token.otpVerified = !!session.user.otpVerified;
       }
+
       return token;
     },
 
@@ -150,6 +166,20 @@ const authOptions = {
       session.user.email = token.email;
       session.user.otpVerified = !!token.otpVerified;
       return session;
+    },
+  },
+
+  cookies: {
+    sessionToken: {
+      name: isProd
+        ? "__Secure-next-auth.session-token"
+        : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: isProd,
+      },
     },
   },
 

@@ -1,4 +1,4 @@
-// /lib/redisClient.cjs
+// /backend/lib/redisClient.cjs
 const { createClient } = require("redis");
 const { RateLimiterRedis } = require("rate-limiter-flexible");
 
