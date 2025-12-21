@@ -4,6 +4,8 @@ const next = require("next");
 const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
 const crypto = require("crypto");
+const path = require("path");
+
 const { disconnectRedisClient } = require("./backend/lib/redisClient.cjs");
 
 dotenv.config();
@@ -14,14 +16,18 @@ global.__ACTIVE_WEBHOOKS__ = 0;
 
 let isShuttingDown = false;
 
-// Load backend initializer
-const { initBackend } = require("../frontend/index.cjs");
+// ✅ IMPORTANT: backend initializer MUST come from backend
+const { initBackend } = require("./backend/initBackend.cjs");
 
 const dev = process.env.NODE_ENV !== "production";
 const port = process.env.PORT || 3000;
 
-// Create Next.js app
-const nextApp = next({ dev });
+// ✅ Tell Next.js where the frontend lives
+const nextApp = next({
+  dev,
+  dir: path.join(__dirname, "frontend"),
+});
+
 const handle = nextApp.getRequestHandler();
 
 (async () => {
@@ -31,7 +37,7 @@ const handle = nextApp.getRequestHandler();
     const server = express();
 
     // --------------------------------------------------
-    // 🔐 CSP NONCE (must run before Next.js)
+    // 🔐 CSP NONCE (must run before Next.js rendering)
     // --------------------------------------------------
     server.use((req, res, nextFn) => {
       const nonce = crypto.randomUUID();
@@ -46,7 +52,21 @@ const handle = nextApp.getRequestHandler();
     server.use(cookieParser());
 
     // --------------------------------------------------
-    // 🔥 LET NEXT.JS HANDLE ALL NEXTAUTH ROUTES
+    // 🔥 Square webhooks REQUIRE raw body
+    // MUST come BEFORE express.json()
+    // --------------------------------------------------
+    server.use(
+      "/api/square/webhook",
+      express.raw({ type: "*/*" })
+    );
+
+    // --------------------------------------------------
+    // 🧠 Normal JSON parsing for all other routes
+    // --------------------------------------------------
+    server.use(express.json());
+
+    // --------------------------------------------------
+    // 🔐 Let Next.js fully own NextAuth
     // --------------------------------------------------
     server.all("/api/auth/:path*", (req, res) => {
       return handle(req, res);
@@ -68,7 +88,7 @@ const handle = nextApp.getRequestHandler();
     // 🚀 Start server
     // --------------------------------------------------
     const httpServer = server.listen(port, () => {
-      console.log(`🚀 Server ready at http://localhost:${port}`);
+      console.log(`🚀 Unified dev server ready at http://localhost:${port}`);
     });
 
     // Expose for shutdown logic
@@ -84,7 +104,7 @@ const handle = nextApp.getRequestHandler();
 // 🛑 Graceful, idempotent shutdown
 // --------------------------------------------------
 async function shutdown(signal) {
-  if (isShuttingDown) return; // ✅ idempotent
+  if (isShuttingDown) return;
   isShuttingDown = true;
 
   console.log(`\n🛑 ${signal} received — graceful shutdown starting...`);
@@ -100,20 +120,16 @@ async function shutdown(signal) {
   }
 
   // 2️⃣ Wait for in-flight Square webhooks
-  const waitForWebhooks = async () => {
-    const timeoutMs = 15_000;
-    const start = Date.now();
+  const timeoutMs = 15_000;
+  const start = Date.now();
 
-    while (global.__ACTIVE_WEBHOOKS__ > 0) {
-      if (Date.now() - start > timeoutMs) {
-        console.warn("⏱ Webhook shutdown timeout reached");
-        break;
-      }
-      await new Promise((r) => setTimeout(r, 200));
+  while (global.__ACTIVE_WEBHOOKS__ > 0) {
+    if (Date.now() - start > timeoutMs) {
+      console.warn("⏱ Webhook shutdown timeout reached");
+      break;
     }
-  };
-
-  await waitForWebhooks();
+    await new Promise((r) => setTimeout(r, 200));
+  }
 
   // 3️⃣ Disconnect Redis
   try {

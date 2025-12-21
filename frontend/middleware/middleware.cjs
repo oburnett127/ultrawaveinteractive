@@ -2,7 +2,7 @@
 const { getServerSession } = require("next-auth/next");
 const { authOptions } = require("../lib/authOptions.cjs"); // ✅ Ensure this exports your NextAuth config
 
-const nextAuthMiddleware = async (req, res, next) => {
+export async function middleware(req, res, next) {
   try {
     const session = await getServerSession(req, res, authOptions);
 
@@ -19,5 +19,3 @@ const nextAuthMiddleware = async (req, res, next) => {
     return res.status(500).json({ error: "Internal server error." });
   }
 };
-
-module.exports = { nextAuthMiddleware };

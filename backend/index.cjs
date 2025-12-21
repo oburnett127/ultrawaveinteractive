@@ -2,14 +2,11 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const rateLimit = require("express-rate-limit");
-const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+
 const {
   createRedisClient,
-  limiterFactory,
-  disconnectRedisClient,
-} = require("../backend/lib/redisClient.cjs");
-const cookieParser = require("cookie-parser");
+} = require("./lib/redisClient.cjs");
 
 dotenv.config();
 
@@ -24,7 +21,31 @@ module.exports.initBackend = async function initBackend(app) {
   // -------------------------------------------------
   // 🌐 Trust proxy (Cloudflare / Northflank)
   // -------------------------------------------------
-  app.set("trust proxy", 1);
+  app.set("trust proxy", true);
+
+  // -------------------------------------------------
+  // ☁️ Cloudflare request normalization
+  // -------------------------------------------------
+  app.use((req, res, next) => {
+    // Real client IP (Cloudflare first)
+    req.realIp =
+      req.headers["cf-connecting-ip"] ||
+      req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+      req.ip;
+
+    // Original protocol
+    req.realProtocol =
+      req.headers["x-forwarded-proto"] || req.protocol;
+
+    // Cloudflare metadata (optional but useful)
+    req.cf = {
+      ray: req.headers["cf-ray"],
+      country: req.headers["cf-ipcountry"],
+      colo: req.headers["cf-colo"],
+    };
+
+    next();
+  });
 
   // -------------------------------------------------
   // 🍪 Cookies (safe globally)
@@ -33,7 +54,7 @@ module.exports.initBackend = async function initBackend(app) {
 
   // -------------------------------------------------
   // 🛡️ Helmet CSP
-  // (nonce already injected by server.cjs)
+  // (nonce injected earlier by server.cjs)
   // -------------------------------------------------
   const helmet = (await import("helmet")).default;
 
@@ -107,9 +128,9 @@ module.exports.initBackend = async function initBackend(app) {
   });
 
   // -------------------------------------------------
-  // 🌍 CORS (only if enabled)
+  // 🌍 CORS (usually disabled in unified setup)
   // -------------------------------------------------
-  if (boolFromEnv(process.env.ENABLE_CORS, true)) {
+  if (boolFromEnv(process.env.ENABLE_CORS, false)) {
     app.use(
       cors({
         origin: ["http://localhost:3000", "https://ultrawaveinteractive.com"],
@@ -124,22 +145,11 @@ module.exports.initBackend = async function initBackend(app) {
   // -------------------------------------------------
   app.options("*", (_, res) => res.sendStatus(204));
 
-  // -------------------------------------------------
-  // 🔔 Square webhook (RAW body only)
-  // -------------------------------------------------
-  const squareWebhookRoute = require("./routes/squareWebhook.route.cjs");
-
   app.use(
     "/api/square/webhook",
     express.raw({ type: "*/*" }),
     squareWebhookRoute
   );
-
-  // -------------------------------------------------
-  // 📦 Body parsers — API ONLY
-  // -------------------------------------------------
-  app.use("/api", bodyParser.json({ limit: "1mb" }));
-  app.use("/api", bodyParser.urlencoded({ extended: true, limit: "1mb" }));
 
   // -------------------------------------------------
   // 🧠 Redis + rate limiting
@@ -153,71 +163,5 @@ module.exports.initBackend = async function initBackend(app) {
     console.error("[Redis] Connection failed ❌", err);
   }
 
-  const waitForRedis = (req, res, next) => {
-    if (!redis) {
-      return res
-        .status(503)
-        .json({ error: "Service initializing, try again shortly." });
-    }
-    next();
-  };
-
-  const rateLimitMiddleware = (limiter) =>
-    isProd
-      ? async (req, res, next) => {
-          try {
-            await limiter.consume(
-              req.headers["x-forwarded-for"]?.split(",")[0] || req.ip
-            );
-            next();
-          } catch {
-            res.status(429).json({ error: "Too many requests" });
-          }
-        }
-      : (req, res, next) => next();
-
-  // -------------------------------------------------
-  // 🚏 Routes
-  // -------------------------------------------------
-  const registerRoute = require("./routes/register.route.cjs");
-  const paymentRoute = require("./routes/payment.route.cjs");
-  const contactRoute = require("./routes/contact.route.cjs");
-  const salesbotRoute = require("./routes/salesbot.route.cjs");
-  const leadsRoute = require("./routes/leads.route.cjs");
-  const blogCreateRoute = require("./routes/blogCreate.route.cjs");
-  const listRoute = require("./routes/list.route.cjs");
-  const blogRoute = require("./routes/blog.route.cjs");
-  const changePasswordRoute = require("./routes/changePassword.route.cjs");
-  const healthRoute = require("./routes/health.route.cjs");
-  const otpRoute = require("./routes/otp.route.cjs");
-  const updateTokenRoute = require("./routes/updateToken.route.cjs");
-
-  app.use("/api", waitForRedis, registerRoute);
-  app.use("/api", waitForRedis, paymentRoute);
-  app.use("/api", waitForRedis, contactRoute);
-  app.use("/api", waitForRedis, salesbotRoute);
-  app.use("/api", waitForRedis, leadsRoute);
-  app.use("/api", waitForRedis, blogCreateRoute);
-  app.use("/api", waitForRedis, listRoute);
-  app.use("/api", waitForRedis, changePasswordRoute);
-  app.use("/api/otp", waitForRedis, otpRoute);
-
-  app.use("/api", waitForRedis, blogRoute);
-  app.use("/api", waitForRedis, updateTokenRoute);
-  app.use("/api", waitForRedis, healthRoute);
-
   return app;
 };
-
-// function makeSanitizer(options = {}) {
-//   return function sanitizeBody(req, _res, next) {
-//     if (req.body && typeof req.body === "object") {
-//       for (const [k, v] of Object.entries(req.body)) {
-//         if (typeof v === "string") {
-//           req.body[k] = sanitizeHtml(v, { allowedTags: [], allowedAttributes: {}, ...options }).trim();
-//         }
-//       }
-//     }
-//     next();
-//   };
-// }

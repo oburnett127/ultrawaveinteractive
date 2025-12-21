@@ -36,7 +36,7 @@ async function getSessionSafe(req, res) {
  *  - 401 → Not Authenticated
  *  - 403 → OTP Required
  */
-async function requireOtpVerified(req, res, next) {
+export async function middleware(req, res, next) {
   //console.log("🔎 Cookies arriving at backend:", req.headers.cookie);
   
   try {
@@ -89,5 +89,3 @@ async function requireOtpVerified(req, res, next) {
     });
   }
 }
-
-module.exports = requireOtpVerified;

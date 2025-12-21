@@ -4,7 +4,7 @@ const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
 const OpenAI = require("openai");
 const prisma = require("../lib/prisma.cjs");
-const { createRedisClient } = require("../backend/lib/redisClient.cjs");
+const { createRedisClient } = require("../lib/redisClient.cjs");
 const { sendNewLeadEmail } = require("../lib/mailerlead.cjs");
 // Add sanitizers
 const {

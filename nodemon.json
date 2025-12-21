@@ -1,0 +1,4 @@
+{
+  "watch": ["server.cjs", "backend"],
+  "ext": "js,cjs,json"
+}

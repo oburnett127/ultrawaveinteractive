@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const prisma = require("../lib/prisma.cjs");
-const requireOtpVerified = require("../middleware/requireOtpVerified.cjs");
+const requireOtpVerified = require("../middleware/middleware.cjs");
 const sanitizeNumberString = require("../lib/sanitizers.cjs");
 
 const router = express.Router();
