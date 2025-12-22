@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useRef } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 import styles from "./ContactForm.module.css";

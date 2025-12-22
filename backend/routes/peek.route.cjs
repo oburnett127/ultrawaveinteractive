@@ -1,6 +1,6 @@
 const getRedis = require("../lib/redis.cjs");
 const express = require('express');
-const requireOtpVerified = require("../middleware/requireOtpVerified.cjs");
+const requireOtpVerified = require("../guards/requireOtpVerified.cjs");
 
 const router = express.Router();
 

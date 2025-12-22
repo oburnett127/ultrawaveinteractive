@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { SessionProvider } from "next-auth/react";
 import Script from "next/script";
-import CSSBaseline from "@mui/material";
+import CssBaseline from "@mui/material/CssBaseline";
 
 export default function Providers({ children, nonce }) {
   /* ---------------------------------------

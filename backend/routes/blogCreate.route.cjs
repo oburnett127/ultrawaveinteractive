@@ -4,7 +4,7 @@ const prisma = require("../lib/prisma.cjs");
 const sanitizeHtml = require("sanitize-html");
 const rateLimit = require("express-rate-limit");
 const { generateSlug } = require("../utils/generateSlug");
-const requireOtpVerified = require("../middleware/requireOtpVerified.cjs");
+const requireOtpVerified = require("../guards/requireOtpVerified.cjs");
 const { sanitizeBlogTitle, sanitizeMarkdownContent } = require("../lib/sanitizers.cjs");
 
 // Markdown → HTML converter

@@ -2,7 +2,7 @@
 const { getServerSession } = require("next-auth/next");
 const { authOptions } = require("../lib/authOptions.cjs"); // ✅ Ensure this exports your NextAuth config
 
-export async function middleware(req, res, next) {
+module.exports = async function getUser(req, res, next) {
   try {
     const session = await getServerSession(req, res, authOptions);
 

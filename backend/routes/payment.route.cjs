@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const prisma = require("../lib/prisma.cjs");
-const requireOtpVerified = require("../middleware/middleware.cjs");
+const requireOtpVerified = require("../guards/requireOtpVerified.cjs");
 const sanitizeNumberString = require("../lib/sanitizers.cjs");
 
 const router = express.Router();
@@ -48,7 +48,7 @@ const paymentLimiter = rateLimit({
 });
 
 // --- POST /api/payment/charge ---
-router.post("/payment/charge", requireOtpVerified, paymentLimiter, async (req, res) => {
+router.post("/payment/charge", requireOtpVerified, paymentLimiter, async function(req, res) {
   const startTime = Date.now();
 
   if (req.method !== "POST") {

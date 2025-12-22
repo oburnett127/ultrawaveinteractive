@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
 const prisma = require("../lib/prisma.cjs");
 const verifyRecaptchaToken = require("../lib/verifyRecaptchaToken.cjs");
-const requireOtpVerified = require("../middleware/requireOtpVerified.cjs");
+const requireOtpVerified = require("../guards/requireOtpVerified.cjs");
 
 // --- Sanitizers (only light sanitization allowed here) ---
 const {
