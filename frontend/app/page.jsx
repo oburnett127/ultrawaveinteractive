@@ -12,7 +12,7 @@ import {
   Stack,
   Typography
 } from "@mui/material";
-import ContactForm from "../components/ContactForm";
+import ContactForm from "../components/ContactForm.jsx";
 import Link from "next/link";
 import BusinessCard from "../components/BusinessCard.jsx";
 import FeatureItem from "../components/FeatureItem.jsx";
@@ -32,10 +32,11 @@ export const metadata = {
 ---------------------------------- */
 async function getPosts() {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/blog/list`, {
+    const res = await fetch(`${process.env.BACKEND_INTERNAL_URL}/blog/list`, {
       cache: "force-cache"
     });
-
+    
+    if (!res.ok) return [];
     const data = await res.json();
     return Array.isArray(data.posts) ? data.posts : [];
   } catch (err) {

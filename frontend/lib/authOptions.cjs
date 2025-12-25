@@ -1,12 +1,15 @@
 // /lib/authOptions.cjs
-const CredentialsProvider = require("next-auth/providers/credentials").default;
+const CredentialsProvider =
+  require("next-auth/providers/credentials").default;
 const { compare } = require("bcryptjs");
-const prisma = require("./prisma.cjs");
+const prisma = require("../../backend/lib/prisma.cjs");
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
 const isProd = process.env.NODE_ENV === "production";
 const fetch = global.fetch;
+
+/* ---------------- helpers (unchanged) ---------------- */
 
 async function incrementFailedLogin(email) {
   const normalizedEmail = String(email || "").trim().toLowerCase();
@@ -72,6 +75,8 @@ async function verifyRecaptcha(token) {
     return false;
   }
 }
+
+/* ---------------- authOptions ---------------- */
 
 const authOptions = {
   session: { strategy: "jwt" },
@@ -151,10 +156,7 @@ const authOptions = {
         token.otpVerified = user.otpVerified;
       }
 
-      if (
-        trigger === "update" &&
-        session?.user?.otpVerified !== undefined
-      ) {
+      if (trigger === "update" && session?.user?.otpVerified !== undefined) {
         token.otpVerified = !!session.user.otpVerified;
       }
 
@@ -189,4 +191,5 @@ const authOptions = {
   debug: !isProd,
 };
 
+/* ✅ ONLY THIS EXPORT */
 module.exports = { authOptions };

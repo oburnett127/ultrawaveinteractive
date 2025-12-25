@@ -49,7 +49,7 @@ export default function Providers({ children, nonce }) {
   return (
     <>
       <SessionProvider>
-        <CSSBaseline />
+        <CssBaseline />
         {children}
       </SessionProvider>
 

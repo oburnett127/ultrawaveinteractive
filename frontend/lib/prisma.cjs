@@ -2,15 +2,14 @@ const { PrismaClient } = require("@prisma/client");
 
 let prisma;
 
-if (!global.__backend_prisma) {
-  global.__backend_prisma = new PrismaClient({
+if (!global.__frontend_prisma) {
+  global.__frontend_prisma = new PrismaClient({
     log: process.env.NODE_ENV === "development"
-      ? ["query", "warn", "error"]
+      ? ["warn", "error"]
       : ["error"],
   });
 }
 
-prisma = global.__backend_prisma;
+prisma = global.__frontend_prisma;
 
 module.exports = prisma;
-
