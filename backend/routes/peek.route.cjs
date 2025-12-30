@@ -1,4 +1,4 @@
-const getRedis = require("../lib/redis.cjs");
+const { createRedisClient } = require("./lib/redisClient.cjs");
 const express = require('express');
 const requireOtpVerified = require("../guards/requireOtpVerified.cjs");
 
@@ -19,7 +19,7 @@ router.get("/", requireOtpVerified, async (req, res) => {
   const key = `otp:${lower}`;
 
   try {
-    const r = await getRedis();
+    const r = await createRedisClient();
 
     const value = await r.get(key);
     const ttl = await r.ttl(key); // -2: no key, -1: no expire, >=0: seconds remaining

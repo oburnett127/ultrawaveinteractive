@@ -1,6 +1,6 @@
 // /routes/verifyRecaptcha.route.cjs
 const express = require("express");
-const getRedis = require("../lib/redis.cjs");
+const { createRedisClient } = require("./lib/redisClient.cjs");
 
 const router = express.Router();
 
@@ -79,7 +79,7 @@ async function verifyRecaptchaToken(token) {
 // --- Per-IP rate limiter via Redis ---
 async function incrementRate(ip) {
   try {
-    const redis = await getRedis();
+    const redis = await createRedisClient();
     const rateKey = `rate:recaptcha:${ip}`;
     const attempts = await redis.incr(rateKey);
 

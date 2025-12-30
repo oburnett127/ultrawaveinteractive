@@ -2,7 +2,7 @@
 // const express = require("express");
 // const crypto = require("crypto");
 // const rateLimit = require("express-rate-limit");
-// const getRedis = require("../lib/redis.cjs");
+//const { createRedisClient } = require("./lib/redisClient.cjs");
 // const {sendOTPEmail} = require("../lib/mail.cjs");
 
 // const router = express.Router();

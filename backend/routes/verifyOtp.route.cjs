@@ -2,7 +2,7 @@
 // const express = require("express");
 // const rateLimit = require("express-rate-limit");
 // const prisma = require("../lib/prisma.cjs");
-// const getRedis = require("../lib/redis.cjs");
+//const { createRedisClient } = require("./lib/redisClient.cjs");
 // const crypto = require("crypto");
 
 // const router = express.Router();

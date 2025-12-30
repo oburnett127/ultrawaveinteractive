@@ -1,5 +1,6 @@
 import crypto from "crypto";
-import getRedis from "./redis.cjs";
+import { create } from "domain";
+const { createRedisClient } = require("./lib/redisClient.cjs");
 
 // 6-digit string
 export function generateOtp() {
@@ -12,7 +13,7 @@ function hmac(code, salt) {
 }
 
 export async function saveOtpForEmail(email, code, ttlSeconds = 300) {
-  const redis = getRedis();
+  const redis = createRedisClient();
   const salt = crypto.randomBytes(16).toString("hex");
   const hash = hmac(code, salt);
 
