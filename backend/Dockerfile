@@ -12,16 +12,16 @@ COPY package*.json ./
 RUN npm ci
 
 # -----------------------------------------------------
-# 2️⃣ Prisma client generation
-# -----------------------------------------------------
-COPY prisma ./prisma
-RUN npx prisma generate
-
-# -----------------------------------------------------
-# 3️⃣ Copy backend source
+# 2️⃣ Copy backend source (INCLUDING prisma)
 # -----------------------------------------------------
 COPY backend ./backend
 COPY server.cjs ./server.cjs
+
+# -----------------------------------------------------
+# 3️⃣ Prisma client generation
+#    (explicit schema path)
+# -----------------------------------------------------
+RUN npx prisma generate --schema=backend/prisma/schema.prisma
 
 # -----------------------------------------------------
 # 4️⃣ Remove devDependencies
@@ -57,7 +57,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 # -----------------------------------------------------
 COPY --from=builder --chown=app:app /app/node_modules ./node_modules
 COPY --from=builder --chown=app:app /app/backend ./backend
-COPY --from=builder --chown=app:app /app/prisma ./prisma
 COPY --from=builder --chown=app:app /app/server.cjs ./server.cjs
 COPY --from=builder --chown=app:app /app/package.json ./package.json
 
@@ -67,14 +66,14 @@ COPY --from=builder --chown=app:app /app/package.json ./package.json
 USER app
 
 # -----------------------------------------------------
-# Startup (UNCHANGED LOGIC)
+# Startup
 # -----------------------------------------------------
 CMD ["sh", "-c", "\
   if [ -z \"$DATABASE_URL\" ]; then \
     echo 'ERROR: DATABASE_URL is not set' >&2; exit 1; \
   fi; \
   echo \"Using DATABASE_URL (masked): $(echo \"$DATABASE_URL\" | sed -E 's#//([^:]+):([^@]+)@#//\\1:****@#')\"; \
-  npx prisma generate && \
-  npx prisma migrate deploy && \
+  npx prisma generate --schema=backend/prisma/schema.prisma && \
+  npx prisma migrate deploy --schema=backend/prisma/schema.prisma && \
   node server.cjs \
 "]
