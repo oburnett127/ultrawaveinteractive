@@ -1,7 +1,7 @@
 "use client";
 
 import { getSession } from "next-auth/react";
-import SquarePaymentPage from "../components/SquarePaymentPage";
+import SquarePaymentPage from "../../components/SquarePaymentPage";
 
 export default function SquarePaymentSSRWrapper(props) {
   return <SquarePaymentPage {...props} />;

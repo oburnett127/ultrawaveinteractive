@@ -3,21 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "author": "Owen Burnett",
-  "description": "Ultrawave Interactive website and backend monorepo",
-  "workspaces": [
-    "frontend",
-    "backend"
-  ],
-  "scripts": {
-    "dev": "NODE_ENV=development nodemon server.cjs",
-    "build": "NODE_ENV=production next build frontend",
-    "start": "NODE_ENV=production node server.cjs"
-  },
+  "description": "Ultrawave Interactive monorepo (frontend + backend)",
+
   "engines": {
     "node": ">=18.18.0",
     "npm": ">=10.0.0"
   },
-  "dependencies": {
-    "nodemon": "^3.1.11"
+
+  "scripts": {
+    "lint": "eslint . --ext .js,.cjs"
   }
 }

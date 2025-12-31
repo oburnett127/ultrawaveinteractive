@@ -1,6 +1,6 @@
 import { getSession } from "next-auth/react";
-import Protected from "../components/Protected";
-import Dashboard from "../components/Dashboard";
+import Protected from "../../components/Protected";
+import Dashboard from "../../components/Dashboard";
 
 export default function DashboardPage({ session }) {
   return (

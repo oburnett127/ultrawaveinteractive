@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import Script from "next/script";
-import Protected from "../components/Protected.jsx";
+import Protected from "../../components/Protected.jsx";
 import { getSession } from "next-auth/react";
 
 export default function VerifyOTP() {

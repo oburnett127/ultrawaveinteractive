@@ -1,38 +1,32 @@
 # =====================================================
 # 🧱 STAGE 1 — Builder
 # =====================================================
-FROM node:18 AS builder
+FROM node:20.11.1-slim AS builder
 
 WORKDIR /app
 
 # -----------------------------------------------------
-# 1️⃣ Install deps (including dev deps)
+# 1️⃣ Install deps
 # -----------------------------------------------------
 COPY package*.json ./
 RUN npm ci
 
 # -----------------------------------------------------
-# 2️⃣ Copy backend source (INCLUDING prisma)
+# 2️⃣ Copy backend + server entry
 # -----------------------------------------------------
 COPY backend ./backend
 COPY server.cjs ./server.cjs
 
 # -----------------------------------------------------
-# 3️⃣ Prisma client generation
-#    (explicit schema path)
-# -----------------------------------------------------
-RUN npx prisma generate --schema=backend/prisma/schema.prisma
-
-# -----------------------------------------------------
-# 4️⃣ Remove devDependencies
+# 3 Remove dev deps
 # -----------------------------------------------------
 RUN npm prune --omit=dev
 
 
 # =====================================================
-# 🚀 STAGE 2 — Runtime (NON-ROOT)
+# 🚀 STAGE 2 — Runtime (MINIMAL, NON-ROOT)
 # =====================================================
-FROM node:18-slim AS runner
+FROM node:20.11.1-slim AS runner
 
 WORKDIR /app
 
@@ -40,40 +34,32 @@ ENV NODE_ENV=production
 ENV PORT=8080
 
 # -----------------------------------------------------
-# 👤 Create non-root user
+# 👤 Non-root user
 # -----------------------------------------------------
 RUN groupadd -r app && useradd -r -g app app
 
 EXPOSE 8080
 
 # -----------------------------------------------------
-# ❤️ Docker healthcheck (backend liveness)
+# ❤️ Healthcheck
 # -----------------------------------------------------
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||8080)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 # -----------------------------------------------------
-# Copy runtime artifacts (owned by app)
+# Copy runtime artifacts only
 # -----------------------------------------------------
 COPY --from=builder --chown=app:app /app/node_modules ./node_modules
 COPY --from=builder --chown=app:app /app/backend ./backend
 COPY --from=builder --chown=app:app /app/server.cjs ./server.cjs
 COPY --from=builder --chown=app:app /app/package.json ./package.json
 
-# -----------------------------------------------------
-# Drop privileges
-# -----------------------------------------------------
 USER app
 
-# -----------------------------------------------------
-# Startup
-# -----------------------------------------------------
 CMD ["sh", "-c", "\
   if [ -z \"$DATABASE_URL\" ]; then \
     echo 'ERROR: DATABASE_URL is not set' >&2; exit 1; \
   fi; \
-  echo \"Using DATABASE_URL (masked): $(echo \"$DATABASE_URL\" | sed -E 's#//([^:]+):([^@]+)@#//\\1:****@#')\"; \
-  npx prisma generate --schema=backend/prisma/schema.prisma && \
   npx prisma migrate deploy --schema=backend/prisma/schema.prisma && \
   node server.cjs \
 "]

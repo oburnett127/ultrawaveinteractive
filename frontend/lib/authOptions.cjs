@@ -2,7 +2,7 @@
 const CredentialsProvider =
   require("next-auth/providers/credentials").default;
 const { compare } = require("bcryptjs");
-const prisma = require("../../backend/lib/prisma.cjs");
+const prisma = require("./prisma.cjs");
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;

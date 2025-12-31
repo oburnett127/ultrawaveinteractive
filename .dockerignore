@@ -1,9 +1,12 @@
-node_modules
-.dockerignore
-Dockerfile
 .git
 .gitignore
-.env
-.env.local
+node_modules
 npm-debug.log
 .next
+frontend/.next
+frontend/node_modules
+backend/node_modules
+.env*
+Dockerfile*
+README.md
+coverage

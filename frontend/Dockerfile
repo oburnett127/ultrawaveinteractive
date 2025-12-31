@@ -1,12 +1,13 @@
 # =====================================================
 # 🧱 STAGE 1 — Builder
 # =====================================================
-FROM node:18 AS builder
+FROM node:20.11.1 AS builder
+
 
 WORKDIR /app
 
 # -----------------------------------------------------
-# 1️⃣ Install deps
+# 1️⃣ Install root deps (cached)
 # -----------------------------------------------------
 COPY package*.json ./
 RUN npm ci
@@ -17,7 +18,7 @@ RUN npm ci
 COPY frontend ./frontend
 
 # -----------------------------------------------------
-# 3️⃣ Public build-time env (NON-SECRET)
+# 3️⃣ Build-time public env (NON-SECRET)
 # -----------------------------------------------------
 ARG NEXT_PUBLIC_RECAPTCHA_SITE_KEY
 ARG NEXT_PUBLIC_SQUARE_APP_ID
@@ -28,20 +29,22 @@ ENV NEXT_PUBLIC_SQUARE_APP_ID=$NEXT_PUBLIC_SQUARE_APP_ID
 ENV NEXT_PUBLIC_SQUARE_LOCATION_ID=$NEXT_PUBLIC_SQUARE_LOCATION_ID
 
 # -----------------------------------------------------
-# 4️⃣ Build Next.js
+# 4️⃣ Build Next.js (from frontend dir)
 # -----------------------------------------------------
-RUN npm run build --workspace=frontend || npm run build
+WORKDIR /app/frontend
+RUN npm run build
 
 # -----------------------------------------------------
 # 5️⃣ Remove devDependencies
 # -----------------------------------------------------
+WORKDIR /app
 RUN npm prune --omit=dev
 
 
 # =====================================================
 # 🚀 STAGE 2 — Runtime (NON-ROOT)
 # =====================================================
-FROM node:18-slim AS runner
+FROM node:20.11.1-slim AS runner
 
 WORKDIR /app
 
@@ -59,14 +62,15 @@ EXPOSE 3000
 # ❤️ Docker healthcheck (frontend liveness)
 # -----------------------------------------------------
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 # -----------------------------------------------------
 # Copy runtime artifacts (owned by app)
 # -----------------------------------------------------
 COPY --from=builder --chown=app:app /app/node_modules ./node_modules
-COPY --from=builder --chown=app:app /app/frontend ./frontend
-COPY --from=builder --chown=app:app /app/package.json ./package.json
+COPY --from=builder --chown=app:app /app/frontend/.next ./frontend/.next
+COPY --from=builder --chown=app:app /app/frontend/public ./frontend/public
+COPY --from=builder --chown=app:app /app/frontend/package.json ./frontend/package.json
 
 # -----------------------------------------------------
 # Drop privileges
@@ -74,6 +78,7 @@ COPY --from=builder --chown=app:app /app/package.json ./package.json
 USER app
 
 # -----------------------------------------------------
-# Start Next.js (UNCHANGED)
+# Start Next.js
 # -----------------------------------------------------
-CMD ["node", "node_modules/next/dist/bin/next", "start", "-p", "3000"]
+WORKDIR /app/frontend
+CMD ["npm", "run", "start"]
