@@ -1,44 +1,45 @@
-import Head from "next/head";
-import remarkGfm from 'remark-gfm';
-import ReactMarkdown from 'react-markdown';
+// app/cookie-policy/page.jsx
+import fs from "fs";
+import path from "path";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import "./cookiePolicy.css";
 
-export default function CookiePolicy({ cookiePolicyText }) {
-  return (
-    <div>
-      <Head>
-        <title>Ultrawave Interactive Web Design | Cookie Policy</title>
-        <meta name="description" content="Read the Cookie Policy for Ultrawave Interactive Web Design to learn about how we use cookies on our website." />
-      </Head>
+// ---------------------------------------------
+// SEO metadata (replaces next/head)
+// ---------------------------------------------
+export function generateMetadata() {
+  return {
+    title: "Ultrawave Interactive Web Design | Cookie Policy",
+    description:
+      "Read the Cookie Policy for Ultrawave Interactive Web Design to learn about how we use cookies on our website.",
+  };
+}
 
-      <main id="main-content">
-        <h1 className="white-text">Cookie Policy</h1>
-        <div className="markdown">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{cookiePolicyText}</ReactMarkdown>
-        </div>
-      </main>
-    </div>
-  );
-};
-
-// 🧊 SSG — built once at deployment
-export async function getStaticProps() {
-  const fs = require("fs");
-  const path = require("path");
-
+// ---------------------------------------------
+// Page component (SSG at build time)
+// ---------------------------------------------
+export default function CookiePolicyPage() {
   const filePath = path.join(process.cwd(), "public", "cookie-policy.txt");
 
-  let termsOfServiceText = "";
+  let cookiePolicyText = "";
 
   try {
-    termsOfServiceText = fs.readFileSync(filePath, "utf8");
+    cookiePolicyText = fs.readFileSync(filePath, "utf8");
   } catch (err) {
-    console.error("Error reading terms of service file:", err.message);
-    termsOfServiceText = "Cookie Policy could not be loaded.";
+    console.error("Error reading cookie policy file:", err.message);
+    cookiePolicyText = "Cookie Policy could not be loaded.";
   }
 
-  return {
-    props: {
-      termsOfServiceText,
-    },
-  };
+  return (
+    <main id="main-content" className="cookie-policy-container">
+      <h1 className="white-text">Cookie Policy</h1>
+
+      <div className="markdown">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {cookiePolicyText}
+        </ReactMarkdown>
+      </div>
+    </main>
+  );
 }

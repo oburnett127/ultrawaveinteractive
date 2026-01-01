@@ -1,28 +1,16 @@
 import Link from "next/link";
+import "@/styles/not-found.css";
 
 export default function NotFound() {
   return (
-    <main
-      id="main-content"
-      style={{
-        minHeight: "60vh",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "2rem",
-        textAlign: "center",
-      }}
-    >
+    <section className="notfound-container">
       <h1>404 — Page Not Found</h1>
 
-      <p>
-        The page you are looking for does not exist.
-      </p>
+      <p>The page you are looking for does not exist.</p>
 
-      <Link href="/" style={{ marginTop: "1rem" }}>
+      <Link href="/" className="notfound-link">
         Return to Home
       </Link>
-    </main>
+    </section>
   );
 }

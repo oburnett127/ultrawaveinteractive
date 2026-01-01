@@ -1,0 +1,11 @@
+.signout-container {
+  padding: 2rem;
+  text-align: center;
+}
+
+.signout-button {
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+}

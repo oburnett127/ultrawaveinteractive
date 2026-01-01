@@ -2,10 +2,9 @@
 
 import { useEffect } from "react";
 import { SessionProvider } from "next-auth/react";
-import Script from "next/script";
 import CssBaseline from "@mui/material/CssBaseline";
 
-export default function Providers({ children, nonce }) {
+export default function Providers({ children }) {
   /* ---------------------------------------
      Prevent flash of wrong theme
   --------------------------------------- */
@@ -15,7 +14,7 @@ export default function Providers({ children, nonce }) {
       if (saved) {
         document.documentElement.setAttribute("data-theme", saved);
       }
-    } catch (e) {}
+    } catch {}
   }, []);
 
   /* ---------------------------------------
@@ -27,7 +26,7 @@ export default function Providers({ children, nonce }) {
         window.cookieconsent.initialise({
           palette: {
             popup: { background: "#000" },
-            button: { background: "#f1d600" }
+            button: { background: "#f1d600" },
           },
           theme: "classic",
           position: "bottom",
@@ -36,8 +35,8 @@ export default function Providers({ children, nonce }) {
               "This website uses cookies to ensure you get the best experience.",
             dismiss: "Got it!",
             link: "Learn more",
-            href: "/privacypolicy"
-          }
+            href: "/privacypolicy",
+          },
         });
       }
     }
@@ -47,18 +46,9 @@ export default function Providers({ children, nonce }) {
   }, []);
 
   return (
-    <>
-      <SessionProvider>
-        <CssBaseline />
-        {children}
-      </SessionProvider>
-
-      {/* CSP-safe inline hook (no HTML injection) */}
-      <Script
-        id="cookieconsent-init"
-        nonce={nonce}
-        strategy="afterInteractive"
-      />
-    </>
+    <SessionProvider>
+      <CssBaseline />
+      {children}
+    </SessionProvider>
   );
 }

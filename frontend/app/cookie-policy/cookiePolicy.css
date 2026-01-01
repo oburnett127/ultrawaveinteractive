@@ -1,0 +1,22 @@
+.cookie-policy-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.markdown {
+  line-height: 1.7;
+}
+
+.markdown h2,
+.markdown h3 {
+  margin-top: 24px;
+}
+
+.markdown ul {
+  padding-left: 20px;
+}
+
+.white-text {
+  color: #ffffff;
+}

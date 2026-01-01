@@ -9,9 +9,6 @@ import SalesChatbot from "../components/SalesChatbot";
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 const isProduction = process.env.NODE_ENV === "production";
 
-/**
- * ✅ App Router metadata (replaces <Head>)
- */
 export const metadata = {
   metadataBase: new URL("https://ultrawaveinteractive.com"),
   title: {
@@ -26,18 +23,23 @@ export const metadata = {
   },
 };
 
-export default async function RootLayout({ children }) {
-  const h = await headers();
+export default function RootLayout({ children }) {
+  const h = headers();
   const nonce = h.get("x-csp-nonce") || "";
 
   return (
     <html lang="en">
       <head>
-        {/* ✅ Cookie Consent CSS */}
         <link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css"
         />
+      </head>
+
+      <body>
+        <a href="#main-content" className="skip-link">
+          Skip to main content
+        </a>
 
         {/* ✅ Square SDK */}
         <Script
@@ -50,33 +52,24 @@ export default async function RootLayout({ children }) {
           nonce={nonce}
         />
 
-        {/* ✅ Google reCAPTCHA */}
+        {/* ✅ reCAPTCHA */}
         <Script
           src={`https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`}
           strategy="beforeInteractive"
           nonce={nonce}
         />
-      </head>
-
-      <body>
-        {/* 👇 Skip nav FIRST focusable element */}
-        <a href="#main-content" className="skip-link">
-          Skip to main content
-        </a>
 
         <Providers nonce={nonce}>
           <Header />
 
-          {/* 👇 REQUIRED for skip link */}
-          <main id="main-content">
-            {children}
-          </main>
+          {/* SINGLE main element */}
+          <main id="main-content">{children}</main>
 
           <SalesChatbot />
           <Footer />
         </Providers>
 
-        {/* ✅ CookieConsent JS */}
+        {/* Cookie consent */}
         <Script
           src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js"
           strategy="afterInteractive"

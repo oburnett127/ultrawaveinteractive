@@ -1,0 +1,14 @@
+.notfound-container {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.notfound-link {
+  margin-top: 1rem;
+  text-decoration: underline;
+}

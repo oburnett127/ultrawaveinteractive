@@ -1,0 +1,15 @@
+.error-container {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.error-retry-button {
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+}
