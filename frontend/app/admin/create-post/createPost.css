@@ -1,0 +1,39 @@
+.create-post-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.create-post-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.create-post-container input,
+.create-post-container textarea {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+.create-post-container textarea {
+  resize: vertical;
+}
+
+.create-post-container button {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.create-post-container button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-text {
+  color: #c62828;
+}

@@ -1,0 +1,18 @@
+.blog-post-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.blog-title {
+  margin-bottom: 16px;
+}
+
+.blog-content {
+  line-height: 1.7;
+}
+
+.blog-error {
+  color: #b00020;
+  padding: 10px 0;
+}

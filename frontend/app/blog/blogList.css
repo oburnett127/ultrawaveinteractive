@@ -1,0 +1,31 @@
+.blog-list-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.blog-list {
+  list-style: none;
+  padding: 0;
+}
+
+.blog-list li {
+  margin-bottom: 10px;
+}
+
+.blog-list a {
+  text-decoration: none;
+}
+
+.blog-list a:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  color: #b00020;
+  margin-top: 12px;
+}
+
+.no-posts-message {
+  margin-top: 12px;
+}

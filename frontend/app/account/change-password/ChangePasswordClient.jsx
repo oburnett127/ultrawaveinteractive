@@ -1,22 +1,17 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/router";
-import Protected from "../../components/Protected.jsx";
-import { getSession } from "next-auth/react";
+import Protected from "@/components/Protected.jsx"; // adjust if needed
+import "./changePassword.css";
 
-export default function ChangePassword() {
+export default function ChangePasswordClient() {
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState({ error: "", success: "" });
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
-  const { data: session, sessionStatus } = useSession();
-  const router = useRouter();
 
   const abortControllerRef = useRef(null);
   const recaptchaReadyRef = useRef(false);
@@ -30,6 +25,11 @@ export default function ChangePassword() {
   // Load reCAPTCHA v3 and mark ready
   // ---------------------------------------
   const getRecaptchaToken = async () => {
+    if (!siteKey) {
+      setStatus({ error: "Missing reCAPTCHA site key.", success: "" });
+      return null;
+    }
+
     if (!window.grecaptcha || !recaptchaReadyRef.current) {
       setStatus({ error: "reCAPTCHA is still loading. Please wait.", success: "" });
       return null;
@@ -41,6 +41,7 @@ export default function ChangePassword() {
       });
     } catch (err) {
       console.error("reCAPTCHA execute failed:", err);
+      setStatus({ error: "reCAPTCHA failed. Please refresh and try again.", success: "" });
       return null;
     }
   };
@@ -77,7 +78,6 @@ export default function ChangePassword() {
       return;
     }
 
-    // 🔐 Get v3 token
     const recaptchaToken = await getRecaptchaToken();
     if (!recaptchaToken) return;
 
@@ -125,7 +125,7 @@ export default function ChangePassword() {
         setNewPassword("");
       }
     } catch (err) {
-      if (err.name !== "AbortError") {
+      if (err?.name !== "AbortError") {
         console.error("Change password error:", err);
         setStatus({
           error: "Unable to connect. Please try again later.",
@@ -139,7 +139,6 @@ export default function ChangePassword() {
 
   return (
     <Protected otpRequired>
-      {/* reCAPTCHA v3 Script */}
       <Script
         src={`https://www.google.com/recaptcha/api.js?render=${siteKey}`}
         strategy="afterInteractive"
@@ -157,6 +156,7 @@ export default function ChangePassword() {
 
       <main id="main-content" className="change-password-container">
         <h2>Change Password</h2>
+
         <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
             <label htmlFor="currentPassword">Current Password</label>
@@ -168,6 +168,7 @@ export default function ChangePassword() {
               required
               disabled={isLoading}
               className="passwordInput"
+              autoComplete="current-password"
             />
           </div>
 
@@ -181,6 +182,7 @@ export default function ChangePassword() {
               required
               disabled={isLoading}
               className="passwordInput"
+              autoComplete="new-password"
             />
           </div>
 
@@ -194,37 +196,4 @@ export default function ChangePassword() {
       </main>
     </Protected>
   );
-}
-
-// 🚨 Server-side route protection
-export async function getServerSideProps(context) {
-  const session = await getSession(context);
-
-  // User not logged in → redirect to signin
-  if (!session) {
-    return {
-      redirect: {
-        destination: "/signin",
-        permanent: false,
-      },
-    };
-  }
-
-  // Logged in but OTP not verified → redirect to OTP verification
-  if (!session.user?.otpVerified) {
-    return {
-      redirect: {
-        destination: "/verifyotp",
-        permanent: false,
-      },
-    };
-  }
-
-  // ✔ Authenticated & OTP verified — proceed normally
-  return {
-    props: {
-      // If you ever want to use session details on page load:
-      session,
-    },
-  };
 }
