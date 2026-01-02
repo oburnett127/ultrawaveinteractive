@@ -3,11 +3,9 @@
 import { useEffect } from "react";
 import { SessionProvider } from "next-auth/react";
 import CssBaseline from "@mui/material/CssBaseline";
+import MuiCacheProvider from "../app/mui-cache";
 
 export default function Providers({ children }) {
-  /* ---------------------------------------
-     Prevent flash of wrong theme
-  --------------------------------------- */
   useEffect(() => {
     try {
       const saved = localStorage.getItem("uw-theme");
@@ -17,11 +15,8 @@ export default function Providers({ children }) {
     } catch {}
   }, []);
 
-  /* ---------------------------------------
-     CookieConsent init
-  --------------------------------------- */
   useEffect(() => {
-    function init() {
+    let timer = setTimeout(() => {
       if (window.cookieconsent) {
         window.cookieconsent.initialise({
           palette: {
@@ -39,16 +34,17 @@ export default function Providers({ children }) {
           },
         });
       }
-    }
+    }, 0);
 
-    window.addEventListener("load", init);
-    return () => window.removeEventListener("load", init);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <SessionProvider>
-      <CssBaseline />
-      {children}
+      <MuiCacheProvider>
+        <CssBaseline />
+        {children}
+      </MuiCacheProvider>
     </SessionProvider>
   );
 }
