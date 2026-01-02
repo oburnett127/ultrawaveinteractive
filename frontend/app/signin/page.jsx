@@ -2,7 +2,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/authOptions.cjs";
-import SignInForm from "@/components/SignInForm";
+import SignInForm from "../components/SignInForm";
 
 export const metadata = {
   title: "Sign In | Ultrawave Interactive",

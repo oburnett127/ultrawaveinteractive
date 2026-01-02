@@ -2,7 +2,7 @@
 const express = require("express");
 const { getServerSession } = require("next-auth/next");
 const prisma = require("../lib/prisma.cjs");
-const { authOptions } = require("../../frontend/lib/authOptions.cjs");
+const { authOptions } = require("../../backend/lib/authOptions.cjs");
 const requireOtpVerified = require("../guards/requireOtpVerified.cjs");
 
 const router = express.Router();

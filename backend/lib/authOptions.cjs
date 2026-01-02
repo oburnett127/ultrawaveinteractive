@@ -1,4 +1,4 @@
-// /lib/authOptions.cjs
+// backend/lib/authOptions.cjs
 const CredentialsProvider =
   require("next-auth/providers/credentials").default;
 const { compare } = require("bcryptjs");
@@ -9,7 +9,7 @@ const LOCKOUT_MINUTES = 15;
 const isProd = process.env.NODE_ENV === "production";
 const fetch = global.fetch;
 
-/* ---------------- helpers (unchanged) ---------------- */
+/* ---------------- helpers ---------------- */
 
 async function incrementFailedLogin(email) {
   const normalizedEmail = String(email || "").trim().toLowerCase();
@@ -54,10 +54,7 @@ async function verifyRecaptcha(token) {
   if (!secret || !token) return false;
 
   try {
-    const params = new URLSearchParams({
-      secret,
-      response: token,
-    });
+    const params = new URLSearchParams({ secret, response: token });
 
     const res = await fetch(
       "https://www.google.com/recaptcha/api/siteverify",
@@ -191,5 +188,4 @@ const authOptions = {
   debug: !isProd,
 };
 
-/* ✅ ONLY THIS EXPORT */
 module.exports = { authOptions };

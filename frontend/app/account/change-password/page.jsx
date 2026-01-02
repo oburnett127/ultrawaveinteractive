@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import ChangePasswordClient from "./ChangePasswordClient";
-import { authOptions } from "@/lib/authOptions"; // adjust path if needed
+import { authOptions } from "../lib/authOptions"; // adjust path if needed
 
 export default async function ChangePasswordPage() {
   const session = await getServerSession(authOptions);

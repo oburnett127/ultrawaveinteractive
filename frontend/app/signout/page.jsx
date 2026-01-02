@@ -2,7 +2,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/authOptions.cjs";
-import SignOutConfirm from "@/components/SignOutConfirm";
+import SignOutConfirm from "../components/SignOutConfirm";
 
 export const metadata = {
   title: "Sign Out | Ultrawave Interactive",

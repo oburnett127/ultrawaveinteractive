@@ -23,8 +23,8 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
-  const h = headers();
+export default async function RootLayout({ children }) {
+  const h = await headers();
   const nonce = h.get("x-csp-nonce") || "";
 
   return (

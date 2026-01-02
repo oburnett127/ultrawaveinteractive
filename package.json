@@ -11,6 +11,9 @@
   },
 
   "scripts": {
+    "dev": "npm run dev:backend",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
     "lint": "eslint . --ext .js,.cjs"
   }
 }

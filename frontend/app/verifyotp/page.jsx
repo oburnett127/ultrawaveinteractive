@@ -2,7 +2,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/authOptions.cjs";
-import VerifyOTPForm from "@/components/VerifyOTPForm";
+import VerifyOTPForm from "../components/VerifyOTPForm";
 
 export const metadata = {
   title: "Verify OTP | Ultrawave Interactive",
