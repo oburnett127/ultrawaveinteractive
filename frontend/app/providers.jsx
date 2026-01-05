@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { SessionProvider } from "next-auth/react";
-import CssBaseline from "@mui/material/CssBaseline";
 import MuiCacheProvider from "../app/mui-cache";
 
 export default function Providers({ children }) {
@@ -42,7 +41,6 @@ export default function Providers({ children }) {
   return (
     <SessionProvider>
       <MuiCacheProvider>
-        <CssBaseline />
         {children}
       </MuiCacheProvider>
     </SessionProvider>

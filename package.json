@@ -4,16 +4,17 @@
   "private": true,
   "author": "Owen Burnett",
   "description": "Ultrawave Interactive monorepo (frontend + backend)",
-
   "engines": {
     "node": ">=18.18.0",
     "npm": ">=10.0.0"
   },
-
   "scripts": {
-    "dev": "npm run dev:backend",
-    "dev:backend": "cd backend && npm run dev",
-    "dev:frontend": "cd frontend && npm run dev",
-    "lint": "eslint . --ext .js,.cjs"
-  }
+    "dev": "npm run dev --workspace frontend",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "dev:backend": "npm run dev --workspace backend"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ]
 }
