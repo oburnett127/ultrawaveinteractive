@@ -6,7 +6,7 @@ const cookieParser = require("cookie-parser");
 const crypto = require("crypto");
 const path = require("path");
 
-const { disconnectRedisClient } = require("./lib/redisClient.cjs");
+const { disconnectRedisClient } = require("./backend/lib/redisClient.cjs");
 
 dotenv.config();
 
@@ -17,7 +17,7 @@ global.__ACTIVE_WEBHOOKS__ = 0;
 let isShuttingDown = false;
 
 // ✅ IMPORTANT: backend initializer MUST come from backend
-const { initBackend } = require("./initBackend.cjs");
+const { initBackend } = require("./backend/initBackend.cjs");
 
 const dev = process.env.NODE_ENV !== "production";
 const port = process.env.PORT || 3000;
