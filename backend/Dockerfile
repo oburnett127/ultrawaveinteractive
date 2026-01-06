@@ -17,6 +17,11 @@ RUN npm ci
 COPY backend ./backend
 COPY server.cjs ./server.cjs
 
+# ✅ RUN MIGRATIONS AT BUILD TIME
+ARG DATABASE_URL
+RUN if [ -z "$DATABASE_URL" ]; then echo "DATABASE_URL missing"; exit 1; fi && \
+    npx prisma migrate deploy --schema=backend/prisma/schema.prisma
+
 # -----------------------------------------------------
 # 3 Remove dev deps
 # -----------------------------------------------------
