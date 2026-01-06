@@ -56,10 +56,5 @@ COPY --from=builder --chown=app:app /app/package.json ./package.json
 
 USER app
 
-CMD ["sh", "-c", "\
-  if [ -z \"$DATABASE_URL\" ]; then \
-    echo 'ERROR: DATABASE_URL is not set' >&2; exit 1; \
-  fi; \
-  npx prisma migrate deploy --schema=backend/prisma/schema.prisma && \
-  node server.cjs \
-"]
+# ✅ NO npx / npm AT RUNTIME
+CMD ["node", "server.cjs"]
