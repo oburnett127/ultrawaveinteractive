@@ -13,6 +13,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
+COPY backend/prisma ./backend/prisma
+
+RUN npx prisma generate --schema=backend/prisma/schema.prisma
+
 # 2️⃣ Copy backend + server entry
 COPY backend ./backend
 COPY server.cjs ./server.cjs
