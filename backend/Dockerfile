@@ -3,6 +3,10 @@
 # =====================================================
 FROM node:20.11.1-slim AS builder
 
+RUN apt-get update && \
+    apt-get install -y openssl && \
+    rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # 1️⃣ Install deps
@@ -21,6 +25,10 @@ RUN npm prune --omit=dev
 # 🚀 STAGE 2 — Runtime (MINIMAL, NON-ROOT)
 # =====================================================
 FROM node:20.11.1-slim AS runner
+
+RUN apt-get update && \
+    apt-get install -y openssl && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
