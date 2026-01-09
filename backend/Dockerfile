@@ -15,7 +15,8 @@ RUN npm ci
 
 COPY backend/prisma ./backend/prisma
 
-RUN npx prisma generate --schema=backend/prisma/schema.prisma
+RUN ./node_modules/.bin/prisma generate --schema=backend/prisma/schema.prisma
+
 
 # 2️⃣ Copy backend + server entry
 COPY backend ./backend
