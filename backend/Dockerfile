@@ -9,22 +9,22 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-# 1️⃣ Install deps
-COPY package*.json ./
+# 1️⃣ Install backend deps
+COPY backend/package*.json ./backend/
+WORKDIR /app/backend
 RUN npm ci
 
-COPY backend/prisma ./backend/prisma
+# 2️⃣ Copy Prisma schema and generate client
+COPY backend/prisma ./prisma
+RUN ./node_modules/.bin/prisma generate --schema=prisma/schema.prisma
 
-RUN ./node_modules/.bin/prisma generate --schema=backend/prisma/schema.prisma
-
-
-# 2️⃣ Copy backend + server entry
-COPY backend ./backend
-COPY server.cjs ./server.cjs
-
-# 3️⃣ Remove dev deps
+# 3️⃣ Remove dev deps (AFTER generate)
 RUN npm prune --omit=dev
 
+# 4️⃣ Copy remaining backend files
+WORKDIR /app
+COPY backend ./backend
+COPY server.cjs ./server.cjs
 
 # =====================================================
 # 🚀 STAGE 2 — Runtime (MINIMAL, NON-ROOT)
@@ -49,11 +49,9 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||8080)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-# Copy runtime artifacts
-COPY --from=builder --chown=app:app /app/node_modules ./node_modules
+# Copy backend runtime artifacts
 COPY --from=builder --chown=app:app /app/backend ./backend
 COPY --from=builder --chown=app:app /app/server.cjs ./server.cjs
-COPY --from=builder --chown=app:app /app/package.json ./package.json
 
 USER app
 
