@@ -20,7 +20,7 @@ let isShuttingDown = false;
 const { initBackend } = require("./backend/initBackend.cjs");
 
 const dev = process.env.NODE_ENV !== "production";
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080;
 
 // ✅ Tell Next.js where the frontend lives
 const nextApp = next({
