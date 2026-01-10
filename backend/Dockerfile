@@ -56,5 +56,4 @@ COPY --from=builder --chown=app:app /app/server.cjs ./server.cjs
 
 USER app
 
-# ✅ App only — NO npm, NO npx, NO migrations
-CMD ["node", "server.cjs"]
+CMD ["node", "backend/server.api.cjs"]
