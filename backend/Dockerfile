@@ -39,6 +39,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=8080
+ENV NODE_PATH=/app/backend/node_modules
 
 # 👤 Non-root user
 RUN groupadd -r app && useradd -r -g app app
