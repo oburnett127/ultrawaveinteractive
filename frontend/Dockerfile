@@ -42,6 +42,9 @@ ENV PORT=3000
 # 👤 Create non-root user
 RUN groupadd -r app && useradd -r -g app app
 
+# ✅ Create writable home for npm
+RUN mkdir -p /home/app/.npm && chown -R app:app /home/app
+
 EXPOSE 3000
 
 # ❤️ Healthcheck
