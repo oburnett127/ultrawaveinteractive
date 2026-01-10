@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
-import Protected from "./components/Protected.jsx"; // adjust if needed
+import Protected from "@/components/Protected.jsx"; // adjust if needed
 import "./changePassword.css";
 
 export default function ChangePasswordClient() {

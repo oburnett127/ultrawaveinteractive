@@ -1,7 +1,7 @@
 // app/blog/create/page.jsx
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
+import { authOptions } from "@/lib/authOptions.js";
 import CreatePostClient from "./CreatePostClient";
 
 export default async function CreatePostPage() {

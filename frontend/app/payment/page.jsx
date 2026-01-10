@@ -1,8 +1,8 @@
 // app/payment/page.jsx
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import SquarePaymentPage from "../components/SquarePaymentPage";
-import { authOptions } from "@/lib/authOptions.cjs";
+import SquarePaymentPage from "@/components/SquarePaymentPage";
+import { authOptions } from "@/lib/authOptions.js";
 
 // 🚀 Server Component (default in App Router)
 export default async function PaymentPage() {

@@ -3,7 +3,6 @@
 import { useState, useRef } from "react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
-import "@/styles/register.css";
 
 export default function RegisterForm() {
   const router = useRouter();

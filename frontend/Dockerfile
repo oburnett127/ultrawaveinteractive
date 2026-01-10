@@ -5,14 +5,17 @@ FROM node:20.11.1 AS builder
 
 WORKDIR /app
 
-# 1️⃣ Install deps
+# 1️⃣ Copy workspace manifests FIRST (CRITICAL)
 COPY package*.json ./
+COPY frontend/package*.json ./frontend/
+
+# 2️⃣ Install deps (includes frontend devDeps like `next`)
 RUN npm ci
 
-# 2️⃣ Copy frontend source
+# 3️⃣ Copy frontend source
 COPY frontend ./frontend
 
-# 3️⃣ Build-time public env (NON-SECRET)
+# 4️⃣ Build-time public env (NON-SECRET)
 ARG NEXT_PUBLIC_RECAPTCHA_SITE_KEY
 ARG NEXT_PUBLIC_SQUARE_APP_ID
 ARG NEXT_PUBLIC_SQUARE_LOCATION_ID
@@ -21,13 +24,9 @@ ENV NEXT_PUBLIC_RECAPTCHA_SITE_KEY=$NEXT_PUBLIC_RECAPTCHA_SITE_KEY
 ENV NEXT_PUBLIC_SQUARE_APP_ID=$NEXT_PUBLIC_SQUARE_APP_ID
 ENV NEXT_PUBLIC_SQUARE_LOCATION_ID=$NEXT_PUBLIC_SQUARE_LOCATION_ID
 
-# 4️⃣ Build Next.js
+# 5️⃣ Build Next.js
 WORKDIR /app/frontend
 RUN npm run build
-
-# 5️⃣ Remove dev deps
-WORKDIR /app
-RUN npm prune --omit=dev
 
 
 # =====================================================
@@ -49,16 +48,21 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
+# Copy manifests
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/frontend/package.json ./frontend/package.json
+
+# Install prod deps only
+RUN npm ci --omit=dev && npm cache clean --force
+
 # Copy runtime artifacts
-COPY --from=builder --chown=app:app /app/node_modules ./node_modules
 COPY --from=builder --chown=app:app /app/frontend/.next ./frontend/.next
 COPY --from=builder --chown=app:app /app/frontend/public ./frontend/public
-COPY --from=builder --chown=app:app /app/frontend/package.json ./frontend/package.json
 COPY --from=builder --chown=app:app /app/frontend/next.config.js ./frontend/next.config.js
 
 # Drop privileges
 USER app
 
-# Start Next.js WITHOUT npm
+# Start Next.js
 WORKDIR /app/frontend
 CMD ["node", "node_modules/next/dist/bin/next", "start", "-p", "3000"]

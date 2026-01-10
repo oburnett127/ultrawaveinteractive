@@ -1,6 +1,6 @@
 // import { useState, useRef } from "react";
 // import Script from "next/script";
-// import { useRouter } from "next/router";
+// import { useRouter } from "next/navigation";
 // import Head from "next/head";
 // import { getSession } from "next-auth/react";
 // export default function Register() {

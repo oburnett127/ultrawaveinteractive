@@ -1,7 +1,7 @@
 // app/signin/page.jsx
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "../../lib/authOptions";
+import { authOptions } from "../../lib/authOptions.js";
 import SignInForm from "../../components/SignInForm";
 
 export const metadata = {

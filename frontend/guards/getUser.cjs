@@ -1,6 +1,6 @@
 // /middleware/nextAuthMiddleware.cjs
 const { getServerSession } = require("next-auth/next");
-const { authOptions } = require("../lib/authOptions.cjs"); // ✅ Ensure this exports your NextAuth config
+const { authOptions } = require("../lib/authOptions.js"); // ✅ Ensure this exports your NextAuth config
 
 module.exports = async function getUser(req, res, next) {
   try {

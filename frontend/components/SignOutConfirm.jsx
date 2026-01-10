@@ -1,7 +1,7 @@
 "use client";
 
 import { signOut } from "next-auth/react";
-import "../signout/signout.css";
+import "@/app/signout/signout.css";
 
 export default function SignOutConfirm() {
   function handleSignOut() {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Protected from "../components/Protected.jsx";
+import Protected from "@/components/Protected.jsx";
 import "./createPost.css";
 
 export default function CreatePostClient() {
