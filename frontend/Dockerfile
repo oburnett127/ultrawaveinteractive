@@ -65,4 +65,5 @@ USER app
 
 # Start Next.js
 WORKDIR /app/frontend
-CMD ["node", "node_modules/next/dist/bin/next", "start", "-p", "3000"]
+CMD ["npm", "run", "start"]
+
