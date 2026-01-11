@@ -53,5 +53,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
 # Drop privileges
 USER app
 
-# 🚀 Start Next.js standalone server (no npm)
+# 🚀 Start Next.js standalone server
+WORKDIR /app/frontend
 CMD ["node", "server.js"]
