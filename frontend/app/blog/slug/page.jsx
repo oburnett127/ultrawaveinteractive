@@ -2,145 +2,197 @@
 import { notFound } from "next/navigation";
 import "./blogPost.css";
 
+// ---------------------------------------------
+// ISR: regenerate page every 60 seconds
+// ---------------------------------------------
+export const revalidate = 60;
+
+// If generateStaticParams returns [] due to outage,
+// still allow on-demand generation for new/existing slugs.
+export const dynamicParams = true;
+
 /**
  * Helper: Strip HTML tags and build a short description
  */
 function buildDescriptionFromHtml(html, maxLength = 160) {
   if (typeof html !== "string") return "";
 
-  const text = html
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
+  const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   if (text.length <= maxLength) return text;
+
   return text.slice(0, maxLength).trimEnd() + "…";
 }
 
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
+function getBackendUrl() {
+  const raw =
+    process.env.BACKEND_URL ||
+    process.env.INTERNAL_BACKEND_URL ||
+    process.env.NEXT_PUBLIC_BACKEND_URL || // fallback if you haven’t added BACKEND_URL yet
+    "";
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "") ||
-  "http://localhost:3000";
+  return raw.replace(/\/+$/, "");
+}
 
-// ---------------------------------------------
-// ISR: regenerate page every 60 seconds
-// ---------------------------------------------
-export const revalidate = 60;
+function getSiteUrl() {
+  const raw =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    "http://localhost:3000";
+
+  return raw.replace(/\/+$/, "");
+}
+
+async function fetchJson(url, { revalidateSeconds = 60, timeoutMs = 6000 } = {}) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      next: { revalidate: revalidateSeconds },
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      return { ok: false, status: res.status, data: null };
+    }
+
+    const data = await res.json();
+    return { ok: true, status: res.status, data };
+  } catch (err) {
+    return { ok: false, status: 0, data: null, error: err };
+  } finally {
+    clearTimeout(t);
+  }
+}
 
 // ---------------------------------------------
 // Static paths (replaces getStaticPaths)
 // ---------------------------------------------
 export async function generateStaticParams() {
-  try {
-    const res = await fetch(`${backendUrl}/api/blog/list`, {
-      next: { revalidate: 60 },
-    });
-
-    if (!res.ok) return [];
-
-    const data = await res.json();
-    const posts = Array.isArray(data.posts) ? data.posts : [];
-
-    return posts.map((post) => ({
-      slug: post.slug,
-    }));
-  } catch (err) {
-    console.error("generateStaticParams error:", err);
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    console.error("generateStaticParams: Missing BACKEND_URL");
     return [];
   }
+
+  const { ok, data, status, error } = await fetchJson(`${backendUrl}/api/blog/list`, {
+    revalidateSeconds: 60,
+    timeoutMs: 6000,
+  });
+
+  if (!ok) {
+    console.error("generateStaticParams blog list failed:", error || `HTTP ${status}`);
+    return [];
+  }
+
+  const posts = Array.isArray(data?.posts) ? data.posts : [];
+  return posts
+    .map((p) => (p?.slug ? { slug: p.slug } : null))
+    .filter(Boolean);
 }
 
 // ---------------------------------------------
 // SEO metadata (replaces <Head />)
 // ---------------------------------------------
 export async function generateMetadata({ params }) {
-  try {
-    const res = await fetch(`${backendUrl}/api/blog/${params.slug}`, {
-      next: { revalidate: 60 },
-    });
+  const backendUrl = getBackendUrl();
+  const siteUrl = getSiteUrl();
 
-    if (res.status === 404) return {};
+  // Safe defaults (used on outage)
+  const fallback = {
+    title: "Blog | Ultrawave Interactive",
+    description:
+      "Read web design tips, performance insights, and digital strategy articles from Ultrawave Interactive.",
+    alternates: {
+      canonical: `${siteUrl}/blog/${params.slug}`,
+    },
+    openGraph: {
+      type: "article",
+      title: "Blog | Ultrawave Interactive",
+      description:
+        "Read web design tips, performance insights, and digital strategy articles from Ultrawave Interactive.",
+      url: `${siteUrl}/blog/${params.slug}`,
+      siteName: "Ultrawave Interactive",
+      images: [`${siteUrl}/images/og-default.jpg`],
+    },
+  };
 
-    if (!res.ok) {
-      return {
-        title: "Blog | Ultrawave Interactive Web Design",
-        description:
-          "Read web design tips, performance insights, and digital strategy articles from Ultrawave Interactive.",
-      };
-    }
+  if (!backendUrl) return fallback;
 
-    const post = await res.json();
+  const { ok, status, data: post } = await fetchJson(
+    `${backendUrl}/api/blog/${params.slug}`,
+    { revalidateSeconds: 60, timeoutMs: 6000 }
+  );
 
-    if (!post) return {};
+  if (!ok) {
+    // If it’s truly missing, we can leave metadata fallback; page will notFound() later
+    if (status === 404) return fallback;
+    return fallback;
+  }
 
-    const url = `${siteUrl}/blog/${post.slug}`;
-    const title = `${post.title} | Ultrawave Interactive Web Design`;
-    const description = buildDescriptionFromHtml(post.content || "");
-    const ogImage = `${siteUrl}/images/og-default.jpg`;
+  const url = `${siteUrl}/blog/${post.slug}`;
+  const title = `${post.title || "Blog Post"} | Ultrawave Interactive`;
+  const description = buildDescriptionFromHtml(post.content || "");
+  const ogImage = `${siteUrl}/images/og-default.jpg`;
 
-    return {
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
       title,
       description,
-      alternates: {
-        canonical: url,
-      },
-      openGraph: {
-        type: "article",
-        title,
-        description,
-        url,
-        siteName: "Ultrawave Interactive",
-        images: [ogImage],
-        publishedTime: post.createdAt || undefined,
-        modifiedTime: post.updatedAt || post.createdAt || undefined,
-      },
-    };
-  } catch (err) {
-    console.error("generateMetadata error:", err);
-    return {};
-  }
+      url,
+      siteName: "Ultrawave Interactive",
+      images: [ogImage],
+      publishedTime: post.createdAt || undefined,
+      modifiedTime: post.updatedAt || post.createdAt || undefined,
+    },
+  };
 }
 
 // ---------------------------------------------
 // Page component
 // ---------------------------------------------
 export default async function BlogPostPage({ params }) {
-  let post;
+  const backendUrl = getBackendUrl();
+  const siteUrl = getSiteUrl();
 
-  try {
-    const res = await fetch(`${backendUrl}/api/blog/${params.slug}`, {
-      next: { revalidate: 60 },
-    });
-
-    if (res.status === 404) {
-      notFound();
-    }
-
-    if (!res.ok) {
-      throw new Error("Failed to load blog post");
-    }
-
-    post = await res.json();
-  } catch (err) {
-    console.error("Blog post fetch error:", err);
-
+  if (!backendUrl) {
     return (
       <main id="main-content">
         <div className="blog-post-container">
-          <h1 className="blog-title">Error Loading Post</h1>
+          <h1 className="blog-title">Blog Unavailable</h1>
           <p className="blog-error">
-            Unable to load this post. Please try again later.
+            The blog service is temporarily unavailable. Please try again later.
           </p>
         </div>
       </main>
     );
   }
 
-  if (!post) {
-    notFound();
+  const { ok, status, data: post, error } = await fetchJson(
+    `${backendUrl}/api/blog/${params.slug}`,
+    { revalidateSeconds: 60, timeoutMs: 6000 }
+  );
+
+  if (!ok) {
+    if (status === 404) notFound();
+
+    console.error("Blog post fetch error:", error || `HTTP ${status}`);
+
+    return (
+      <main id="main-content">
+        <div className="blog-post-container">
+          <h1 className="blog-title">Error Loading Post</h1>
+          <p className="blog-error">Unable to load this post. Please try again later.</p>
+        </div>
+      </main>
+    );
   }
+
+  if (!post) notFound();
 
   // ---------------------------------------------
   // JSON-LD structured data
@@ -173,7 +225,6 @@ export default async function BlogPostPage({ params }) {
 
   return (
     <>
-      {/* JSON-LD */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -185,7 +236,7 @@ export default async function BlogPostPage({ params }) {
 
           <div
             className="blog-content"
-            dangerouslySetInnerHTML={{ __html: post.content }}
+            dangerouslySetInnerHTML={{ __html: post.content || "" }}
           />
         </div>
       </main>
