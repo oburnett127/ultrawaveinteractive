@@ -23,13 +23,15 @@ export function generateMetadata() {
 // - Prefer BACKEND_URL (server-only) over NEXT_PUBLIC_BACKEND_URL
 // ---------------------------------------------
 function getBackendUrl() {
-  const raw =
-    process.env.BACKEND_URL ||
-    process.env.INTERNAL_BACKEND_URL ||
-    process.env.NEXT_PUBLIC_BACKEND_URL || // fallback if you haven’t added BACKEND_URL yet
-    "";
+  const url =
+    process.env.BACKEND_INTERNAL_URL ||
+    process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  return raw.replace(/\/+$/, "");
+  if (!url) {
+    throw new Error("Backend URL not configured");
+  }
+
+  return url.replace(/\/+$/, "");
 }
 
 // ---------------------------------------------
