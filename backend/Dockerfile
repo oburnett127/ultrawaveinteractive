@@ -58,11 +58,12 @@ EXPOSE 8080
 # Copy runtime artifacts
 # -----------------------------------------------------
 COPY --from=builder --chown=app:app /app/backend ./backend
-COPY --chown=app:app server.cjs ./server.cjs
+COPY --chown=app:app backend/server.cjs ./server.cjs
+
 
 USER app
 
 # -----------------------------------------------------
 # Start backend
 # -----------------------------------------------------
-CMD ["node", "backend/server.cjs"]
+CMD ["node", "server.cjs"]
