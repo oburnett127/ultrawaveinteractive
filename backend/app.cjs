@@ -51,6 +51,66 @@ let redis;
   }
 })();
 
+let limiters;
+
+function getLimiters() {
+  if (!redis || !redis.isOpen) {
+    throw new Error("Redis not ready for limiters");
+  }
+
+  if (!limiters) {
+    limiters = {
+      register: limiterFactory({
+        redisClient: redis,
+        keyPrefix: "register",
+        points: 5,
+        duration: 3600,
+        blockDuration: 1800,
+      }),
+      otp: limiterFactory({
+        redisClient: redis,
+        keyPrefix: "otp",
+        points: 5,
+        duration: 300,
+        blockDuration: 900,
+      }),
+      updateToken: limiterFactory({
+        redisClient: redis,
+        keyPrefix: "update-token",
+        points: 5,
+        duration: 600,
+      }),
+      salesbot: limiterFactory({
+        redisClient: redis,
+        keyPrefix: "salesbot",
+        points: 50,
+        duration: 3600,
+      }),
+      leads: limiterFactory({
+        redisClient: redis,
+        keyPrefix: "leads",
+        points: 10,
+        duration: 3600,
+      }),
+      blogCreate: limiterFactory({
+        redisClient: redis,
+        keyPrefix: "blog-create",
+        points: 10,
+        duration: 3600,
+      }),
+      changePassword: limiterFactory({
+        redisClient: redis,
+        keyPrefix: "change-password",
+        points: 3,
+        duration: 900,
+        blockDuration: 1800,
+      }),
+    };
+  }
+
+  return limiters;
+}
+
 // --------------------------------------------------
 // Health & readiness
 // --------------------------------------------------
@@ -96,11 +156,12 @@ const waitForRedis = (req, res, next) => {
 // --------------------------------------------------
 // Rate limiting helpers
 // --------------------------------------------------
-const rateLimitMiddleware = (limiter) =>
+const rateLimit = (limiterName) =>
   !isProd
     ? (req, res, next) => next()
     : async (req, res, next) => {
         try {
+          const limiter = getLimiters()[limiterName];
           await limiter.consume(req.realIp || req.ip);
           next();
         } catch {
@@ -109,83 +170,18 @@ const rateLimitMiddleware = (limiter) =>
       };
 
 // --------------------------------------------------
-// 🚦 Limiters
-// --------------------------------------------------
-const registerLimiter = limiterFactory({
-  redisClient: redis,
-  keyPrefix: "register",
-  points: 5,
-  duration: 3600,
-  blockDuration: 1800,
-});
-
-const otpLimiter = limiterFactory({
-  redisClient: redis,
-  keyPrefix: "otp",
-  points: 5,
-  duration: 300,
-  blockDuration: 900,
-});
-
-const updateTokenLimiter = limiterFactory({
-  redisClient: redis,
-  keyPrefix: "update-token",
-  points: 5,
-  duration: 600,
-});
-
-const salesbotLimiter = limiterFactory({
-  redisClient: redis,
-  keyPrefix: "salesbot",
-  points: 50,
-  duration: 3600,
-});
-
-const leadsLimiter = limiterFactory({
-  redisClient: redis,
-  keyPrefix: "leads",
-  points: 10,
-  duration: 3600,
-});
-
-const blogCreateLimiter = limiterFactory({
-  redisClient: redis,
-  keyPrefix: "blog-create",
-  points: 10,
-  duration: 3600,
-});
-
-const changePasswordLimiter = limiterFactory({
-  redisClient: redis,
-  keyPrefix: "change-password",
-  points: 3,
-  duration: 900,
-  blockDuration: 1800,
-});
-
-// --------------------------------------------------
 // 🚏 Routes (scoped + safe)
 // --------------------------------------------------
-app.use("/api", waitForRedis, rateLimitMiddleware(registerLimiter), registerRoute);
+app.use("/api", waitForRedis, rateLimit("register"), registerRoute);
 app.use("/api", waitForRedis, paymentRoute);
 app.use("/api", waitForRedis, contactRoute);
-app.use("/api", waitForRedis, rateLimitMiddleware(salesbotLimiter), salesbotRoute);
-app.use("/api", waitForRedis, rateLimitMiddleware(leadsLimiter), leadsRoute);
-app.use("/api", waitForRedis, rateLimitMiddleware(blogCreateLimiter), blogCreateRoute);
+app.use("/api", waitForRedis, rateLimit("salesbot"), salesbotRoute);
+app.use("/api", waitForRedis, rateLimit("leads"), leadsRoute);
+app.use("/api", waitForRedis, rateLimit("blogCreate"), blogCreateRoute);
 app.use("/api", waitForRedis, listRoute);
-app.use(
-  "/api",
-  waitForRedis,
-  rateLimitMiddleware(changePasswordLimiter),
-  changePasswordRoute
-);
-app.use("/api/otp", waitForRedis, rateLimitMiddleware(otpLimiter), otpRoute);
+app.use("/api", waitForRedis, rateLimit("changePassword"), changePasswordRoute);
+app.use("/api/otp", waitForRedis, rateLimit("otp"), otpRoute);
 app.use("/api", waitForRedis, blogRoute);
-app.use(
-  "/api",
-  waitForRedis,
-  rateLimitMiddleware(updateTokenLimiter),
-  updateTokenRoute
-);
+app.use("/api", waitForRedis, rateLimit("updateToken"), updateTokenRoute);
 
 module.exports = app;
