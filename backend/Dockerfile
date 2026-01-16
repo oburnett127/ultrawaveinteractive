@@ -65,4 +65,4 @@ USER app
 # -----------------------------------------------------
 # Start backend
 # -----------------------------------------------------
-CMD ["node", "backend/server.api.cjs"]
+CMD ["node", "backend/server.cjs"]
