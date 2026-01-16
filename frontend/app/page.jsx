@@ -31,8 +31,12 @@ export const metadata = {
    Server-side data fetch
 ---------------------------------- */
 async function getPosts() {
+  const backendUrl = process.env.BACKEND_INTERNAL_URL ||
+                      process.env.NEXT_PUBLIC_BACKEND_URL ||
+                      null;
+  
   try {
-    const res = await fetch(`${process.env.BACKEND_INTERNAL_URL}/blog/list`, {
+    const res = await fetch(`${backendUrl}/api/blog/list`, {
       cache: "force-cache"
     });
     

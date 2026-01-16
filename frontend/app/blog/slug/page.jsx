@@ -25,7 +25,6 @@ function buildDescriptionFromHtml(html, maxLength = 160) {
 
 function getBackendUrl() {
   const raw =
-    process.env.BACKEND_URL ||
     process.env.INTERNAL_BACKEND_URL ||
     process.env.NEXT_PUBLIC_BACKEND_URL || // fallback if you haven’t added BACKEND_URL yet
     "";
@@ -69,26 +68,33 @@ async function fetchJson(url, { revalidateSeconds = 60, timeoutMs = 6000 } = {})
 // Static paths (replaces getStaticPaths)
 // ---------------------------------------------
 export async function generateStaticParams() {
-  const backendUrl = getBackendUrl();
+  const backendUrl =
+    process.env.BACKEND_INTERNAL_URL ||
+    process.env.NEXT_PUBLIC_BACKEND_URL;
+
   if (!backendUrl) {
-    console.error("generateStaticParams: Missing BACKEND_URL");
+    console.warn("⚠️ No backend URL — skipping static params");
     return [];
   }
 
-  const { ok, data, status, error } = await fetchJson(`${backendUrl}/api/blog/list`, {
-    revalidateSeconds: 60,
-    timeoutMs: 6000,
-  });
+  try {
+    const res = await fetch(`${backendUrl}/api/blog/list`, {
+      next: { revalidate: 60 },
+    });
 
-  if (!ok) {
-    console.error("generateStaticParams blog list failed:", error || `HTTP ${status}`);
+    if (!res.ok) {
+      console.warn("⚠️ Blog list unavailable — ISR will handle later");
+      return [];
+    }
+
+    const data = await res.json();
+    return Array.isArray(data.posts)
+      ? data.posts.map((p) => ({ slug: p.slug }))
+      : [];
+  } catch (err) {
+    console.warn("⚠️ generateStaticParams failed — build continues");
     return [];
   }
-
-  const posts = Array.isArray(data?.posts) ? data.posts : [];
-  return posts
-    .map((p) => (p?.slug ? { slug: p.slug } : null))
-    .filter(Boolean);
 }
 
 // ---------------------------------------------
