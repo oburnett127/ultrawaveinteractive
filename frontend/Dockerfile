@@ -5,7 +5,7 @@ FROM node:20.11.1 AS builder
 
 WORKDIR /app
 
-# 1️⃣ Copy workspace manifests FIRST (CRITICAL)
+# 1️⃣ Copy workspace manifests FIRST
 COPY package*.json ./
 COPY frontend/package*.json ./frontend/
 
@@ -36,7 +36,7 @@ RUN groupadd -r app && useradd -r -g app app
 # -----------------------------------------------------
 # 📦 Copy standalone runtime output
 # -----------------------------------------------------
-# Includes server.js + minimal node_modules
+# server.js + minimal node_modules
 COPY --from=builder /app/frontend/.next/standalone ./
 COPY --from=builder /app/frontend/.next/static ./.next/static
 COPY --from=builder /app/frontend/public ./public
@@ -46,7 +46,7 @@ RUN chown -R app:app /app
 
 EXPOSE 3000
 
-# ❤️ Healthcheck (unchanged behavior)
+# ❤️ Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
@@ -54,5 +54,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
 USER app
 
 # 🚀 Start Next.js standalone server
-WORKDIR /app/frontend
 CMD ["node", "server.js"]
