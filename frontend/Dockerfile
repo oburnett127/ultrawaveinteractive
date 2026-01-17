@@ -1,23 +1,20 @@
-# =====================================================
-# 🧱 STAGE 1 — Builder
-# =====================================================
+# =========================
+# 🧱 Builder
+# =========================
 FROM node:20.11.1 AS builder
 
-WORKDIR /app
+WORKDIR /app/frontend
 
-COPY package*.json ./
-COPY frontend/package*.json ./frontend/
+COPY frontend/package*.json ./
 RUN npm ci
 
-COPY frontend ./frontend
-
-WORKDIR /app/frontend
+COPY frontend ./
 RUN npm run build
 
 
-# =====================================================
-# 🚀 STAGE 2 — Runtime
-# =====================================================
+# =========================
+# 🚀 Runtime
+# =========================
 FROM node:20.11.1-slim AS runner
 
 WORKDIR /app
@@ -27,10 +24,10 @@ ENV PORT=3000
 
 RUN groupadd -r app && useradd -r -g app app
 
-# Copy entire standalone bundle
+# Copy standalone bundle (self-contained now)
 COPY --from=builder /app/frontend/.next/standalone/frontend ./frontend
 
-# Copy static assets to WHERE THE SERVER EXPECTS THEM
+# Static assets
 COPY --from=builder /app/frontend/.next/static ./frontend/.next/static
 COPY --from=builder /app/frontend/public ./frontend/public
 
