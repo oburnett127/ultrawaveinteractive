@@ -28,7 +28,7 @@ ENV PORT=3000
 RUN groupadd -r app && useradd -r -g app app
 
 # Copy entire standalone bundle
-COPY --from=builder /app/frontend/.next/standalone ./frontend
+COPY --from=builder /app/frontend/.next/standalone/frontend ./frontend
 
 # Copy static assets to WHERE THE SERVER EXPECTS THEM
 COPY --from=builder /app/frontend/.next/static ./frontend/.next/static
