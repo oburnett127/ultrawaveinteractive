@@ -27,18 +27,17 @@ ENV PORT=3000
 
 RUN groupadd -r app && useradd -r -g app app
 
-COPY --from=builder /app/frontend/.next/standalone ./
-COPY --from=builder /app/frontend/.next/static ./.next/static
-COPY --from=builder /app/frontend/public ./public
+# Copy entire standalone bundle
+COPY --from=builder /app/frontend/.next/standalone ./frontend
+
+# Copy static assets to WHERE THE SERVER EXPECTS THEM
+COPY --from=builder /app/frontend/.next/static ./frontend/.next/static
+COPY --from=builder /app/frontend/public ./frontend/public
 
 RUN chown -R app:app /app
 
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-
 USER app
 
-# ✅ Correct entrypoint
 CMD ["node", "frontend/server.js"]
