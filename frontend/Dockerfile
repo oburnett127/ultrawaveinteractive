@@ -5,19 +5,17 @@ FROM node:20.11.1 AS builder
 
 WORKDIR /app
 
-# Copy root manifests (lockfile lives here)
+# Root lockfile controls everything
 COPY package.json package-lock.json ./
 COPY frontend/package.json ./frontend/
 
-# ✅ Install deps ONCE, using root lockfile
 RUN npm ci
 
-# Copy frontend source
 COPY frontend ./frontend
 
-# Build frontend
 WORKDIR /app/frontend
 RUN npm run build
+
 
 # =========================
 # 🚀 Runtime
@@ -31,12 +29,11 @@ ENV PORT=3000
 
 RUN groupadd -r app && useradd -r -g app app
 
-# Copy standalone bundle
-COPY --from=builder /app/frontend/.next/standalone/frontend ./frontend
+# Copy app
+COPY --from=builder /app/frontend ./frontend
 
-# Static assets
-COPY --from=builder /app/frontend/.next/static ./frontend/.next/static
-COPY --from=builder /app/frontend/public ./frontend/public
+# Copy node_modules (required for next start)
+COPY --from=builder /app/node_modules ./node_modules
 
 RUN chown -R app:app /app
 
@@ -44,6 +41,5 @@ EXPOSE 3000
 
 USER app
 
-# 🔑 THIS IS THE CRITICAL PART
 WORKDIR /app/frontend
-CMD ["node", "server.js"]
+CMD ["npx", "next", "start", "-p", "3000"]
