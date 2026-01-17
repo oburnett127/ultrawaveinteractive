@@ -29,10 +29,8 @@ ENV PORT=3000
 
 RUN groupadd -r app && useradd -r -g app app
 
-# Copy app
+# Copy app + deps
 COPY --from=builder /app/frontend ./frontend
-
-# Copy node_modules (required for next start)
 COPY --from=builder /app/node_modules ./node_modules
 
 RUN chown -R app:app /app
@@ -42,4 +40,7 @@ EXPOSE 3000
 USER app
 
 WORKDIR /app/frontend
-CMD ["npx", "next", "start", "-p", "3000"]
+
+# ✅ NO npx
+CMD ["node", "../node_modules/next/dist/bin/next", "start", "-p", "3000"]
+
