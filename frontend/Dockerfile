@@ -31,7 +31,7 @@ ENV PORT=3000
 
 RUN groupadd -r app && useradd -r -g app app
 
-# Copy standalone bundle (self-contained now)
+# Copy standalone bundle
 COPY --from=builder /app/frontend/.next/standalone/frontend ./frontend
 
 # Static assets
@@ -44,4 +44,6 @@ EXPOSE 3000
 
 USER app
 
-CMD ["node", "frontend/server.js"]
+# 🔑 THIS IS THE CRITICAL PART
+WORKDIR /app/frontend
+CMD ["node", "server.js"]
