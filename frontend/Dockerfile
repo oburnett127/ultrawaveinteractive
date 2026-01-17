@@ -3,14 +3,21 @@
 # =========================
 FROM node:20.11.1 AS builder
 
-WORKDIR /app/frontend
+WORKDIR /app
 
-COPY frontend/package*.json ./
+# Copy root manifests (lockfile lives here)
+COPY package.json package-lock.json ./
+COPY frontend/package.json ./frontend/
+
+# ✅ Install deps ONCE, using root lockfile
 RUN npm ci
 
-COPY frontend ./
-RUN npm run build
+# Copy frontend source
+COPY frontend ./frontend
 
+# Build frontend
+WORKDIR /app/frontend
+RUN npm run build
 
 # =========================
 # 🚀 Runtime
