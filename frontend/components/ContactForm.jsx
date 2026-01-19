@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import ReCAPTCHA from "react-google-recaptcha";
+import React, { useState, useEffect } from "react";
 import styles from "./ContactForm.module.css";
 
 const ContactForm = () => {
-  const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
 
   const [formData, setFormData] = useState({
     name: "",
@@ -16,8 +14,33 @@ const ContactForm = () => {
   });
 
   const [status, setStatus] = useState({ sending: false, msg: "", err: "" });
-  const [recaptchaError, setRecaptchaError] = useState("");
-  const recaptchaRef = useRef(null);
+  const [recaptchaReady, setRecaptchaReady] = useState(false);
+
+  /** ─────────────────────────────
+   *   Load reCAPTCHA v3 script
+   *  ───────────────────────────── */
+  useEffect(() => {
+    if (!siteKey) return;
+
+    if (window.grecaptcha) {
+      setRecaptchaReady(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setRecaptchaReady(true);
+    script.onerror = () =>
+      setStatus({
+        sending: false,
+        msg: "",
+        err: "Failed to load reCAPTCHA. Please try again later.",
+      });
+
+    document.body.appendChild(script);
+  }, [siteKey]);
 
   /** ─────────────────────────────
    *   Form utilities
@@ -66,61 +89,75 @@ const ContactForm = () => {
   };
 
   /** ─────────────────────────────
-   *   Main submit handler
+   *   Execute reCAPTCHA v3
+   *  ───────────────────────────── */
+  const getRecaptchaToken = async () => {
+    if (!recaptchaReady || !window.grecaptcha) {
+      throw new Error("reCAPTCHA not ready");
+    }
+
+    return await window.grecaptcha.execute(siteKey, {
+      action: "contact_form",
+    });
+  };
+
+  /** ─────────────────────────────
+   *   Submit handler
    *  ───────────────────────────── */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (status.sending) return;
     if (!isFormValid()) return;
 
-    const recaptchaToken = recaptchaRef.current?.getValue();
-    if (!recaptchaToken) {
-      setRecaptchaError("Please complete the reCAPTCHA.");
+    setStatus({ sending: true, msg: "", err: "" });
+
+    let recaptchaToken;
+    try {
+      recaptchaToken = await getRecaptchaToken();
+    } catch (err) {
+      setStatus({
+        sending: false,
+        msg: "",
+        err: "reCAPTCHA verification failed. Please try again.",
+      });
       return;
     }
-
-    setRecaptchaError("");
-    setStatus({ sending: true, msg: "", err: "" });
 
     const payload = {
       name: formData.name.trim(),
       email: formData.email.trim(),
       phone: formData.phone.trim(),
       message: formData.message.trim(),
-      recaptchaToken,
+      recaptchaToken, // 👈 v3 token
     };
 
     let res;
     try {
-      // Small retry for transient network failures
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
-          res = await fetch(`/api/contact`, {
+          res = await fetch("/api/contact", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
-          break; // success
+          break;
         } catch (err) {
           if (attempt === 2) throw err;
-          await new Promise((r) => setTimeout(r, 500 * attempt)); // brief backoff
+          await new Promise((r) => setTimeout(r, 500 * attempt));
         }
       }
 
       const data = await res.json().catch(() => ({}));
 
-      /** Handle rate limit */
       if (res.status === 429) {
         setStatus({
           sending: false,
           msg: "",
           err: "Too many requests. Please wait a minute and try again.",
         });
-        recaptchaRef.current?.reset();
         return;
       }
 
-      /** Handle validation / server errors */
       if (!res.ok) {
         const errText =
           data?.error ||
@@ -129,14 +166,11 @@ const ContactForm = () => {
             : `Request failed (HTTP ${res.status}).`);
 
         setStatus({ sending: false, msg: "", err: errText });
-        recaptchaRef.current?.reset();
         return;
       }
 
-      /** Success */
       setStatus({ sending: false, msg: "Message sent successfully!", err: "" });
       setFormData({ name: "", email: "", phone: "", message: "" });
-      recaptchaRef.current?.reset();
     } catch (error) {
       console.error("Network or unexpected error:", error);
       setStatus({
@@ -144,7 +178,6 @@ const ContactForm = () => {
         msg: "",
         err: "Network error — please check your connection and try again.",
       });
-      recaptchaRef.current?.reset();
     }
   };
 
@@ -159,7 +192,6 @@ const ContactForm = () => {
         noValidate
         aria-busy={status.sending}
       >
-
         <div className={styles.formGroup}>
           <label htmlFor="name">
             Name <span aria-hidden="true">*</span>
@@ -171,8 +203,6 @@ const ContactForm = () => {
             value={formData.name}
             onChange={handleChange}
             required
-            autoComplete="name"
-            aria-required="true"
             disabled={status.sending}
           />
         </div>
@@ -188,8 +218,6 @@ const ContactForm = () => {
             value={formData.email}
             onChange={handleChange}
             required
-            autoComplete="email"
-            aria-required="true"
             disabled={status.sending}
           />
         </div>
@@ -202,7 +230,6 @@ const ContactForm = () => {
             name="phone"
             value={formData.phone}
             onChange={handleChange}
-            autoComplete="tel"
             disabled={status.sending}
           />
         </div>
@@ -214,53 +241,31 @@ const ContactForm = () => {
           <textarea
             id="message"
             name="message"
+            rows={6}
             value={formData.message}
             onChange={handleChange}
             required
-            rows={6}
-            aria-required="true"
             disabled={status.sending}
-          ></textarea>
-        </div>
-
-        <div className={styles.recaptchaWrapper}>
-          <ReCAPTCHA
-            ref={recaptchaRef}
-            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
-            size="compact"
           />
-          {recaptchaError && (
-            <p className={styles.error} role="alert">
-              {recaptchaError}
-            </p>
-          )}
         </div>
 
-        <button
-          className={styles.button}
-          type="submit"
-          disabled={status.sending}
-        >
+        <button className={styles.button} type="submit" disabled={status.sending}>
           {status.sending ? "Sending..." : "Submit"}
         </button>
       </form>
 
       {(status.msg || status.err) && (
-        <div
-          className={styles.responseMessage}
-          aria-live="polite"
-        >
-          {status.msg && (
-            <p className={styles.success}>{status.msg}</p>
-          )}
+        <div className={styles.responseMessage} aria-live="polite">
+          {status.msg && <p className={styles.success}>{status.msg}</p>}
           {status.err && (
-            <p className={styles.error} role="alert">{status.err}</p>
+            <p className={styles.error} role="alert">
+              {status.err}
+            </p>
           )}
         </div>
       )}
     </div>
   );
-
 };
 
 export default ContactForm;
