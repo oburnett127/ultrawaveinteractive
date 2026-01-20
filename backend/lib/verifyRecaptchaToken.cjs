@@ -49,11 +49,13 @@ async function verifyRecaptchaToken(token, expectedAction = null) {
       return { success: false, error: "invalid-action" };
     }
 
-    if (data.score < 0.3) {
-      return { success: false, error: "low-score", score: data.score };
-    }
+   return {
+      success: true,
+      score: data.score,
+      action: data.action,
+      hostname: data.hostname,
+    };
 
-    return { success: true, score: data.score, action: data.action };
   } catch (err) {
     console.error("Error verifying reCAPTCHA:", err);
     return { success: false, error: "verify-failed" };
