@@ -50,6 +50,7 @@ async function verifyRecaptchaToken(token, expectedAction = null) {
     }
 
     if (expectedAction && data.action !== expectedAction) {
+      console.error("[verifyRecaptchaToken] ❌ data.action !== expectedAction", " " + data.action + " " + expectedAction);
       return { success: false, error: "invalid-action" };
     }
 
