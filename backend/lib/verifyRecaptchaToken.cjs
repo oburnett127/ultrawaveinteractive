@@ -42,6 +42,10 @@ async function verifyRecaptchaToken(token, expectedAction = null) {
     //console.log("🔍 Google response data:", data);
 
     if (!data.success) {
+      console.error(
+        "[verifyRecaptchaToken] ❌ Google rejected token:",
+        JSON.stringify(data, null, 2)
+      );
       return { success: false, error: data["error-codes"] || "failed" };
     }
 
