@@ -67,6 +67,12 @@ router.post("/contact", contactLimiter, async (req, res) => {
       });
     }
 
+    console.log("[ContactRoute] reCAPTCHA:", {
+      score: recaptchaResult.score,
+      action: recaptchaResult.action,
+      hostname: recaptchaResult.hostname,
+    });
+
     if (!recaptchaResult?.success) {
       console.warn("[ContactRoute] ⚠️ reCAPTCHA verification failed:", recaptchaResult);
       return res.status(403).json({ error: "Failed reCAPTCHA verification." });
