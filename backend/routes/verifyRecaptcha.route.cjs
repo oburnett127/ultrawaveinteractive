@@ -1,4 +1,3 @@
-// /routes/verifyRecaptcha.route.cjs
 const express = require("express");
 const { createRedisClient } = require("./lib/redisClient.cjs");
 
@@ -7,63 +6,6 @@ const router = express.Router();
 // --- Utility: consistent JSON response ---
 function respond(res, status, body) {
   res.status(status).json(body);
-}
-
-// --- Verify Google reCAPTCHA Token ---
-async function verifyRecaptchaToken(token) {
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-  const verificationURL = "https://www.google.com/recaptcha/api/siteverify";
-
-  if (!token) {
-    return { success: false, "error-codes": ["missing-input-response"] };
-  }
-  if (!secretKey) {
-    console.error("[verify-recaptcha] ❌ Missing reCAPTCHA secret key in environment variables.");
-    return { success: false, "error-codes": ["missing-secret-key"] };
-  }
-
-  try {
-    const params = new URLSearchParams();
-    params.append("secret", secretKey);
-    params.append("response", token);
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout
-
-    const response = await fetch(verificationURL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params.toString(),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      console.warn(`[verify-recaptcha] ⚠️ HTTP ${response.status}: ${response.statusText}`);
-      return { success: false, "error-codes": ["verification-failed"] };
-    }
-
-    const data = await response.json();
-
-    // Handle Google’s failure response
-    if (!data.success) {
-      console.warn("[verify-recaptcha] ⚠️ Verification failed:", data["error-codes"]);
-      return {
-        success: false,
-        "error-codes": data["error-codes"] || ["verification-failed"],
-      };
-    }
-
-    return data; // always return Google's response if success === true
-  } catch (error) {
-    if (error.name === "AbortError") {
-      console.error("[verify-recaptcha] ⏱️ Request timed out.");
-      return { success: false, "error-codes": ["timeout"] };
-    }
-    console.error("[verify-recaptcha] ❌ Error verifying token:", error.message);
-    return { success: false, "error-codes": ["internal-error"] };
-  }
 }
 
 // --- Per-IP rate limiter via Redis ---
@@ -85,6 +27,8 @@ async function incrementRate(ip) {
 
 // --- Main Route ---
 router.post("/verify-recaptcha", async (req, res) => {
+  console.error("🔥 VERIFY FUNCTION HIT:", __filename);
+
   const start = Date.now();
 
   try {
@@ -106,7 +50,7 @@ router.post("/verify-recaptcha", async (req, res) => {
     }
 
     // --- Verify token with Google ---
-    const data = await verifyRecaptchaToken(recaptchaToken);
+    const data = await verifyV3(recaptchaToken);
 
     if (data.success) {
       console.info(`[verify-recaptcha] ✅ Success for ${ip} (${Date.now() - start}ms)`);

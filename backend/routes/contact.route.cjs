@@ -1,10 +1,10 @@
 const express = require("express");
 const validator = require("validator");
 const rateLimit = require("express-rate-limit");
-const verifyRecaptchaToken = require("../lib/verifyRecaptchaToken.cjs");
 const sendContactEmail = require("../lib/sendContactEmail.cjs");
 const { sanitizeBasicText } = require("../lib/sanitizers.cjs");
 const { sanitizeContactMessage } = require("../lib/sanitizers.cjs");
+const verifyV3 = require("../lib/recaptcha/verifyV3.cjs");
 
 const router = express.Router();
 
@@ -59,7 +59,7 @@ router.post("/contact", contactLimiter, async (req, res) => {
 
     let recaptchaResult;
     try {
-      recaptchaResult = await verifyRecaptchaToken(recaptchaToken);
+      recaptchaResult = await verifyV3(recaptchaToken);
     } catch (recaptchaErr) {
       console.error("[ContactRoute] ❌ reCAPTCHA API error:", recaptchaErr);
       return res.status(503).json({

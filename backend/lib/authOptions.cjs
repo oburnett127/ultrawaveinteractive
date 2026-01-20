@@ -86,10 +86,10 @@ const authOptions = {
         email = (email || "").trim().toLowerCase();
         if (!email || !password) return null;
 
-        const validCaptcha = await verifyRecaptcha(recaptchaToken);
-        if (!validCaptcha) {
+        const data = await verifyV3(recaptchaToken);
+        if (!data.success) {
           await incrementFailedLogin(email);
-          throw new Error("Invalid login attempt.");
+          return null;
         }
 
         const user = await prisma.user.findUnique({
