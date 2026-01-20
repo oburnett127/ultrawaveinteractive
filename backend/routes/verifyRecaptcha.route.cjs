@@ -55,17 +55,7 @@ async function verifyRecaptchaToken(token) {
       };
     }
 
-    // Optional: enforce score for v3 tokens
-    if (typeof data.score === "number" && data.score < 0.5) {
-      console.warn("[verify-recaptcha] ⚠️ Low score:", data.score);
-      return {
-        success: false,
-        "error-codes": ["low-score"],
-        score: data.score,
-      };
-    }
-
-    return data;
+    return data; // always return Google's response if success === true
   } catch (error) {
     if (error.name === "AbortError") {
       console.error("[verify-recaptcha] ⏱️ Request timed out.");
