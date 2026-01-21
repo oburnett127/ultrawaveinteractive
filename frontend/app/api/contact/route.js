@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 export async function POST(req) {
   console.error("🔥 FRONTEND /api/contact route HIT");
 
