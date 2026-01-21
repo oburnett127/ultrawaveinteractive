@@ -27,8 +27,6 @@ async function incrementRate(ip) {
 
 // --- Main Route ---
 router.post("/verify-recaptcha", async (req, res) => {
-  console.error("🔥 VERIFY FUNCTION HIT:", __filename);
-
   const start = Date.now();
 
   try {

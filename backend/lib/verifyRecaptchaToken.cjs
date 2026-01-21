@@ -5,8 +5,6 @@ const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 async function verifyRecaptchaToken(token, expectedAction = null) {
-  console.error("🔥 VERIFY FUNCTION HIT:", __filename);
-
   if (!token) {
     return { success: false, error: "missing-input-response" };
   }

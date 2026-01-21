@@ -2,7 +2,7 @@ export async function POST(req) {
   const data = await req.json();
 
   const response = await fetch(
-    process.env.NEXT_PUBLIC_BACKEND_URL + "/contact",
+    process.env.BACKEND_INTERNAL_URL + "/contact",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

@@ -3,8 +3,6 @@ const fetch = (...args) =>
 
 async function verifyV3(token) {
 
-  console.error("🔥 VERIFY FUNCTION HIT:", __filename);
-
   const secret = process.env.RECAPTCHA_SECRET_KEY;
   if (!secret || !token) return { success: false };
 
