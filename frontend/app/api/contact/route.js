@@ -11,7 +11,7 @@ export async function POST(req) {
   const data = await req.json();
 
   const response = await fetch(
-    process.env.BACKEND_INTERNAL_URL + "/contact",
+    process.env.BACKEND_INTERNAL_URL + "/api/contact",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
