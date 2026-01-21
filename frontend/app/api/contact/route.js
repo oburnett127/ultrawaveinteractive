@@ -1,4 +1,11 @@
 export async function POST(req) {
+  console.error("🔥 FRONTEND /api/contact route HIT");
+
+  console.error(
+    "🔍 BACKEND_INTERNAL_URL =",
+    process.env.BACKEND_INTERNAL_URL
+  );
+
   const data = await req.json();
 
   const response = await fetch(
@@ -10,6 +17,10 @@ export async function POST(req) {
     }
   );
 
-  const result = await response.json();
-  return Response.json(result, { status: response.status });
+  console.error("🔁 Backend response status:", response.status);
+
+  const text = await response.text();
+  console.error("🔁 Backend raw response:", text);
+
+  return new Response(text, { status: response.status });
 }
