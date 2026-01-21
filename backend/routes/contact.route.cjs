@@ -79,14 +79,14 @@ router.post("/contact", contactLimiter, async (req, res) => {
     }
 
     // Optional: reCAPTCHA score threshold
-    if (typeof recaptchaResult.score === "number" && recaptchaResult.score < 0.2) {
-      console.warn(`[ContactRoute] Low score: ${recaptchaResult.score}`);
-      return res.status(403).json({ error: "Suspicious activity detected. Please try again later." });
-    }
-
-    // if (recaptchaResult.action !== "contact_form") {
-    //   return res.status(403).json({ error: "Invalid reCAPTCHA action" });
+    // if (typeof recaptchaResult.score === "number" && recaptchaResult.score < 0.2) {
+    //   console.warn(`[ContactRoute] Low score: ${recaptchaResult.score}`);
+    //   return res.status(403).json({ error: "Suspicious activity detected. Please try again later." });
     // }
+
+    if (recaptchaResult.action !== "contact_form") {
+      return res.status(403).json({ error: "Invalid reCAPTCHA action" });
+    }
 
     // --- 4️⃣ Attempt to send email ---
     try {
