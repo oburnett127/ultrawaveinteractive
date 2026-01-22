@@ -8,7 +8,7 @@ const router = express.Router();
  * Safely fetch a single blog post by slug.
  * Sanitized + validated + production-safe.
  */
-router.get("/blog/:slug", async (req, res) => {
+router.get("/:slug", async (req, res) => {
   try {
     let slug = req.params?.slug || "";
 

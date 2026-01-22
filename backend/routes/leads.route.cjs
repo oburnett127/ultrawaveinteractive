@@ -29,7 +29,7 @@ const leadsLimiter = rateLimit({
 router.use(express.json({ limit: "100kb" }));
 
 // --- POST /api/leads ---
-router.post("/leads", leadsLimiter, async (req, res) => {
+router.post("/", leadsLimiter, async (req, res) => {
   const startTime = Date.now();
 
   try {

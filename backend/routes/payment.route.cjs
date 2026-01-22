@@ -48,7 +48,7 @@ const paymentLimiter = rateLimit({
 });
 
 // --- POST /api/payment/charge ---
-router.post("/payment/charge", requireOtpVerified, paymentLimiter, async function(req, res) {
+router.post("/charge", requireOtpVerified, paymentLimiter, async function(req, res) {
   const startTime = Date.now();
 
   if (req.method !== "POST") {

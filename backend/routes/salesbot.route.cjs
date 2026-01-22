@@ -240,7 +240,7 @@ async function saveSession(redis, key, session) {
 }
 
 // -------- Route --------
-router.post("/salesbot", async (req, res) => {
+router.post("/", async (req, res) => {
   const started = Date.now();
 
   try {

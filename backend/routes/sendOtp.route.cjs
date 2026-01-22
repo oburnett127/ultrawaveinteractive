@@ -55,7 +55,7 @@
 // });
 
 // // --- Main Route: POST /api/otp/send ---
-// router.post("/otp/send", otpLimiter, async (req, res) => {
+// router.post("/send", otpLimiter, async (req, res) => {
 //   const start = Date.now();
 //   try {
 //     const { email, recaptchaToken } = req.body || {};

@@ -23,7 +23,7 @@ const contactLimiter = rateLimit({
 router.use(express.json({ limit: "100kb" })); // 100KB is more than enough for contact forms
 
 // --- POST /api/contact ---
-router.post("/contact", async (req, res) => {
+router.post("/", async (req, res) => {
   const startTime = Date.now();
   try {
     const { name, email, phone, message, recaptchaToken } = req.body || {};

@@ -35,7 +35,7 @@ const registerLimiter = rateLimit({
 // ---------------------------------------------
 // POST /api/auth/register
 // ---------------------------------------------
-router.post("/auth/register", registerLimiter, async (req, res) => {
+router.post("/", registerLimiter, async (req, res) => {
   const start = Date.now();
 
   try {

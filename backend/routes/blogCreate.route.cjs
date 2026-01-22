@@ -36,7 +36,7 @@ router.use(express.json({ limit: "2mb" }));
 // POST /api/blog/create
 // Admin-only
 // -----------------------------------------
-router.post("/blog/create", requireOtpVerified, blogCreateLimiter, async (req, res) => {
+router.post("/", requireOtpVerified, blogCreateLimiter, async (req, res) => {
   try {
     // -------------------------------------
     // 1) Auth check

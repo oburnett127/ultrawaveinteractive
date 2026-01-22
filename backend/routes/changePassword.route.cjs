@@ -30,7 +30,7 @@ const changePasswordLimiter = rateLimit({
 // POST /api/auth/change-password
 // ---------------------------------------------
 router.post(
-  "/auth/change-password",
+  "/",
   requireOtpVerified,
   changePasswordLimiter,
   async (req, res) => {

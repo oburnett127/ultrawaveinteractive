@@ -15,7 +15,7 @@ const blogListLimiter = rateLimit({
 });
 
 // --- GET /api/blog/list ---
-router.get("/blog/list", blogListLimiter, async (req, res) => {
+router.get("/list", blogListLimiter, async (req, res) => {
   const start = Date.now();
 
   // Optional pagination query parameters (default: first 10)
