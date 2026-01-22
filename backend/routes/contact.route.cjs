@@ -8,10 +8,12 @@ const verifyV3 = require("../lib/recaptcha/verifyV3.cjs");
 
 const router = express.Router();
 
+//DON'T FORGET TO ADD THE CONTACTLIMITER AS MIDDLEWARE IN THE ROUTER.POST('/CONTACT"...) LINE <================
+
 // --- Rate limit to prevent spam and abuse (10 messages per hour per IP) ---
 const contactLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 35,
+  max: 10,
   message: { error: "Too many contact attempts. Please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
@@ -21,7 +23,7 @@ const contactLimiter = rateLimit({
 router.use(express.json({ limit: "100kb" })); // 100KB is more than enough for contact forms
 
 // --- POST /api/contact ---
-router.post("/contact", contactLimiter, async (req, res) => {
+router.post("/contact", async (req, res) => {
   const startTime = Date.now();
   try {
     const { name, email, phone, message, recaptchaToken } = req.body || {};
