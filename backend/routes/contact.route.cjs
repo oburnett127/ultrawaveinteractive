@@ -11,7 +11,7 @@ const router = express.Router();
 // --- Rate limit to prevent spam and abuse (10 messages per hour per IP) ---
 const contactLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 10,
+  max: 12,
   message: { error: "Too many contact attempts. Please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
