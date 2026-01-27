@@ -9,7 +9,9 @@ WORKDIR /app/backend
 # 1️⃣ Install dependencies (including dev deps)
 # -----------------------------------------------------
 COPY backend/package*.json ./
-RUN npm ci
+RUN npm config set registry https://registry.npmjs.org/
+RUN npm ci --prefer-offline --no-audit --no-fund
+
 
 # -----------------------------------------------------
 # 2️⃣ Prisma client generation
