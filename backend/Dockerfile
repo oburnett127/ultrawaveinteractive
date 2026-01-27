@@ -33,18 +33,25 @@ RUN npm prune --omit=dev
 # =====================================================
 FROM node:20.11.1-slim AS runner
 
-# OpenSSL required for Prisma + TLS
+# -----------------------------------------------------
+# 🔐 OS packages (root ONLY during build)
+# -----------------------------------------------------
+USER root
+
+# OpenSSL + mysql-client required for Prisma + DB inspection
 RUN apt-get update && \
-    apt-get install -y openssl && \
+    apt-get install -y openssl mysql-client && \
     rm -rf /var/lib/apt/lists/*
+
+# -----------------------------------------------------
+# 👤 Create non-root user
+# -----------------------------------------------------
+RUN groupadd -r app && useradd -r -g app app
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=8080
-
-# 👤 Create non-root user
-RUN groupadd -r app && useradd -r -g app app
 
 # -----------------------------------------------------
 # ❤️ Healthcheck
@@ -60,10 +67,12 @@ EXPOSE 8080
 COPY --from=builder --chown=app:app /app/backend ./backend
 COPY --chown=app:app backend/server.cjs ./server.cjs
 
-
+# -----------------------------------------------------
+# 🔒 Drop privileges permanently
+# -----------------------------------------------------
 USER app
 
 # -----------------------------------------------------
-# Start backend
+# ▶️ Start backend
 # -----------------------------------------------------
 CMD ["node", "backend/server.cjs"]

@@ -36,7 +36,7 @@ async function getPosts() {
                       null;
   
   try {
-    const res = await fetch(`${backendUrl}/api/blog/list`, {
+    const res = await fetch(`${backendUrl}/api/list`, {
       cache: "force-cache"
     });
     
