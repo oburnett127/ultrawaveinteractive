@@ -121,6 +121,11 @@ export default function Header() {
                       Sign In
                     </Link>
                   </li>
+                  <li role="none">
+                    <Link role="menuitem" href="/register" onClick={itemClickAction}>
+                      Register
+                    </Link>
+                  </li>
                 </>
               )}
             {status === "authenticated" && (
