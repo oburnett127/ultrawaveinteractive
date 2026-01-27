@@ -38,9 +38,9 @@ FROM node:20.11.1-slim AS runner
 # -----------------------------------------------------
 USER root
 
-# OpenSSL + mysql-client required for Prisma + DB inspection
+# OpenSSL + MySQL client (Debian bookworm compatible)
 RUN apt-get update && \
-    apt-get install -y openssl mysql-client && \
+    apt-get install -y openssl default-mysql-client && \
     rm -rf /var/lib/apt/lists/*
 
 # -----------------------------------------------------
