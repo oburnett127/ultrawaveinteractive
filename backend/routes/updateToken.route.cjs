@@ -11,7 +11,7 @@ const router = express.Router();
  * POST /api/update-token
  * Marks the current authenticated user as OTP verified.
  */
-router.post("/update-token", requireOtpVerified, async (req, res) => {
+router.post("/", requireOtpVerified, async (req, res) => {
   const start = Date.now();
   try {
     // --- 1️⃣ Validate session ---

@@ -37,6 +37,10 @@ export default function RootLayout({ children }) {
         <Script
           src={`https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`}
           strategy="afterInteractive"
+          onLoad={() => {
+            console.log("reCAPTCHA script loaded");
+            recaptchaReady.current = true;
+          }}
         />
 
         <Providers>
