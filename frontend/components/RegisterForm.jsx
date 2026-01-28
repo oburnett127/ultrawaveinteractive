@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import Script from "next/script";
 import { useRouter } from "next/navigation";
 
 export default function RegisterForm() {
@@ -13,19 +12,19 @@ export default function RegisterForm() {
   const [errorMsg, setErrorMsg] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const recaptchaReady = useRef(false);
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
   // ------------------------------------
   // reCAPTCHA v3 token
   // ------------------------------------
   async function getRecaptchaToken() {
-    if (!window.grecaptcha || !recaptchaReady.current) {
-      setErrorMsg("reCAPTCHA is still loading. Please wait a moment.");
+    if (!window.grecaptcha) {
+      setErrorMsg("reCAPTCHA failed to load. Please refresh the page.");
       return null;
     }
 
     try {
+      await window.grecaptcha.ready(() => {});
       return await window.grecaptcha.execute(siteKey, {
         action: "register",
       });
@@ -66,7 +65,7 @@ export default function RegisterForm() {
     const timeout = setTimeout(() => controller.abort(), 10000);
 
     try {
-      const res = await fetch("/api/register", {
+      fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -115,22 +114,6 @@ export default function RegisterForm() {
 
   return (
     <div className="register-styling">
-      <Script
-        src={`https://www.google.com/recaptcha/api.js?render=${siteKey}`}
-        strategy="afterInteractive"
-        onLoad={() => {
-          if (window.grecaptcha) {
-            window.grecaptcha.ready(() => {
-              recaptchaReady.current = true;
-            });
-          }
-        }}
-        onError={() =>
-          setErrorMsg(
-            "Failed to load reCAPTCHA. Please refresh and try again."
-          )
-        }
-      />
 
       <h1>Create Account</h1>
 

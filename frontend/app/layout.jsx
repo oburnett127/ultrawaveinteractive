@@ -11,13 +11,6 @@ const isProduction = process.env.NODE_ENV === "production";
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css"
-        />
-      </head>
-
       <body>
         <a href="#main-content" className="skip-link">
           Skip to main content
@@ -33,15 +26,13 @@ export default function RootLayout({ children }) {
           strategy="afterInteractive"
         />
 
-        {/* reCAPTCHA */}
-        <Script
-          src={`https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`}
-          strategy="afterInteractive"
-          onLoad={() => {
-            console.log("reCAPTCHA script loaded");
-            recaptchaReady.current = true;
-          }}
-        />
+        {/* reCAPTCHA v3 */}
+        {SITE_KEY && (
+          <Script
+            src={`https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`}
+            strategy="afterInteractive"
+          />
+        )}
 
         <Providers>
           <Header />
