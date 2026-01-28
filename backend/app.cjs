@@ -190,16 +190,4 @@ app.use("/api/blog", blogRoute);
 app.use("/api/list", listRoute);
 app.use("/api/otp", rateLimit("otp"), otpRoute);
 
-// app.use("/api", waitForRedis, rateLimit("register"), registerRoute);
-// app.use("/api", waitForRedis, paymentRoute);
-// app.use("/api", waitForRedis, contactRoute);
-// app.use("/api", waitForRedis, rateLimit("salesbot"), salesbotRoute);
-// app.use("/api", waitForRedis, rateLimit("leads"), leadsRoute);
-// app.use("/api", waitForRedis, rateLimit("blogCreate"), blogCreateRoute);
-// app.use("/api", waitForRedis, listRoute);
-// app.use("/api", waitForRedis, rateLimit("changePassword"), changePasswordRoute);
-// app.use("/api/otp", waitForRedis, rateLimit("otp"), otpRoute);
-// app.use("/api", waitForRedis, blogRoute);
-// app.use("/api", waitForRedis, rateLimit("updateToken"), updateTokenRoute);
-
 module.exports = app;

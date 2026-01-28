@@ -63,7 +63,7 @@
 //     const timeout = setTimeout(() => controller.abort(), 10000);
 
 //     try {
-//       const res = await fetch(`/api/auth/register`, {
+//       const res = await fetch(`/api/register`, {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         credentials: "include",

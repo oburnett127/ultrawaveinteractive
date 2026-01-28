@@ -33,7 +33,7 @@ const registerLimiter = rateLimit({
 });
 
 // ---------------------------------------------
-// POST /api/auth/register
+// POST /api/register
 // ---------------------------------------------
 router.post("/", registerLimiter, async (req, res) => {
   const start = Date.now();
