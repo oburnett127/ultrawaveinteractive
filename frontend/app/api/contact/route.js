@@ -1,12 +1,12 @@
 export const runtime = "nodejs";
 
 export async function POST(req) {
-  console.error("🔥 FRONTEND /api/contact route HIT");
+  // console.error("🔥 FRONTEND /api/contact route HIT");
 
-  console.error(
-    "🔍 BACKEND_INTERNAL_URL =",
-    process.env.BACKEND_INTERNAL_URL
-  );
+  // console.error(
+  //   "🔍 BACKEND_INTERNAL_URL =",
+  //   process.env.BACKEND_INTERNAL_URL
+  // );
 
   const data = await req.json();
 
@@ -19,10 +19,10 @@ export async function POST(req) {
     }
   );
 
-  console.error("🔁 Backend response status:", response.status);
+  //console.error("🔁 Backend response status:", response.status);
 
   const text = await response.text();
-  console.error("🔁 Backend raw response:", text);
+  //console.error("🔁 Backend raw response:", text);
 
   return new Response(text, { status: response.status });
 }

@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import styles from "./ContactForm.module.css";
 
 const ContactForm = () => {
-  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
+
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -14,37 +15,7 @@ const ContactForm = () => {
   });
 
   const [status, setStatus] = useState({ sending: false, msg: "", err: "" });
-  const [recaptchaReady, setRecaptchaReady] = useState(false);
 
-  /** ─────────────────────────────
-   *   Load reCAPTCHA v3 script
-   *  ───────────────────────────── */
-  useEffect(() => {
-    if (!siteKey) return;
-
-    if (window.grecaptcha) {
-      setRecaptchaReady(true);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => setRecaptchaReady(true);
-    script.onerror = () =>
-      setStatus({
-        sending: false,
-        msg: "",
-        err: "Failed to load reCAPTCHA. Please try again later.",
-      });
-
-    document.body.appendChild(script);
-  }, [siteKey]);
-
-  /** ─────────────────────────────
-   *   Form utilities
-   *  ───────────────────────────── */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -92,13 +63,18 @@ const ContactForm = () => {
    *   Execute reCAPTCHA v3
    *  ───────────────────────────── */
   const getRecaptchaToken = async () => {
-    if (!recaptchaReady || !window.grecaptcha) {
-      throw new Error("reCAPTCHA not ready");
+    if (!window.grecaptcha) {
+      throw new Error("reCAPTCHA failed to load");
     }
 
-    return await window.grecaptcha.execute(siteKey, {
-      action: "contact_form",
-    });
+    try {
+      return await window.grecaptcha.execute(siteKey, {
+        action: "contact_form",
+      });
+    } catch (err) {
+      console.error("reCAPTCHA execute error:", err);
+      throw err;
+    }
   };
 
   /** ─────────────────────────────

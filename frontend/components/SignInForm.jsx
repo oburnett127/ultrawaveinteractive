@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import Script from "next/script";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
@@ -13,7 +12,6 @@ export default function SignInForm() {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
-  const [ready, setReady] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e) {
@@ -21,8 +19,9 @@ export default function SignInForm() {
     setErr("");
 
     if (loading) return;
-    if (!ready || !window.grecaptcha) {
-      setErr("reCAPTCHA is still loading. Please wait a moment and try again.");
+
+    if (!window.grecaptcha) {
+      setErr("reCAPTCHA failed to load. Please refresh the page.");
       return;
     }
 
@@ -34,6 +33,7 @@ export default function SignInForm() {
     setLoading(true);
 
     try {
+      await window.grecaptcha.ready(() => {});
       const token = await window.grecaptcha.execute(SITE_KEY, {
         action: "login",
       });
@@ -64,8 +64,8 @@ export default function SignInForm() {
       }
 
       window.location.href = result.url || "/verifyotp";
-    } catch (err) {
-      console.error("[Login] Unexpected error:", err);
+    } catch (error) {
+      console.error("[Login] Unexpected error:", error);
       setErr("Login failed. Please try again.");
     } finally {
       setLoading(false);
@@ -73,55 +73,47 @@ export default function SignInForm() {
   }
 
   return (
-    <>
-      <Script
-        src={`https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`}
-        strategy="afterInteractive"
-        onLoad={() => {
-          window.grecaptcha.ready(() => setReady(true));
-        }}
+    <form onSubmit={handleSubmit} className="signin-form" noValidate>
+      <h1>Sign in</h1>
+
+      <label htmlFor="email">Email</label>
+      <input
+        id="email"
+        type="email"
+        disabled={loading}
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="signin-input"
+        autoComplete="email"
       />
 
-      <form onSubmit={handleSubmit} className="signin-form" noValidate>
-        <h1>Sign in</h1>
-
-        <label htmlFor="email">Email</label>
+      <label htmlFor="password">Password</label>
+      <div className="inputWrapper">
         <input
-          id="email"
-          type="email"
+          id="password"
+          type={showPassword ? "text" : "password"}
           disabled={loading}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="signin-input"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="passwordInput"
+          autoComplete="current-password"
         />
 
-        <label htmlFor="password">Password</label>
-        <div className="inputWrapper">
-          <input
-            id="password"
-            type={showPassword ? "text" : "password"}
-            disabled={loading}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="passwordInput"
-          />
-
-          <button
-            type="button"
-            onClick={() => setShowPassword((p) => !p)}
-            className="passwordEye"
-            aria-label={showPassword ? "Hide password" : "Show password"}
-          >
-            {showPassword ? <VisibilityOff /> : <Visibility />}
-          </button>
-        </div>
-
-        <button type="submit" disabled={loading}>
-          {loading ? "Signing in..." : "Sign in"}
+        <button
+          type="button"
+          onClick={() => setShowPassword((p) => !p)}
+          className="passwordEye"
+          aria-label={showPassword ? "Hide password" : "Show password"}
+        >
+          {showPassword ? <VisibilityOff /> : <Visibility />}
         </button>
+      </div>
 
-        {err && <p className="signin-error">⚠️ {err}</p>}
-      </form>
-    </>
+      <button type="submit" disabled={loading}>
+        {loading ? "Signing in..." : "Sign in"}
+      </button>
+
+      {err && <p className="signin-error">⚠️ {err}</p>}
+    </form>
   );
 }

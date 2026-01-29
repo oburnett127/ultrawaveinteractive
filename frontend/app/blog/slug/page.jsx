@@ -68,9 +68,7 @@ async function fetchJson(url, { revalidateSeconds = 60, timeoutMs = 6000 } = {})
 // Static paths (replaces getStaticPaths)
 // ---------------------------------------------
 export async function generateStaticParams() {
-  const backendUrl =
-    process.env.BACKEND_INTERNAL_URL ||
-    process.env.NEXT_PUBLIC_BACKEND_URL;
+  const backendUrl = getBackendUrl();
 
   if (!backendUrl) {
     console.warn("⚠️ No backend URL — skipping static params");

@@ -65,7 +65,7 @@ export default function RegisterForm() {
     const timeout = setTimeout(() => controller.abort(), 10000);
 
     try {
-      fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/register`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -76,7 +76,8 @@ export default function RegisterForm() {
           name,
           recaptchaToken,
         }),
-      });
+        }
+      );
 
       clearTimeout(timeout);
 
@@ -108,6 +109,7 @@ export default function RegisterForm() {
         );
       }
     } finally {
+      clearTimeout(timeout);
       setSubmitting(false);
     }
   }

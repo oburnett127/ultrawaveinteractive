@@ -1,12 +1,8 @@
 "use client";
 
-// components/SalesBot.jsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
 export default function SalesChatbot() {
-  const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") || "";
-
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hi 👋 How can I help grow your business today?" },
@@ -17,12 +13,10 @@ export default function SalesChatbot() {
   const messagesEndRef = useRef(null);
   const abortControllerRef = useRef(null);
 
-  // Auto-scroll to bottom on new message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Gracefully cancel in-flight requests on unmount
   useEffect(() => {
     return () => {
       abortControllerRef.current?.abort();
@@ -42,38 +36,40 @@ export default function SalesChatbot() {
     setIsLoading(true);
     setErrorMsg("");
 
-    abortControllerRef.current?.abort(); // cancel any prior pending request
+    abortControllerRef.current?.abort();
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
     try {
-      const res = await fetch(`/api/salesbot`, {
+      const res = await fetch("/api/salesbot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMessage }),
         signal: controller.signal,
       });
 
-      // Handle rate limit specifically
       if (res.status === 429) {
-        appendMessage("assistant", "⚠️ Too many requests. Please wait a moment before trying again.");
+        appendMessage(
+          "assistant",
+          "⚠️ Too many requests. Please wait a moment before trying again."
+        );
         return;
       }
 
-      // Handle other non-OK responses gracefully
       if (!res.ok) {
         throw new Error(`Server responded with ${res.status}`);
       }
 
       const data = await res.json();
-
       const reply = data?.reply?.trim();
-      appendMessage("assistant", reply || "🤔 I'm not sure how to respond to that right now.");
+
+      appendMessage(
+        "assistant",
+        reply || "🤔 I'm not sure how to respond to that right now."
+      );
     } catch (error) {
-      if (error.name === "AbortError") {
-        console.warn("Fetch aborted (component unmounted or new request sent).");
-        return;
-      }
+      if (error.name === "AbortError") return;
+
       console.error("Salesbot error:", error);
       setErrorMsg("Something went wrong. Please try again later.");
       appendMessage(
@@ -83,7 +79,7 @@ export default function SalesChatbot() {
     } finally {
       setIsLoading(false);
     }
-  }, [input, backendUrl, appendMessage, isLoading]);
+  }, [input, appendMessage, isLoading]);
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") sendMessage();
